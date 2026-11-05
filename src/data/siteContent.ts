@@ -168,7 +168,7 @@ export const valuePoints = [
 ];
 
 export const contactDetails = {
-  address: ['AGS Trade', New Delhi 110045, India'],
+  address: ['AGS Trade', 'New Delhi 110045, India'],
   email: 'info@agsglobaltrades.in',
   phone: '+91 9013165871',
   hours: '9:00- 21:00 IST',
