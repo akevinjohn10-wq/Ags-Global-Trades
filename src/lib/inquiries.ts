@@ -58,16 +58,39 @@ export function validateInquiry(values: InquiryValues): InquiryErrors {
   return errors;
 }
 
+const FORMSPREE_URL = 'https://formspree.io/f/mwllzano';
+
 export async function submitInquiry(values: InquiryValues): Promise<void> {
-  const { error } = await supabase.from('inquiries').insert({
+  const payload = {
     name: values.name.trim(),
     email: values.email.trim(),
-    company: values.company.trim() || null,
-    product_interest: values.productInterest,
+    company: values.company.trim() || 'Not provided',
+    productInterest: values.productInterest,
     message: values.message.trim(),
-  });
+  };
 
-  if (error) {
-    throw error;
+  const [emailResult, dbResult] = await Promise.allSettled([
+    fetch(FORMSPREE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(payload),
+    }).then((response) => {
+      if (!response.ok) throw new Error('Email delivery failed');
+    }),
+    supabase.from('inquiries').insert({
+      name: payload.name,
+      email: payload.email,
+      company: values.company.trim() || null,
+      product_interest: payload.productInterest,
+      message: payload.message,
+    }).then(({ error }) => {
+      if (error) throw error;
+    }),
+  ]);
+
+  // Only show an error if BOTH the email and the database save failed
+  if (emailResult.status === 'rejected' && dbResult.status === 'rejected') {
+    throw new Error('Could not send enquiry');
   }
 }
+
