@@ -168,9 +168,9 @@ export const valuePoints = [
 ];
 
 export const contactDetails = {
-  address: ['AGS Trade', 'RZC 57A Mahavir Enclave', 'New Delhi 110045, India'],
-  email: 'agsglobaltrades@gmail.com',
-  phone: '+91 9090050574',
-  hours: 'Monday to Friday, 08:30 to 18:00 IST',
+  address: ['AGS Trade', New Delhi 110045, India'],
+  email: 'info@agsglobaltrades.in',
+  phone: '+91 9013165871',
+  hours: '9:00- 21:00 IST',
   linkedin: 'https://www.linkedin.com/in/aditya-dey-07708634a/',
 };
