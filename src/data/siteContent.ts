@@ -24,9 +24,8 @@ export const navLinks = [
 ];
 
 export const stats = [
-  { value: '15+', label: 'Countries Served' },
-  { value: '500+', label: 'Shipments Delivered' },
-  { value: '10+', label: 'Years Experience' },
+ 
+  { value: '3+', label: 'Years Experience' },
   { value: '100%', label: 'Compliance Rate' },
 ];
 
