@@ -1,8 +1,7 @@
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 
-const ABOUT_IMAGE =
-  'https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg?auto=compress&cs=tinysrgb&h=650&w=940';
+const ABOUT_IMAGE = '/images/about.jpeg';
 
 export default function About() {
   return (
@@ -12,11 +11,10 @@ export default function About() {
           <figure className="relative overflow-hidden rounded-[4px] border border-line">
             <img
               src={ABOUT_IMAGE}
-              alt="Stacked shipping containers in a logistics yard"
+              alt="AGS Global Trade logistics and shipping operations"
               loading="lazy"
-              className="h-[400px] w-full object-cover grayscale sm:h-[520px]"
+              className="h-[400px] w-full object-cover sm:h-[520px]"
             />
-            <div aria-hidden="true" className="absolute inset-0 bg-canvas/30" />
           </figure>
         </Reveal>
 
