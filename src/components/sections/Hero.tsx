@@ -1,8 +1,9 @@
 import Reveal from '@/components/ui/Reveal';
 import Button from '@/components/ui/Button';
 
-      const HERO_IMAGE = '/images/WhatsApp_Image_2026-11-05_at_7.18.56_PM.jpeg';
-   const HERO_VIDEO = '/images/hero-video.mp4';
+const HERO_IMAGE = '/images/WhatsApp_Image_2026-11-05_at_7.18.56_PM.jpeg';
+const HERO_VIDEO = '/images/hero-video.mp4';
+
 export default function Hero() {
   return (
     <section id="home" className="scroll-mt-[72px] pb-24 pt-20 lg:pb-[120px] lg:pt-[120px]">
@@ -33,17 +34,16 @@ export default function Hero() {
 
         <Reveal delay={200} className="mt-16 lg:mt-20">
           <figure className="overflow-hidden rounded-[4px] border border-line">
-              <video
-     src={HERO_VIDEO}
-     poster={HERO_IMAGE}
-     aria-label="World map showing global trade routes connecting markets across continents"
-     className="aspect-[1280/533] w-full object-cover"
-     autoPlay
-     muted
-     loop
-     playsInline
-     preload="metadata"
-   />
+            <video
+              src={HERO_VIDEO}
+              poster={HERO_IMAGE}
+              aria-label="World map showing global trade routes connecting markets across continents"
+              className="aspect-[1280/533] w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
             />
           </figure>
         </Reveal>
