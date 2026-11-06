@@ -133,14 +133,14 @@ export const productCategories: ProductCategory[] = [
   {
     name: 'OEM & ODM Procurement',
     description: 'Custom-manufactured and white-label products built to your specifications.',
-    image: '/images/oem-odm-procurement.jpeg',
-    alt: 'Custom manufactured products for OEM and ODM orders',
+    image: 'https://images.pexels.com/photos/3520692/pexels-photo-3520692.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    alt: 'Circuit board with precision electronic components',
   },
   {
     name: 'Supply Chain & Logistics Coordination',
     description: 'Freight, customs, and tracking managed so shipments arrive on schedule.',
-    image: '/images/supply-chain-logistics.jpeg',
-    alt: 'Freight and logistics operations',
+    image: 'https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
+    alt: 'Stacked shipping containers in a logistics yard',
   },
 ];
 export interface ProcessStep {
