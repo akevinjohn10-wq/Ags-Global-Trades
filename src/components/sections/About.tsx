@@ -6,14 +6,14 @@ const ABOUT_IMAGE = '/images/about.jpeg';
 export default function About() {
   return (
     <section id="about" className="section-y scroll-mt-[72px] bg-surface">
-      <div className="container-x grid items-center gap-16 lg:grid-cols-2 lg:gap-20">
+      <div className="container-x grid items-center gap-10 sm:gap-16 lg:grid-cols-2 lg:gap-20">
         <Reveal>
           <figure className="relative overflow-hidden rounded-[4px] border border-line">
             <img
               src={ABOUT_IMAGE}
               alt="AGS Global Trade logistics and shipping operations"
               loading="lazy"
-              className="h-[400px] w-full object-cover sm:h-[520px]"
+              className="h-[260px] w-full object-cover sm:h-[520px]"
             />
           </figure>
         </Reveal>
