@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-canvas font-sans text-[17px] leading-[1.7] text-ink;
+    @apply bg-canvas font-sans text-[16px] leading-[1.65] text-ink lg:text-[17px] lg:leading-[1.7];
   }
 
   h1,
@@ -27,11 +27,11 @@
 
 @layer components {
   .container-x {
-    @apply mx-auto w-full max-w-content px-6 lg:px-10;
+    @apply mx-auto w-full max-w-content px-5 sm:px-6 lg:px-10;
   }
 
   .section-y {
-    @apply py-24 lg:py-[120px];
+    @apply py-14 sm:py-20 lg:py-[120px];
   }
 
   .eyebrow {
@@ -39,7 +39,7 @@
   }
 
   .icon-box {
-    @apply inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[4px] border border-line text-accent transition-colors duration-300;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] border border-line text-accent transition-colors duration-300 sm:h-12 sm:w-12;
   }
 
   .field-input {
