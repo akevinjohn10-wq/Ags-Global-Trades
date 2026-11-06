@@ -8,9 +8,9 @@ export default function Products() {
       <div className="container-x">
         <Reveal>
           <SectionHeading
-            eyebrow="Products"
-            title="Categories we trade across every market."
-            description="From raw agricultural commodities to finished industrial equipment, we source and ship across six core categories."
+            eyebrow="Products & Services"
+            title="What we trade, source, and deliver."
+            description="From commodities and machinery to sourcing and logistics, we support businesses across the full trade cycle."
           />
         </Reveal>
 
