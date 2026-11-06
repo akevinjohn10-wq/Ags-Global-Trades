@@ -13,8 +13,10 @@ export default function SectionHeading({ eyebrow, title, description, align = 'l
   return (
     <div className={`max-w-2xl ${alignClass}`}>
       <p className="eyebrow">{eyebrow}</p>
-      <h2 className="mt-4 text-3xl font-semibold text-ink sm:text-4xl lg:text-[44px]">{title}</h2>
-      {description && <p className="mt-5 text-lg leading-[1.7] text-muted">{description}</p>}
+      <h2 className="mt-3 text-[26px] font-semibold text-ink sm:mt-4 sm:text-4xl lg:text-[44px]">{title}</h2>
+      {description && (
+        <p className="mt-4 text-base leading-[1.65] text-muted sm:mt-5 sm:text-lg sm:leading-[1.7]">{description}</p>
+      )}
     </div>
   );
 }
