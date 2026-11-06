@@ -36,6 +36,11 @@ export default function Hero() {
               src={HERO_VIDEO}
               alt="World map showing global trade routes connecting markets across continents"
               className="aspect-[1280/533] w-full object-cover"
+               autoPlay
+     muted
+     loop
+     playsInline
+     preload="metadata"
             />
           </figure>
         </Reveal>
