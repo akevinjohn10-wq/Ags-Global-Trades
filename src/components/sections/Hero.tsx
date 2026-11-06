@@ -32,7 +32,7 @@ export default function Hero() {
 
         <Reveal delay={200} className="mt-16 lg:mt-20">
           <figure className="overflow-hidden rounded-[4px] border border-line">
-            <img
+            <video
               src={HERO_VIDEO}
               alt="World map showing global trade routes connecting markets across continents"
               className="aspect-[1280/533] w-full object-cover"
