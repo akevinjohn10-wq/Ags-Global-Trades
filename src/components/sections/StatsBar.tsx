@@ -5,11 +5,11 @@ export default function StatsBar() {
   return (
     <section aria-label="Company highlights" className="border-y border-line">
       <Reveal>
-        <dl className="container-x grid grid-cols-2 lg:grid-cols-4">
+        <dl className="container-x flex flex-wrap justify-center">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="flex flex-col items-center justify-center px-4 py-10 text-center lg:border-r lg:border-line lg:py-14 lg:last:border-r-0"
+              className="flex basis-1/2 flex-col items-center justify-center px-4 py-10 text-center lg:basis-0 lg:flex-1 lg:border-r lg:border-line lg:py-14 lg:last:border-r-0"
             >
               <dt className="order-2 mt-2 text-sm text-muted">{stat.label}</dt>
               <dd className="order-1 text-4xl font-bold tracking-tightest text-ink lg:text-5xl">{stat.value}</dd>
