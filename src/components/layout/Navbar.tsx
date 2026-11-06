@@ -12,7 +12,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-line bg-canvas">
       <nav aria-label="Primary" className="container-x flex h-[72px] items-center justify-between">
         <a href="#home" aria-label="AGS Trade home" className="transition-opacity duration-200 hover:opacity-80">
-          <Logo height={48} />
+          <Logo height={60} />
         </a>
 
         <ul className="hidden items-center gap-8 lg:flex">
