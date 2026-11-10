@@ -77,15 +77,17 @@ export async function submitInquiry(values: InquiryValues): Promise<void> {
     }).then((response) => {
       if (!response.ok) throw new Error('Email delivery failed');
     }),
-    supabase.from('inquiries').insert({
-      name: payload.name,
-      email: payload.email,
-      company: values.company.trim() || null,
-      product_interest: payload.productInterest,
-      message: payload.message,
-    }).then(({ error }) => {
+    (async () => {
+      if (!supabase) throw new Error('Database not configured');
+      const { error } = await supabase.from('inquiries').insert({
+        name: payload.name,
+        email: payload.email,
+        company: values.company.trim() || null,
+        product_interest: payload.productInterest,
+        message: payload.message,
+      });
       if (error) throw error;
-    }),
+    })(),
   ]);
 
   // Only show an error if BOTH the email and the database save failed
