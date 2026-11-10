@@ -6,8 +6,8 @@ import { allHubs, corridors } from '@/data/globe';
 import { onReady } from '@/lib/ready';
 
 // Which regions light up as the visitor scrolls through the hero
-const STAGES = [['east-asia', 'southeast-asia'], ['middle-east', 'europe', 'africa'], corridors.map((c) => c.id)];
-const STAGE_LABELS = ['Sourcing from Asia', 'Supplying the Gulf, Europe & Africa', 'Delivering worldwide'];
+const STAGES = [['east-asia'], ['europe', 'africa'], corridors.map((c) => c.id)];
+const STAGE_LABELS = ['Sourcing from China & Japan', 'Supplying Europe & Africa', 'Delivering worldwide'];
 
 /**
  * Dark hero over an interactive dotted world map. Scrolling lights up new sourcing routes,
