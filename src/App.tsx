@@ -10,7 +10,6 @@ import Faq from '@/components/sections/Faq';
 import GlobalReach from '@/components/sections/GlobalReach';
 import Hero from '@/components/sections/Hero';
 import Journey from '@/components/sections/Journey';
-import ShippingModes from '@/components/sections/ShippingModes';
 import Statement from '@/components/sections/Statement';
 import Story from '@/components/sections/Story';
 import ScrollProgress from '@/components/ui/ScrollProgress';
@@ -54,7 +53,6 @@ export default function App() {
         <Products />
         <Journey />
         <GlobalReach />
-        <ShippingModes />
         <Faq />
         <CtaBand />
         <Contact />
