@@ -21,7 +21,7 @@ const PART = (n: string) => `/story/parts/${n}.webp`;
 const P_LOAD = 0.3;
 const P_ROAD = 0.52;
 const P_SEA = 0.74;
-const LABELS = ['Loaded', 'On the road', 'At sea', 'By air'];
+const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
 
 // Sprite geometry, in units of the truck's height (H). Measured from the cut-out renders.
 const TRUCK_W = 1188 / 556; // truck width
@@ -69,8 +69,8 @@ function cloudLayer(seed: number, count: number, alpha: number, minW: number, ma
 
 /**
  * The scroll story. On a white page the forklift loads the crate into the AGS truck and the truck
- * drives off; the road and sea legs play from the brand film; then the AGS plane climbs through
- * the clouds, which close over the screen and open onto the white product section below.
+ * drives off; the road and sea legs play from the brand film; then the sky clears and the
+ * clouds close over the screen and open onto the white product section below.
  */
 export default function Story() {
   const [reduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -95,7 +95,6 @@ function StoryFilm() {
   const skyLightRef = useRef<HTMLDivElement>(null);
   const cloudsBackRef = useRef<HTMLDivElement>(null);
   const cloudsFrontRef = useRef<HTMLDivElement>(null);
-  const planeRef = useRef<HTMLDivElement>(null);
   const bankRef = useRef<HTMLDivElement>(null);
   const copyRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
   const serviceRefs = useRef<(HTMLLIElement | null)[]>([]);
@@ -238,21 +237,16 @@ function StoryFilm() {
       for (const b of [P_LOAD, P_ROAD, P_SEA]) dip = Math.max(dip, 1 - Math.abs(p - b) / 0.02);
       set(dipRef.current, { opacity: String(clamp(dip) * 0.9) });
 
-      // ---- Leg 4: the plane climbs through the clouds into the page below ----
+      // ---- Leg 4: through the clouds into the page below ----
       const u = seg(p, P_SEA, 1);
       set(skyRef.current, { visibility: p > P_SEA - 0.005 ? 'visible' : 'hidden' });
-      set(skyLightRef.current, { opacity: String(ease(seg(u, 0.25, 0.85))) });
+      set(skyLightRef.current, { opacity: String(ease(seg(u, 0.4, 0.9))) });
       set(cloudsBackRef.current, { transform: `translate3d(0,${(-60 + u * 90).toFixed(2)}%,0)` });
       set(cloudsFrontRef.current, { transform: `translate3d(0,${(-70 + u * 130).toFixed(2)}%,0)` });
-      const rise = lerp(75, 2, easeOut(seg(u, 0, 0.4))) - easeIn(seg(u, 0.62, 0.95)) * 125;
-      const sway = Math.sin(u * Math.PI * 2.2) * 3;
-      set(planeRef.current, {
-        transform: `translate3d(-50%,${rise.toFixed(2)}vh,0) rotate(${sway.toFixed(2)}deg) scale(${(0.92 + u * 0.3).toFixed(3)})`,
-      });
       set(bankRef.current, { transform: `translate3d(0,${(100 - ease(seg(u, 0.7, 1)) * 100).toFixed(2)}%,0)` });
 
       // ---- Copy ----
-      const ranges: [number, number][] = [[-1, 0.24], [0.31, 0.51], [0.53, 0.73], [0.77, 0.9]];
+      const ranges: [number, number][] = [[-1, 0.24], [0.31, 0.51], [0.53, 0.73], [0.765, 0.86]];
       ranges.forEach(([a, b], k) => {
         const el = copyRefs[k].current;
         if (!el) return;
@@ -350,14 +344,6 @@ function StoryFilm() {
             style={{ backgroundImage: clouds.back }}
           />
           <div
-            ref={planeRef}
-            aria-hidden="true"
-            className="absolute left-1/2 top-[18%] w-[min(58vw,62vh)] will-change-transform"
-            style={{ filter: 'drop-shadow(40px 60px 40px rgba(10,22,64,0.35))' }}
-          >
-            <img src={PART('plane')} alt="" draggable={false} className="block w-full" />
-          </div>
-          <div
             ref={cloudsFrontRef}
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 top-0 h-[260%] blur-[10px]"
@@ -436,9 +422,9 @@ function StoryFilm() {
 
         <div ref={copyRefs[3]} className="container-x absolute inset-x-0 top-0 flex flex-col gap-6 pt-28 sm:pt-32" style={{ opacity: 0 }}>
           <div>
-            <p className="eyebrow eyebrow-light">Urgent orders</p>
-            <h3 className="mt-4 max-w-xl font-display text-[30px] font-medium leading-[1.05] sm:text-[48px]">When it can&apos;t wait, it flies.</h3>
-            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-white/75">Sea for volume, air for speed. We pick the route that fits your deadline and budget.</p>
+            <p className="eyebrow eyebrow-light">Delivered</p>
+            <h3 className="mt-4 max-w-xl font-display text-[30px] font-medium leading-[1.05] sm:text-[48px]">Delivered to your door, as promised.</h3>
+            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-white/75">By sea or courier, we pick the route that fits your deadline and budget, and track it all the way.</p>
           </div>
           <Button href="#contact" variant="light" className="pointer-events-auto self-start">
             Request a quote

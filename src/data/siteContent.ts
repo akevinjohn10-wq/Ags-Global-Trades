@@ -108,7 +108,7 @@ export const services: Service[] = [
   },
   {
     title: 'Shipping & Delivery',
-    short: 'Sea, air and courier',
+    short: 'Sea freight and courier',
     description: 'We book your goods with established shipping lines, freight agents or courier services and share tracking until delivery.',
     icon: Truck,
     image: '/images/photos/import-export.jpg',
@@ -213,7 +213,7 @@ export const productCategories: ProductCategory[] = [
     icon: Network,
     image: 'https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
     alt: 'Stacked shipping containers in a logistics yard',
-    points: ['Sea, air or courier chosen to suit the order', 'Tracking shared until delivery', 'A named contact for each shipment'],
+    points: ['Sea freight or courier chosen to suit the order', 'Tracking shared until delivery', 'A named contact for each shipment'],
   },
 ];
 
@@ -257,7 +257,7 @@ export const processSteps: ProcessStep[] = [
   },
   {
     title: 'Ship',
-    description: 'We book sea, air or courier freight with trusted partners and share the tracking with you.',
+    description: 'We book sea freight or courier shipping with trusted partners and share the tracking with you.',
     icon: Ship,
     image: '/images/photos/import-export.jpg',
     alt: 'Container ship departing port',

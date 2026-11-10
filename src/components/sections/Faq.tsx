@@ -19,7 +19,7 @@ const FAQS = [
   },
   {
     q: 'How do you ship my order?',
-    a: 'We book your goods with established shipping lines, freight agents or courier services, by sea, air or courier depending on size, budget and urgency, and share tracking with you until delivery.',
+    a: 'We book your goods with established shipping lines, freight agents or courier services, by sea or courier depending on size, budget and urgency, and share tracking with you until delivery.',
   },
   {
     q: 'Do you check quality before shipping?',
