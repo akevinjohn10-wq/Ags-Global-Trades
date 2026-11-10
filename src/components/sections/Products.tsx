@@ -98,7 +98,7 @@ export default function Products() {
                           </ul>
                         </div>
 
-                        <div className={`overflow-hidden rounded-lg bg-mist lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}>
+                        <div data-tilt className={`overflow-hidden rounded-lg bg-mist transition-transform duration-300 ease-out lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}>
                           {isOpen && (
                             <img
                               src={item.image}

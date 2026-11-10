@@ -39,7 +39,7 @@ export default function Button({
 }: ButtonProps) {
   const v = variantClass[variant];
   const text = label ?? (typeof children === 'string' ? children : undefined);
-  const classes = `group inline-flex h-12 items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[15px] font-normal tracking-[-0.01em] transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
+  const classes = `group inline-flex h-12 items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[15px] font-normal tracking-[-0.01em] transition-[background-color,color,border-color,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
 
   const content = (
     <>
@@ -72,14 +72,14 @@ export default function Button({
 
   if (href) {
     return (
-      <a href={href} className={classes} onClick={onClick}>
+      <a href={href} data-magnetic className={classes} onClick={onClick}>
         {content}
       </a>
     );
   }
 
   return (
-    <button type={type} disabled={disabled} onClick={onClick} className={classes}>
+    <button type={type} data-magnetic disabled={disabled} onClick={onClick} className={classes}>
       {content}
     </button>
   );

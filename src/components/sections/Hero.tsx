@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
+import Particles from '@/components/ui/Particles';
 import SplitText from '@/components/ui/SplitText';
 import { allHubs, corridors } from '@/data/globe';
 import { onReady } from '@/lib/ready';
@@ -71,7 +72,8 @@ export default function Hero() {
 
   return (
     <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[280vh]'}`}>
-      <div className={`${reduce ? 'relative' : 'sticky top-0'} h-[100svh] min-h-[640px] overflow-hidden`}>
+      <div className={`${reduce ? 'relative' : 'sticky top-0'} aurora grain isolate h-[100svh] min-h-[640px] overflow-hidden`}>
+        <Particles />
         <div aria-hidden="true" className="stars pointer-events-none absolute inset-0 opacity-50" />
         <div
           aria-hidden="true"
@@ -116,7 +118,7 @@ export default function Hero() {
             delay={150}
             stagger={110}
             text={'Sourced.\nChecked.\nDelivered.'}
-            className="mt-5 text-[15vw] font-medium leading-[0.92] sm:text-[11vw] lg:text-[7.6vw] 2xl:text-[124px] [&_.block:last-child]:text-sky"
+            className="sheen mt-5 text-[15vw] font-medium leading-[0.92] sm:text-[11vw] lg:text-[7.6vw] 2xl:text-[124px] [&_.block:last-child]:text-sky"
           />
           <div className={`mt-7 max-w-md transition-all delay-700 duration-1000 ease-expo ${entered ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
             <p className="text-[16px] leading-[1.65] text-white/75 sm:text-[18px]">

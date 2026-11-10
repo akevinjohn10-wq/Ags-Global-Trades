@@ -10,7 +10,7 @@ export default function CtaBand() {
   const row = [...PHRASES, ...PHRASES, ...PHRASES];
 
   return (
-    <section aria-label="Start an order" className="relative isolate overflow-hidden bg-accent text-white">
+    <section aria-label="Start an order" className="aurora grain relative isolate overflow-hidden bg-accent text-white">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-60">
         <DotMap theme="blue" labels="none" animated={false} intro={false} fit="cover" density={9} />
       </div>

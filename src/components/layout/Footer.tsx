@@ -67,7 +67,7 @@ export default function Footer() {
   const linkClass = 'text-white/60 transition-colors duration-200 hover:text-white';
 
   return (
-    <footer className="relative isolate overflow-hidden bg-ink text-white">
+    <footer className="aurora grain relative isolate overflow-hidden bg-ink text-white">
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] opacity-40">
         <DotMap theme="dark" labels="none" animated={false} intro={false} fit="cover" density={8} />
       </div>
