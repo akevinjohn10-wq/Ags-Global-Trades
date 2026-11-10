@@ -4,6 +4,7 @@ import '@/lib/translateFix';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
+import DotWordmark from '@/components/ui/DotWordmark';
 import LegalModal from '@/components/layout/LegalModal';
 import { contactDetails, navLinks, productCategories, services } from '@/data/siteContent';
 import { legalDocuments } from '@/data/legal';
@@ -153,13 +154,21 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Oversized wordmark */}
-      <div aria-hidden="true" className="container-x select-none">
-        <svg viewBox="0 0 1000 118" className="block w-full fill-white/[0.06]">
-          <text x="0" y="104" textLength="1000" lengthAdjust="spacingAndGlyphs" className="font-display font-semibold uppercase" style={{ fontSize: 132 }}>
-            AGS GLOBAL TRADE
-          </text>
-        </svg>
+      {/* Oversized wordmark made of dots that scatter around the cursor */}
+      <div className="container-x">
+        <DotWordmark text="AGS GLOBAL TRADE" className="h-[16vw] max-h-[220px]" />
+      </div>
+
+      {/* Category ticker */}
+      <div className="marquee-pause overflow-hidden border-t border-white/10 py-4">
+        <ul className="flex w-max animate-marquee items-center whitespace-nowrap">
+          {[...productCategories, ...productCategories].map((c, i) => (
+            <li key={`${c.name}-${i}`} aria-hidden={i >= productCategories.length} className="flex items-center gap-6 pr-6 font-display text-[18px] uppercase text-white/30">
+              <span className="h-1.5 w-1.5 bg-accent2" aria-hidden="true" />
+              {c.name}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="border-t border-white/10">

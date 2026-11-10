@@ -6,6 +6,8 @@ export default {
       // Palette taken from bluesqx.com: white, cool mist, near-black ink and the deep electric blue accent.
       colors: {
         paper: '#FFFFFF',
+        space: '#05070F',
+        navy: '#0A1640',
         mist: '#ECF0F8',
         haze: '#E1E7F4',
         line: '#DCE1EB',

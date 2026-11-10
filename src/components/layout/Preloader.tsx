@@ -3,6 +3,9 @@ import DotMap from '@/components/ui/DotMap';
 import Logo from '@/components/ui/Logo';
 import { tickerItems } from '@/data/siteContent';
 import { markReady } from '@/lib/ready';
+import { allHubs } from '@/data/globe';
+
+const regions = allHubs.map((h) => h.name);
 
 const DURATION = 2100;
 const SESSION_KEY = 'ags-intro-seen';
@@ -60,12 +63,13 @@ export default function Preloader() {
 
   if (phase === 'done') return null;
 
+  const regionIndex = Math.min(regions.length - 1, Math.floor((count / 101) * regions.length));
   const word = tickerItems[Math.min(tickerItems.length - 1, Math.floor((count / 101) * tickerItems.length))];
 
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[90] flex flex-col bg-ink text-white transition-[clip-path] duration-[1000ms] ease-expo ${
+      className={`fixed inset-0 z-[90] flex flex-col bg-space text-white transition-[clip-path] duration-[1000ms] ease-expo ${
         phase === 'leaving' ? '[clip-path:inset(0_0_100%_0)]' : '[clip-path:inset(0_0_0_0)]'
       }`}
     >
@@ -84,6 +88,13 @@ export default function Preloader() {
         <div className="absolute inset-x-0 top-1/2 mx-auto aspect-[2.6/1] w-full max-w-[1300px] -translate-y-1/2 px-5">
           <DotMap theme="dark" labels="none" animated={false} density={8} label="Loading" />
         </div>
+        <ul className="absolute left-5 top-1/2 hidden -translate-y-1/2 font-mono text-[11px] uppercase tracking-eyebrow sm:left-8 lg:left-12 lg:block">
+          {regions.map((name, i) => (
+            <li key={name} className={`transition-colors duration-300 ${i === regionIndex ? 'text-white' : 'text-white/25'}`}>
+              {name}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="container-x flex items-end justify-between pb-6 sm:pb-8">

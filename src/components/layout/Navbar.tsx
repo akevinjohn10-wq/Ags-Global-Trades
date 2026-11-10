@@ -52,7 +52,7 @@ export default function Navbar() {
       >
         {/* Utility ticker */}
         <div
-          className={`overflow-hidden border-b border-white/10 bg-ink text-white/70 transition-[max-height] duration-500 ease-expo ${
+          className={`overflow-hidden border-b border-white/10 bg-space text-white/70 transition-[max-height] duration-500 ease-expo ${
             scrolled ? 'max-h-0' : 'max-h-10'
           }`}
         >
@@ -80,7 +80,7 @@ export default function Navbar() {
         </div>
 
         {/* Main bar */}
-        <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/95 backdrop-blur-md' : 'border-transparent bg-ink'}`}>
+        <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/95 backdrop-blur-md' : 'border-transparent bg-transparent'}`}>
           <nav aria-label="Primary" className="mx-auto flex h-[72px] max-w-content items-center justify-between gap-6 px-5 sm:px-8 lg:px-12">
             <a href="#home" aria-label="AGS Global Trade home" className="shrink-0">
               <Logo height={50} />

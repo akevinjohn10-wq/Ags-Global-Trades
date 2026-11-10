@@ -3,18 +3,17 @@ import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import PageTransition from '@/components/layout/PageTransition';
 import Preloader from '@/components/layout/Preloader';
-import About from '@/components/sections/About';
 import BrandReel from '@/components/sections/BrandReel';
+import Catalogue from '@/components/sections/Catalogue';
 import Contact from '@/components/sections/Contact';
 import CtaBand from '@/components/sections/CtaBand';
+import Faq from '@/components/sections/Faq';
 import GlobalReach from '@/components/sections/GlobalReach';
 import Hero from '@/components/sections/Hero';
-import MarqueeBand from '@/components/sections/MarqueeBand';
 import Journey from '@/components/sections/Journey';
-import Pillars from '@/components/sections/Pillars';
-import Products from '@/components/sections/Products';
-import Services from '@/components/sections/Services';
-import WhyChooseUs from '@/components/sections/WhyChooseUs';
+import ShippingModes from '@/components/sections/ShippingModes';
+import Statement from '@/components/sections/Statement';
+import Story from '@/components/sections/Story';
 import ScrollProgress from '@/components/ui/ScrollProgress';
 
 /** Makes the soft blue spotlight on every .spot card follow the cursor. */
@@ -51,15 +50,14 @@ export default function App() {
       <Navbar />
       <main id="main">
         <Hero />
-        <MarqueeBand />
-        <About />
-        <Pillars />
-        <BrandReel />
-        <Services />
-        <Products />
+        <Statement />
+        <Story />
+        <Catalogue />
         <Journey />
         <GlobalReach />
-        <WhyChooseUs />
+        <ShippingModes />
+        <BrandReel />
+        <Faq />
         <CtaBand />
         <Contact />
       </main>
