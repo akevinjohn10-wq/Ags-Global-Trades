@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Minus, Plus, RotateCcw, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import DotMap from '@/components/ui/DotMap';
+import DotMap, { type DotMapControls } from '@/components/ui/DotMap';
 import Particles from '@/components/ui/Particles';
 import SplitText from '@/components/ui/SplitText';
-import { allHubs, corridors } from '@/data/globe';
+import { allHubs, corridors, homeHub, type Hub } from '@/data/globe';
 import { onReady } from '@/lib/ready';
 
 // Which regions light up as the visitor scrolls through the hero
@@ -21,6 +22,22 @@ export default function Hero() {
   const skyRef = useRef<HTMLDivElement>(null);
   const [entered, setEntered] = useState(false);
   const [stage, setStage] = useState(0);
+  const [pinned, setPinned] = useState<Hub | null>(null);
+  const controls = useRef<DotMapControls | null>(null);
+  const pinnedRegion = pinned
+    ? pinned.name === homeHub.name
+      ? 'Home base'
+      : corridors.find((c) => c.hubs.some((h) => h.name === pinned.name))?.name
+    : '';
+
+  const selectPin = (hub: Hub) => {
+    setPinned(hub);
+    controls.current?.flyTo(hub);
+  };
+  const closePin = () => {
+    setPinned(null);
+    controls.current?.reset();
+  };
   // Whole world on wide screens; cropped around New Delhi on narrow ones
   const [wide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [reduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -93,6 +110,11 @@ export default function Hero() {
                 hubs={allHubs}
                 activeHubs={activeHubs}
                 interactive
+                pannable
+                pins
+                selectedHub={pinned?.name ?? null}
+                onHubSelect={selectPin}
+                controlsRef={controls}
                 fit={wide ? 'width' : 'cover'}
                 focusX={0.6}
                 density={wide ? 6.5 : 7.5}
@@ -152,13 +174,72 @@ export default function Hero() {
               </span>
             </div>
             <span className="mono-caps hidden items-center gap-3 text-white/60 md:flex">
-              Hover a city · scroll to explore
+              Drag the map · click a pin
               <span aria-hidden="true" className="relative block h-5 w-px overflow-hidden bg-white/20">
                 <span className="absolute inset-0 animate-scrollcue bg-white" />
               </span>
             </span>
           </div>
         </div>
+
+        {/* Map controls */}
+        <div
+          className={`absolute bottom-5 right-4 z-[15] flex flex-col overflow-hidden rounded-md border border-white/15 bg-space/70 backdrop-blur transition-opacity duration-700 lg:bottom-24 lg:right-8 ${
+            entered ? 'opacity-100' : 'opacity-0'
+          } ${pinned ? 'max-lg:hidden' : ''}`}
+        >
+          {[
+            { label: 'Zoom in', Icon: Plus, run: () => controls.current?.zoomIn() },
+            { label: 'Zoom out', Icon: Minus, run: () => controls.current?.zoomOut() },
+            { label: 'Reset map', Icon: RotateCcw, run: closePin },
+          ].map(({ label, Icon, run }, i) => (
+            <button
+              key={label}
+              type="button"
+              aria-label={label}
+              title={label}
+              onClick={run}
+              className={`flex h-9 w-9 items-center justify-center text-white/80 transition-colors hover:bg-white hover:text-ink ${i ? 'border-t border-white/15' : ''}`}
+            >
+              <Icon size={16} strokeWidth={1.75} />
+            </button>
+          ))}
+        </div>
+
+        {/* Pinned city card */}
+        {pinned && (
+          <div
+            key={pinned.name}
+            role="dialog"
+            aria-label={`${pinned.name} details`}
+            className="absolute inset-x-4 bottom-4 z-[15] animate-panelin rounded-lg border border-white/15 bg-space/80 p-5 backdrop-blur-md sm:inset-x-auto sm:right-6 sm:w-[320px] lg:bottom-auto lg:right-8 lg:top-28"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="mono-caps text-sky">{pinnedRegion}</p>
+                <p className="mt-2 font-display text-[26px] font-medium leading-none">{pinned.name}</p>
+                {pinned.country && <p className="mt-1.5 text-[14px] text-white/60">{pinned.country}</p>}
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={closePin}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-white/15 text-white/70 transition-colors hover:bg-white hover:text-ink"
+              >
+                <X size={16} strokeWidth={1.75} />
+              </button>
+            </div>
+            {pinned.note && <p className="mt-4 text-[15px] leading-[1.6] text-white/80">{pinned.note}</p>}
+            <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+              <span className="mono-caps text-white/50">
+                {pinned.name === homeHub.name ? 'AGS Trade HQ' : `Route from ${homeHub.name}`}
+              </span>
+              <a href="#contact" className="mono-caps text-white underline-offset-4 hover:underline">
+                Enquire →
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* Atmosphere that rises as you dive in */}
         <div

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { homeHub, type Hub } from '@/data/globe';
 import { getLandMask, isLand } from '@/lib/landMask';
 
@@ -26,7 +26,32 @@ interface DotMapProps {
   /** Where New Delhi sits horizontally when cropping, 0-1 */
   focusX?: number;
   label?: string;
+  /** Drag to pan, pinch / ctrl+wheel to zoom, and the controls API */
+  pannable?: boolean;
+  /** Draw map pins instead of dots for the hubs */
+  pins?: boolean;
+  /** Name of the pinned (selected) hub */
+  selectedHub?: string | null;
+  controlsRef?: MutableRefObject<DotMapControls | null>;
 }
+
+export interface DotMapControls {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  reset: () => void;
+  flyTo: (hub: Hub, zoom?: number) => void;
+}
+
+interface View {
+  k: number;
+  tx: number;
+  ty: number;
+}
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 6;
+/** How far past its edges the map may be moved, as a share of the box */
+const PAN_SLACK = 0.22;
 
 const LON_MIN = -170;
 const LAT_MAX = 80;
@@ -111,16 +136,20 @@ export default function DotMap({
   fit = 'width',
   focusX = 0.6,
   label = 'World map showing trade routes from New Delhi',
+  pannable = false,
+  pins = false,
+  selectedHub = null,
+  controlsRef,
 }: DotMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Live props for the render loop, so changing tabs never restarts it
-  const live = useRef({ hubs, activeHubs, labels, onHubSelect, theme });
-  live.current = { hubs, activeHubs, labels, onHubSelect, theme };
+  const live = useRef({ hubs, activeHubs, labels, onHubSelect, theme, selectedHub });
+  live.current = { hubs, activeHubs, labels, onHubSelect, theme, selectedHub };
   const redrawRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     redrawRef.current();
-  }, [hubs, activeHubs, labels, theme]);
+  }, [hubs, activeHubs, labels, theme, selectedHub]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -133,7 +162,12 @@ export default function DotMap({
     const mask = getLandMask();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-    let layout: Layout = { w: 0, h: 0, scale: 1, ox: 0, oy: 0 };
+    let base: Layout = { w: 0, h: 0, scale: 1, ox: 0, oy: 0 };
+    let layout: Layout = base;
+    let gap = 7;
+    const view: View = { k: 1, tx: 0, ty: 0 };
+    let target: View = { k: 1, tx: 0, ty: 0 };
+    let pinStart = -1;
     let dots = new Float32Array(0); // x, y, delay
     let dotR = 1.5;
     let dotLayer: HTMLCanvasElement | null = null;
@@ -165,24 +199,91 @@ export default function DotMap({
         const hx = (homeHub.lon - LON_MIN) * s;
         ox = Math.min(0, Math.max(w - LON_SPAN * s, w * focusX - hx));
       }
-      layout = { w, h, scale: s, ox, oy: (h - LAT_SPAN * s) / 2 };
+      base = { w, h, scale: s, ox, oy: (h - LAT_SPAN * s) / 2 };
+      gap = Math.max(4.2, Math.min(9, (density * w) / 1200));
+      Object.assign(view, clampView(view, 0));
+      target = clampView(target, 0);
+      applyView();
+    }
 
-      const gap = Math.max(4.2, Math.min(9, (density * w) / 1200));
-      const stepDeg = gap / s;
-      dotR = Math.max(1, gap * 0.26);
+    /** Keeps the map on screen; `slack` lets a drag overshoot a little before springing back. */
+    function clampView(v: View, slack: number): View {
+      const k = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.k));
+      const s = base.scale * k;
+      const fitAxis = (o: number, size: number, box: number) => {
+        const lo = size <= box ? (box - size) / 2 - slack * box : box - size - slack * box;
+        const hi = size <= box ? (box - size) / 2 + slack * box : slack * box;
+        return Math.min(hi, Math.max(lo, o));
+      };
+      const ox = fitAxis(base.ox * k + v.tx, LON_SPAN * s, base.w);
+      const oy = fitAxis(base.oy * k + v.ty, LAT_SPAN * s, base.h);
+      return { k, tx: ox - base.ox * k, ty: oy - base.oy * k };
+    }
+
+    /** Rebuilds the layout and the visible dot grid for the current pan and zoom. */
+    function applyView() {
+      const { w, h } = base;
+      const s = base.scale * view.k;
+      layout = { w, h, scale: s, ox: base.ox * view.k + view.tx, oy: base.oy * view.k + view.ty };
+
+      // Grid density doubles at each zoom level, so the dots stay steady while panning
+      const level = Math.pow(2, Math.floor(Math.log2(view.k) + 1e-6));
+      const stepDeg = gap / base.scale / level;
+      dotR = Math.max(1, gap * 0.26 * Math.min(1.5, Math.sqrt(view.k / level)));
+      const pad = gap * 2;
+      const lonFrom = LON_MIN + (-pad - layout.ox) / s;
+      const lonTo = LON_MIN + (w + pad - layout.ox) / s;
+      const latFrom = LAT_MAX - (-pad - layout.oy) / s;
+      const latTo = LAT_MAX - (h + pad - layout.oy) / s;
+      const i0 = Math.max(0, Math.floor((lonFrom - LON_MIN) / stepDeg));
+      const i1 = Math.min(Math.ceil(LON_SPAN / stepDeg), Math.ceil((lonTo - LON_MIN) / stepDeg));
+      const j0 = Math.max(0, Math.floor((LAT_MAX - latFrom) / stepDeg));
+      const j1 = Math.min(Math.ceil(LAT_SPAN / stepDeg), Math.ceil((LAT_MAX - latTo) / stepDeg));
       const list: number[] = [];
-      for (let lat = LAT_MAX - stepDeg / 2; lat > LAT_MIN; lat -= stepDeg) {
-        for (let l = LON_MIN + stepDeg / 2; l < LON_MIN + LON_SPAN; l += stepDeg) {
+      for (let j = j0; j <= j1; j++) {
+        const lat = LAT_MAX - stepDeg / 2 - j * stepDeg;
+        if (lat <= LAT_MIN) break;
+        for (let i = i0; i <= i1; i++) {
+          const l = LON_MIN + stepDeg / 2 + i * stepDeg;
+          if (l >= LON_MIN + LON_SPAN) break;
           const lon = l > 180 ? l - 360 : l;
           if (!isLand(mask, lon, lat)) continue;
           const [x, y] = project(layout, lon, lat);
-          if (x < -gap || x > w + gap || y < -gap || y > h + gap) continue;
           const delay = ((l - LON_MIN) / LON_SPAN) * 0.75 + Math.random() * 0.25;
           list.push(x, y, delay);
         }
       }
       dots = new Float32Array(list);
       dotLayerKey = '';
+    }
+
+    function zoomAt(sx: number, sy: number, k: number) {
+      const nk = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));
+      const bx = (sx - target.tx) / target.k;
+      const by = (sy - target.ty) / target.k;
+      target = clampView({ k: nk, tx: sx - bx * nk, ty: sy - by * nk }, 0);
+      kick();
+    }
+
+    function flyTo(hub: Hub, k = 2.4) {
+      const bx = base.ox + (hub.lon - LON_MIN) * base.scale;
+      const by = base.oy + (LAT_MAX - hub.lat) * base.scale;
+      // On wide screens the info card sits on the right, so park the pin left of centre
+      const cx = base.w * (base.w >= 900 ? 0.4 : 0.5);
+      target = clampView({ k, tx: cx - bx * k, ty: base.h * (base.w >= 900 ? 0.52 : 0.4) - by * k }, PAN_SLACK);
+      kick();
+    }
+
+    if (controlsRef) {
+      controlsRef.current = {
+        zoomIn: () => zoomAt(base.w / 2, base.h / 2, target.k * 1.6),
+        zoomOut: () => zoomAt(base.w / 2, base.h / 2, target.k / 1.6),
+        reset: () => {
+          target = clampView({ k: 1, tx: 0, ty: 0 }, 0);
+          kick();
+        },
+        flyTo,
+      };
     }
 
     function tintFor(x: number, y: number, active: [number, number][]) {
@@ -199,7 +300,7 @@ export default function DotMap({
       const pal = PALETTES[live.current.theme];
       const activePts = live.current.hubs.filter(isActive).map((hub) => project(layout, hub.lon, hub.lat));
       activePts.push(project(layout, homeHub.lon, homeHub.lat));
-      const key = `${layout.w}x${layout.h}|${live.current.theme}|${activePts.map((p) => p.join(',')).join(';')}`;
+      const key = `${layout.w}x${layout.h}|${layout.ox.toFixed(1)},${layout.oy.toFixed(1)},${layout.scale.toFixed(4)}|${live.current.theme}|${activePts.map((p) => p.join(',')).join(';')}`;
       if (key === dotLayerKey && dotLayer) return;
       dotLayerKey = key;
       dotLayer = dotLayer ?? document.createElement('canvas');
@@ -259,10 +360,59 @@ export default function DotMap({
       ctx!.fillText(t, bx + 7, by + bh / 2 + 0.5);
     }
 
+    function drawPin(x: number, y: number, selected: boolean, hovered: boolean, alpha: number, lift: number, pal: (typeof PALETTES)[Theme], phase: number) {
+      if (alpha <= 0) return;
+      const R = (layout.w < 640 ? 5.5 : 7) * (selected ? 1.35 : hovered ? 1.15 : 1);
+      const tipY = y + lift;
+      const cy = tipY - R * 2.1;
+      ctx!.globalAlpha = alpha;
+      // pulse on the ground
+      if (doAnimate) {
+        const ph = (phase % 2.2) / 2.2;
+        ctx!.strokeStyle = selected ? '#FFFFFF' : pal.hub;
+        ctx!.globalAlpha = alpha * 0.5 * (1 - ph);
+        ctx!.lineWidth = 1.2;
+        ctx!.beginPath();
+        ctx!.ellipse(x, y, 3 + ph * 16, (3 + ph * 16) * 0.45, 0, 0, Math.PI * 2);
+        ctx!.stroke();
+        ctx!.globalAlpha = alpha;
+      }
+      // shadow
+      ctx!.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx!.beginPath();
+      ctx!.ellipse(x, y, R * 0.55, R * 0.2, 0, 0, Math.PI * 2);
+      ctx!.fill();
+      // body
+      ctx!.fillStyle = selected ? '#FFFFFF' : pal.hub;
+      ctx!.beginPath();
+      ctx!.moveTo(x, tipY);
+      ctx!.bezierCurveTo(x - R * 0.35, tipY - R * 0.75, x - R, cy + R * 0.7, x - R, cy);
+      ctx!.arc(x, cy, R, Math.PI, 0);
+      ctx!.bezierCurveTo(x + R, cy + R * 0.7, x + R * 0.35, tipY - R * 0.75, x, tipY);
+      ctx!.fill();
+      // eye
+      ctx!.fillStyle = selected ? '#23408E' : live.current.theme === 'blue' ? '#23408E' : '#0A1640';
+      ctx!.beginPath();
+      ctx!.arc(x, cy, R * 0.42, 0, Math.PI * 2);
+      ctx!.fill();
+      ctx!.globalAlpha = 1;
+    }
+
     function frame(now: number) {
       raf = 0;
       const dt = Math.min(64, now - last);
       last = now;
+      let viewMoving = false;
+      if (view.k !== target.k || view.tx !== target.tx || view.ty !== target.ty) {
+        const f = reduce ? 1 : 1 - Math.exp(-dt / 130);
+        view.k += (target.k - view.k) * f;
+        view.tx += (target.tx - view.tx) * f;
+        view.ty += (target.ty - view.ty) * f;
+        if (Math.abs(target.k - view.k) < 0.001 && Math.abs(target.tx - view.tx) < 0.3 && Math.abs(target.ty - view.ty) < 0.3) {
+          Object.assign(view, target);
+        } else viewMoving = true;
+        applyView();
+      }
       const pal = PALETTES[live.current.theme];
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx!.clearRect(0, 0, layout.w, layout.h);
@@ -344,8 +494,20 @@ export default function DotMap({
       });
 
       // Hubs
+      if (pins && routeAlpha && pinStart < 0) pinStart = now;
+      const pinAge = pins ? (now - pinStart) / 1000 : 0;
       live.current.hubs.forEach((hub, index) => {
         if (!routeAlpha) return;
+        if (pins) {
+          const [x, y] = project(layout, hub.lon, hub.lat);
+          if (x < -40 || x > layout.w + 40 || y < -10 || y > layout.h + 60) return;
+          const selected = live.current.selectedHub === hub.name;
+          // staggered drop-in with a small bounce
+          const d = Math.min(1, Math.max(0, (pinAge - index * 0.08) / 0.55));
+          const drop = reduce ? 1 : 1 + 2.4 * Math.pow(d - 1, 3) + 1.4 * Math.pow(d - 1, 2);
+          drawPin(x, y, selected, hover === hub, d, (1 - drop) * -26, pal, tSec + index * 0.3);
+          return;
+        }
         const [x, y] = project(layout, hub.lon, hub.lat);
         const active = isActive(hub) || hover === hub;
         if (active && doAnimate) {
@@ -395,11 +557,12 @@ export default function DotMap({
           if (!show) return;
           const [x, y] = project(layout, hub.lon, hub.lat);
           if (x < 0 || x > layout.w || y < 0 || y > layout.h) return;
-          drawLabel(hub.name, x, y, pal);
+          const R = layout.w < 640 ? 5.5 : 7;
+          drawLabel(hub.name, x, pins ? y - R * 2.1 : y, pal, live.current.selectedHub === hub.name);
         });
       }
 
-      const moving = doAnimate || !introDone || [...drawState.values()].some((v) => v > 0.001 && v < 0.999);
+      const moving = viewMoving || doAnimate || !introDone || [...drawState.values()].some((v) => v > 0.001 && v < 0.999);
       if (visible && moving && !document.hidden) raf = requestAnimationFrame(frame);
     }
 
@@ -411,15 +574,20 @@ export default function DotMap({
     }
     redrawRef.current = kick;
 
-    function hubAt(clientX: number, clientY: number): Hub | null {
+    /** Client coordinates to canvas coordinates (the canvas may be CSS-scaled by the hero dive). */
+    function toLocal(clientX: number, clientY: number): [number, number] {
       const rect = canvas!.getBoundingClientRect();
-      const mx = clientX - rect.left;
-      const my = clientY - rect.top;
+      return [((clientX - rect.left) * layout.w) / rect.width, ((clientY - rect.top) * layout.h) / rect.height];
+    }
+
+    function hubAt(clientX: number, clientY: number): Hub | null {
+      const [mx, my] = toLocal(clientX, clientY);
       let best: Hub | null = null;
       let bestD = 20;
-      for (const hub of live.current.hubs) {
+      const lift = pins ? (layout.w < 640 ? 5.5 : 7) * 2.1 : 0;
+      for (const hub of pins ? [...live.current.hubs, homeHub] : live.current.hubs) {
         const [x, y] = project(layout, hub.lon, hub.lat);
-        const d = Math.hypot(mx - x, my - y);
+        const d = Math.min(Math.hypot(mx - x, my - y), Math.hypot(mx - x, my - (y - lift)));
         if (d < bestD) {
           bestD = d;
           best = hub;
@@ -428,22 +596,75 @@ export default function DotMap({
       return best;
     }
 
+    const idleCursor = pannable ? 'grab' : '';
+    let drag: { id: number; x: number; y: number; tx: number; ty: number; moved: boolean } | null = null;
+    let suppressClick = false;
+
+    const onDown = (event: PointerEvent) => {
+      if (!pannable || event.button !== 0) return;
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, tx: view.tx, ty: view.ty, moved: false };
+      suppressClick = false;
+    };
     const onMove = (event: PointerEvent) => {
+      if (drag && event.pointerId === drag.id) {
+        const rect = canvas.getBoundingClientRect();
+        const r = layout.w / rect.width;
+        const dx = (event.clientX - drag.x) * r;
+        const dy = (event.clientY - drag.y) * r;
+        if (!drag.moved && Math.hypot(dx, dy) > 5) {
+          drag.moved = true;
+          try {
+            canvas.setPointerCapture(event.pointerId);
+          } catch {
+            /* ignore */
+          }
+          canvas.style.cursor = 'grabbing';
+        }
+        if (drag.moved) {
+          const next = clampView({ k: view.k, tx: drag.tx + dx, ty: drag.ty + dy }, PAN_SLACK + 0.1);
+          Object.assign(view, next);
+          target = { ...next };
+          applyView();
+          kick();
+          return;
+        }
+      }
       const h = hubAt(event.clientX, event.clientY);
       if (h !== hover) {
         hover = h;
-        canvas.style.cursor = h ? 'pointer' : '';
+        canvas.style.cursor = h ? 'pointer' : idleCursor;
         kick();
       }
     };
+    const onUp = (event: PointerEvent) => {
+      if (!drag || event.pointerId !== drag.id) return;
+      if (drag.moved) {
+        suppressClick = true;
+        target = clampView(view, PAN_SLACK); // spring back if dragged too far
+        canvas.style.cursor = idleCursor;
+        kick();
+      }
+      drag = null;
+    };
     const onLeave = () => {
       hover = null;
-      canvas.style.cursor = '';
+      if (!drag) canvas.style.cursor = idleCursor;
       kick();
     };
     const onClick = (event: MouseEvent) => {
+      if (suppressClick) {
+        suppressClick = false;
+        return;
+      }
       const h = hubAt(event.clientX, event.clientY);
       if (h) live.current.onHubSelect?.(h);
+    };
+    // Trackpad pinch (and ctrl + wheel) zooms; a plain wheel keeps scrolling the page
+    const onWheel = (event: WheelEvent) => {
+      if (!pannable || !event.ctrlKey) return;
+      event.preventDefault();
+      const [mx, my] = toLocal(event.clientX, event.clientY);
+      zoomAt(mx, my, target.k * Math.exp(-event.deltaY * 0.01));
     };
 
     build();
@@ -464,10 +685,16 @@ export default function DotMap({
     const onVis = () => kick();
     document.addEventListener('visibilitychange', onVis);
 
-    if (interactive) {
+    if (interactive || pannable) {
+      canvas.style.cursor = idleCursor;
+      if (pannable) canvas.style.touchAction = 'pan-y';
+      canvas.addEventListener('pointerdown', onDown);
       canvas.addEventListener('pointermove', onMove);
+      canvas.addEventListener('pointerup', onUp);
+      canvas.addEventListener('pointercancel', onUp);
       canvas.addEventListener('pointerleave', onLeave);
       canvas.addEventListener('click', onClick);
+      canvas.addEventListener('wheel', onWheel, { passive: false });
     }
 
     return () => {
@@ -475,11 +702,16 @@ export default function DotMap({
       ro.disconnect();
       io.disconnect();
       document.removeEventListener('visibilitychange', onVis);
+      canvas.removeEventListener('pointerdown', onDown);
       canvas.removeEventListener('pointermove', onMove);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
       canvas.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('click', onClick);
+      canvas.removeEventListener('wheel', onWheel);
+      if (controlsRef) controlsRef.current = null;
     };
-  }, [animated, intro, interactive, density, fit, focusX]);
+  }, [animated, intro, interactive, density, fit, focusX, pannable, pins, controlsRef]);
 
   return <canvas ref={canvasRef} role="img" aria-label={label} className={`block h-full w-full ${className}`} />;
 }
