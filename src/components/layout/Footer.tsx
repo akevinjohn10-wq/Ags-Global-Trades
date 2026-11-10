@@ -4,6 +4,7 @@ import '@/lib/translateFix';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
+import { allHubs } from '@/data/globe';
 import DotWordmark from '@/components/ui/DotWordmark';
 import LegalModal from '@/components/layout/LegalModal';
 import { contactDetails, navLinks, productCategories, services } from '@/data/siteContent';
@@ -68,8 +69,10 @@ export default function Footer() {
 
   return (
     <footer className="aurora grain relative isolate overflow-hidden bg-ink text-white">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] opacity-40">
-        <DotMap theme="dark" labels="none" animated={false} intro={false} fit="cover" density={8} />
+      <div aria-hidden="true" className="map-sweep pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden opacity-50">
+        <div className="map-drift h-full w-full">
+          <DotMap theme="dark" hubs={allHubs} labels="none" intro={false} fit="cover" density={8} />
+        </div>
       </div>
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[200px] -z-10 h-[320px] bg-gradient-to-b from-transparent to-ink" />
 
