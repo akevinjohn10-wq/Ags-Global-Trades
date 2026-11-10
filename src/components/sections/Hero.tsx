@@ -66,7 +66,7 @@ export default function Hero() {
         {/* Live map */}
         <div
           ref={mapRef}
-          className={`absolute inset-x-0 bottom-0 top-[42%] origin-[60%_40%] transition-opacity duration-1000 sm:top-[38%] lg:top-[30%] ${entered ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-x-0 bottom-0 top-[46%] origin-[60%_40%] transition-opacity duration-1000 sm:top-[52%] lg:top-[35%] ${entered ? 'opacity-100' : 'opacity-0'}`}
         >
           <div className="mx-auto h-full w-full max-w-[1700px]">
             {entered && (

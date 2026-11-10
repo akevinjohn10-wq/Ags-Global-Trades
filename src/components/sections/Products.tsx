@@ -61,10 +61,10 @@ export default function Products() {
                       <span
                         aria-hidden="true"
                         className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-all duration-500 ease-expo sm:h-12 sm:w-12 ${
-                          isOpen ? 'rotate-45 border-accent bg-accent text-white' : 'border-ink/15 text-ink group-hover:border-ink group-hover:bg-ink group-hover:text-white'
+                          isOpen ? 'border-accent bg-accent text-white' : 'border-ink/15 text-ink group-hover:border-ink group-hover:bg-ink group-hover:text-white'
                         }`}
                       >
-                        <Plus size={20} strokeWidth={1.5} />
+                        <Plus size={20} strokeWidth={1.5} className={`transition-transform duration-500 ease-expo ${isOpen ? 'rotate-45' : 'group-hover:rotate-90'}`} />
                       </span>
                     </button>
                   </h3>
@@ -103,7 +103,6 @@ export default function Products() {
                             <img
                               src={item.image}
                               alt={item.alt}
-                              loading="lazy"
                               className="aspect-[4/3] w-full animate-imgin object-cover transition-transform duration-700 ease-expo hover:scale-[1.04]"
                             />
                           )}
