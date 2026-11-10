@@ -76,10 +76,6 @@ export function TruckSide({ className = '' }: { className?: string }) {
         ))}
       </g>
       <rect x="14" y="120" width="360" height="16" fill={BLUE} />
-      <rect x="28" y="40" width="18" height="18" fill={BLUE} />
-      <text x="56" y="55" fontFamily="Geist Mono, monospace" fontSize="15" fontWeight="600" fill={INK} letterSpacing="2">
-        AGS GLOBAL TRADE
-      </text>
       {/* chassis */}
       <rect x="10" y="174" width="500" height="14" fill={INK} />
       {/* cab */}
