@@ -40,7 +40,7 @@ export default function Hero() {
       setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
       const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
       const e = d * d * (3 - 2 * d);
-      const base = window.innerWidth >= 1024 ? 1.3 : 1;
+      const base = window.innerWidth >= 1024 ? 1.12 : 1;
       if (mapRef.current) mapRef.current.style.transform = `scale(${(base + e * 1.4).toFixed(4)})`;
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
