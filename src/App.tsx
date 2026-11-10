@@ -3,8 +3,7 @@ import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
 import PageTransition from '@/components/layout/PageTransition';
 import Preloader from '@/components/layout/Preloader';
-import BrandReel from '@/components/sections/BrandReel';
-import Catalogue from '@/components/sections/Catalogue';
+import Products from '@/components/sections/Products';
 import Contact from '@/components/sections/Contact';
 import CtaBand from '@/components/sections/CtaBand';
 import Faq from '@/components/sections/Faq';
@@ -52,11 +51,10 @@ export default function App() {
         <Hero />
         <Statement />
         <Story />
-        <Catalogue />
+        <Products />
         <Journey />
         <GlobalReach />
         <ShippingModes />
-        <BrandReel />
         <Faq />
         <CtaBand />
         <Contact />

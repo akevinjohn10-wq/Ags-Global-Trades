@@ -42,6 +42,10 @@ export default {
         expo: 'cubic-bezier(0.16, 1, 0.3, 1)',
       },
       keyframes: {
+        kenburns: {
+          '0%': { transform: 'scale(1.02) translate(0, 0)' },
+          '100%': { transform: 'scale(1.16) translate(-3%, -2%)' },
+        },
         marquee: {
           '0%': { transform: 'translateX(0)' },
           '100%': { transform: 'translateX(-50%)' },
@@ -72,6 +76,7 @@ export default {
         },
       },
       animation: {
+        kenburns: 'kenburns 16s ease-in-out infinite alternate',
         marquee: 'marquee 40s linear infinite',
         'marquee-fast': 'marquee 24s linear infinite',
         'marquee-rev': 'marquee-rev 48s linear infinite',

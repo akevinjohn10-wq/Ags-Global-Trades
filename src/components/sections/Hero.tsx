@@ -135,7 +135,7 @@ export default function Hero() {
         </div>
 
         {/* Bottom strip: current route stage */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden sm:block">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden lg:block [@media(max-height:860px)]:!hidden">
           <div className="container-x flex items-center justify-between gap-6 pb-6">
             <div className="flex items-center gap-4">
               <span className="mono-caps text-white/80">{String(stage + 1).padStart(2, '0')}</span>
