@@ -18,8 +18,8 @@ interface ButtonProps {
 }
 
 const variantClass: Record<ButtonVariant, { root: string; box: string }> = {
-  dark: { root: 'bg-ink text-white hover:bg-accent', box: 'bg-white/10' },
-  accent: { root: 'bg-accent text-white hover:bg-ink', box: 'bg-white/15' },
+  dark: { root: 'bg-ink text-white hover:bg-ink2', box: 'bg-white/10' },
+  accent: { root: 'bg-accent text-white hover:bg-ink2', box: 'bg-white/15' },
   outline: { root: 'border border-ink/15 bg-transparent text-ink hover:border-ink hover:bg-ink hover:text-white', box: 'bg-ink/5 group-hover:bg-white/10' },
   light: { root: 'bg-white text-ink hover:bg-mist', box: 'bg-ink/5' },
   'outline-light': { root: 'border border-white/30 text-white hover:bg-white hover:text-ink', box: 'bg-white/10 group-hover:bg-ink/5' },

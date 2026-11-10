@@ -76,7 +76,7 @@ export default function Hero() {
         <div aria-hidden="true" className="stars pointer-events-none absolute inset-0 opacity-50" />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_68%_48%,rgba(2,41,213,0.32),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_68%_48%,rgba(170,176,190,0.12),transparent_70%)]"
         />
 
         {/* Interactive map */}
@@ -117,7 +117,7 @@ export default function Hero() {
             delay={150}
             stagger={110}
             text={'Sourced.\nChecked.\nDelivered.'}
-            className="mt-5 text-[15vw] font-medium leading-[0.92] sm:text-[11vw] lg:text-[7.6vw] 2xl:text-[124px] [&_.block:last-child]:text-sky"
+            className="mt-5 text-[15vw] font-medium leading-[0.92] sm:text-[11vw] lg:text-[7.6vw] 2xl:text-[124px] [&_.block:last-child]:text-white/40"
           />
           <div className={`mt-7 max-w-md transition-all delay-700 duration-1000 ease-expo ${entered ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
             <p className="text-[16px] leading-[1.65] text-white/75 sm:text-[18px]">
@@ -164,7 +164,7 @@ export default function Hero() {
           ref={skyRef}
           aria-hidden="true"
           style={{ transform: 'translate3d(0, 100%, 0)' }}
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full bg-[linear-gradient(to_top,#FFFFFF_0%,#FFFFFF_28%,#C9D3F5_42%,#4C6BFF_62%,rgba(2,41,213,0.65)_80%,rgba(2,41,213,0)_100%)]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full bg-[linear-gradient(to_top,#FFFFFF_0%,#FFFFFF_28%,#E6E8EC_42%,#8D929D_62%,rgba(40,43,50,0.7)_80%,rgba(40,43,50,0)_100%)]"
         />
       </div>
     </section>
