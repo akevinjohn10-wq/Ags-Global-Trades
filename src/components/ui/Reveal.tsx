@@ -5,18 +5,20 @@ interface RevealProps {
   children: ReactNode;
   delay?: number;
   className?: string;
+  as?: 'div' | 'li' | 'section';
 }
 
-export default function Reveal({ children, delay = 0, className = '' }: RevealProps) {
-  const { ref, isInView } = useInView<HTMLDivElement>();
+/** Fades and lifts its content in the first time it scrolls into view. */
+export default function Reveal({ children, delay = 0, className = '', as: Tag = 'div' }: RevealProps) {
+  const { ref, isInView } = useInView<HTMLElement>();
 
   return (
-    <div
-      ref={ref}
+    <Tag
+      ref={ref as never}
       className={`reveal ${isInView ? 'is-visible' : ''} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
-    </div>
+    </Tag>
   );
 }

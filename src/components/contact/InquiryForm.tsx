@@ -1,7 +1,8 @@
-import { useState, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from 'react';
 import { CircleCheck, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { productCategories } from '@/data/siteContent';
+import { ENQUIRY_EVENT } from '@/lib/enquiry';
 import {
   emptyInquiry,
   submitInquiry,
@@ -26,13 +27,13 @@ interface FieldProps {
 function Field({ id, label, error, optional, children }: FieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block text-sm font-medium text-ink">
+      <label htmlFor={id} className="mono-caps mb-2 block text-ink">
         {label}
-        {optional && <span className="font-normal text-muted"> (optional)</span>}
+        {optional && <span className="text-soft"> (optional)</span>}
       </label>
       {children}
       {error && (
-        <p id={`${id}-error`} className="mt-2 text-sm font-medium text-ink">
+        <p id={`${id}-error`} className="mt-2 text-sm font-medium text-signal">
           {error}
         </p>
       )}
@@ -46,6 +47,19 @@ export default function InquiryForm() {
   const [status, setStatus] = useState<SubmitStatus>('idle');
 
   const isSubmitting = status === 'submitting';
+
+  // "Enquire about this" buttons elsewhere on the page pre-select the product
+  useEffect(() => {
+    const onEnquire = (event: Event) => {
+      const product = (event as CustomEvent<string>).detail;
+      if (!product) return;
+      setStatus('idle');
+      setValues((current) => ({ ...current, productInterest: product }));
+      setErrors((current) => ({ ...current, productInterest: undefined }));
+    };
+    window.addEventListener(ENQUIRY_EVENT, onEnquire);
+    return () => window.removeEventListener(ENQUIRY_EVENT, onEnquire);
+  }, []);
 
   function refreshFieldError(field: InquiryField, nextValues: InquiryValues) {
     const fieldError = validateInquiry(nextValues)[field];
@@ -85,15 +99,15 @@ export default function InquiryForm() {
   if (status === 'success') {
     return (
       <div className="flex h-full flex-col items-start justify-center gap-6 py-8" role="status">
-        <CircleCheck size={40} strokeWidth={1.5} className="text-ink" aria-hidden="true" />
+        <CircleCheck size={40} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
         <div>
-          <h3 className="text-2xl">Thank you for your enquiry.</h3>
+          <h3 className="font-display text-2xl uppercase text-ink">Thank you for your enquiry.</h3>
           <p className="mt-3 text-[16px] leading-[1.7] text-muted">
             Your message has reached our team. A member of staff will respond within one business day.
           </p>
         </div>
         <Button variant="outline" onClick={() => setStatus('idle')}>
-          Send Another Enquiry
+          Send another enquiry
         </Button>
       </div>
     );
@@ -190,20 +204,20 @@ export default function InquiryForm() {
 
       <div aria-live="polite">
         {status === 'error' && (
-          <p role="alert" className="rounded-[4px] border border-ink px-4 py-3 text-sm font-medium text-ink">
+          <p role="alert" className="rounded-md border border-signal bg-signal/5 px-4 py-3 text-sm font-medium text-ink">
             We could not send your enquiry. Please try again, or email us directly.
           </p>
         )}
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+      <Button type="submit" variant="accent" disabled={isSubmitting} arrow={!isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? (
-          <>
+          <span className="flex items-center gap-2">
             <Loader2 size={18} className="animate-spin" aria-hidden="true" />
             Sending
-          </>
+          </span>
         ) : (
-          'Send Enquiry'
+          'Send enquiry'
         )}
       </Button>
     </form>

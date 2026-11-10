@@ -4,76 +4,74 @@ import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { contactDetails } from '@/data/siteContent';
 
-const linkClass = 'text-[16px] leading-[1.7] text-ink underline-offset-4 transition-colors duration-200 hover:text-accent hover:underline';
-
 export default function Contact() {
   const details = [
     { label: 'Address', icon: MapPin, lines: contactDetails.address },
     { label: 'Email', icon: Mail, href: `mailto:${contactDetails.email}`, lines: [contactDetails.email] },
     { label: 'Phone', icon: Phone, href: `tel:${contactDetails.phone.replace(/\s/g, '')}`, lines: [contactDetails.phone] },
     { label: 'Business Hours', icon: Clock, lines: [contactDetails.hours] },
-    { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['Aditya Dey'] },
+    { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['Aditya Dey'], external: true },
   ];
 
   return (
-    <section id="contact" className="section-y relative isolate scroll-mt-24 overflow-hidden bg-deep">
-      {/* World map backdrop */}
-      <img
-        src="/images/world-map.jpg"
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        className="absolute inset-0 -z-20 h-full w-full object-cover opacity-50"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,#030712_0%,rgba(3,7,18,0.55)_25%,rgba(3,7,18,0.7)_75%,#030712_100%)]"
-      />
-      <div className="container-x grid gap-16 lg:grid-cols-[5fr_7fr] lg:gap-20">
-        <Reveal>
+    <section id="contact" className="section-y scroll-mt-24 bg-mist">
+      <div className="container-x grid gap-14 lg:grid-cols-12 lg:gap-10">
+        <div className="lg:col-span-5">
           <SectionHeading
             eyebrow="Contact"
-            title="Tell us what you need to move."
+            title={'Tell us what you\nneed to move.'}
             description="Share your product and route, and a member of our team will prepare a tailored quote."
           />
 
-          <ul className="mt-12 space-y-8">
-            {details.map((detail) => {
-              const Icon = detail.icon;
-              return (
-                <li key={detail.label} className="flex gap-5">
-                  <span className="icon-box">
-                    <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="eyebrow">{detail.label}</p>
-                    {detail.lines.map((line) =>
-                      detail.href ? (
-                        <p key={line} className="mt-1">
-                          <a
-                            href={detail.href}
-                            target={detail.label === 'LinkedIn' ? '_blank' : undefined}
-                            rel={detail.label === 'LinkedIn' ? 'noopener noreferrer' : undefined}
-                            className={linkClass}
-                          >
-                            {line}
-                          </a>
-                        </p>
-                      ) : (
-                        <p key={line} className="mt-1 text-[16px] leading-[1.7] text-ink">
+          <Reveal delay={150}>
+            <ul className="mt-12 divide-y divide-ink/10 border-y border-ink/10">
+              {details.map((detail) => {
+                const Icon = detail.icon;
+                const body = (
+                  <>
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-paper text-accent transition-colors duration-300 group-hover:bg-accent group-hover:text-white">
+                      <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="mono-caps block text-soft">{detail.label}</span>
+                      {detail.lines.map((line) => (
+                        <span key={line} className="block text-[16px] leading-[1.6] text-ink">
                           {line}
-                        </p>
-                      ),
+                        </span>
+                      ))}
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={detail.label}>
+                    {detail.href ? (
+                      <a
+                        href={detail.href}
+                        target={detail.external ? '_blank' : undefined}
+                        rel={detail.external ? 'noopener noreferrer' : undefined}
+                        className="group flex items-center gap-5 py-4 transition-transform duration-500 ease-expo hover:translate-x-1"
+                      >
+                        {body}
+                      </a>
+                    ) : (
+                      <div className="group flex items-center gap-5 py-4">{body}</div>
                     )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </Reveal>
+                  </li>
+                );
+              })}
+            </ul>
+          </Reveal>
+        </div>
 
-        <Reveal delay={150}>
-          <div className="rounded-3xl border border-white/10 bg-canvas/80 p-7 shadow-[0_30px_80px_-30px_rgba(61,139,255,0.35)] backdrop-blur-xl sm:p-10">
+        <Reveal delay={150} className="lg:col-span-6 lg:col-start-7">
+          <div className="rounded-lg border border-line bg-paper p-6 shadow-[0_40px_90px_-50px_rgba(27,30,36,0.35)] sm:p-10">
+            <div className="mb-8 flex items-center justify-between border-b border-line pb-6">
+              <p className="font-display text-[22px] font-semibold uppercase text-ink">Request a quote</p>
+              <span className="mono-caps flex items-center gap-2 text-soft">
+                <span className="h-2 w-2 animate-blink bg-accent" aria-hidden="true" />
+                Reply in 1 business day
+              </span>
+            </div>
             <InquiryForm />
           </div>
         </Reveal>

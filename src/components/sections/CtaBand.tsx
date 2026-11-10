@@ -1,50 +1,52 @@
-import { Phone } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import DotMap from '@/components/ui/DotMap';
 import Reveal from '@/components/ui/Reveal';
-import SplitText from '@/components/ui/SplitText';
 import { contactDetails } from '@/data/siteContent';
 
-const VIDEO = '/images/network-loop.mp4';
-const POSTER = '/images/network-poster.jpg';
+const PHRASES = ['Connecting markets', 'Delivering globally'];
 
-/** Full-bleed call to action over a looping trade-route animation. */
+/** Electric-blue closing band with an oversized moving headline. */
 export default function CtaBand() {
-  return (
-    <section aria-label="Get in touch" className="relative isolate overflow-hidden bg-deep">
-      <video
-        src={VIDEO}
-        poster={POSTER}
-        aria-hidden="true"
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="metadata"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,#02040B_0%,rgba(2,4,11,0.35)_30%,rgba(2,4,11,0.35)_70%,#02040B_100%)]"
-      />
+  const row = [...PHRASES, ...PHRASES, ...PHRASES];
 
-      <div className="container-x py-28 text-center sm:py-36 lg:py-48">
-        <SplitText
-          text={'Ready to move\nyour next shipment?'}
-          className="mx-auto max-w-4xl text-[30px] font-semibold uppercase leading-[1.05] tracking-display text-white sm:text-5xl lg:text-[68px]"
-        />
-        <Reveal delay={300}>
-          <p className="mx-auto mt-7 max-w-md text-base text-muted sm:text-lg">
-            Tell us what you trade and where it needs to go.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-            <Button href="#contact" variant="accent" className="sm:min-w-[180px]">
-              Get a Quote
-            </Button>
-            <Button href={`tel:${contactDetails.phone.replace(/\s/g, '')}`} variant="outline" className="sm:min-w-[180px]">
-              <Phone size={15} aria-hidden="true" />
-              {contactDetails.phone}
-            </Button>
-          </div>
+  return (
+    <section aria-label="Start a shipment" className="relative isolate overflow-hidden bg-accent text-white">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-60">
+        <DotMap theme="blue" labels="none" animated={false} intro={false} fit="cover" density={9} />
+      </div>
+
+      <div className="marquee-pause overflow-hidden border-b border-white/15 py-8 sm:py-12">
+        <div className="flex w-max animate-marquee">
+          {[0, 1].map((copy) => (
+            <p
+              key={copy}
+              aria-hidden={copy === 1}
+              className="flex shrink-0 items-center whitespace-nowrap font-display text-[64px] font-semibold uppercase leading-none sm:text-[120px] lg:text-[160px]"
+            >
+              {row.map((phrase, i) => (
+                <span key={`${phrase}-${i}`} className="flex items-center">
+                  <span style={i % 2 ? { color: 'transparent', WebkitTextStroke: '2px #fff' } : undefined}>{phrase}</span>
+                  <span aria-hidden="true" className="mx-8 inline-block h-[0.32em] w-[0.32em] bg-white sm:mx-12" />
+                </span>
+              ))}
+            </p>
+          ))}
+        </div>
+      </div>
+
+      <div className="container-x grid gap-10 py-14 sm:py-20 lg:grid-cols-12 lg:items-end">
+        <Reveal className="lg:col-span-7">
+          <p className="eyebrow eyebrow-light [&::before]:bg-white">Start a shipment</p>
+          <h2 className="mt-5 text-[32px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[60px]">Ready to move your next shipment?</h2>
+          <p className="mt-5 max-w-xl text-lg text-white/75">Tell us what you trade and where it needs to go.</p>
+        </Reveal>
+        <Reveal delay={150} className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
+          <Button href="#contact" variant="light">
+            Get a quote
+          </Button>
+          <Button href={`tel:${contactDetails.phone.replace(/\s/g, '')}`} variant="outline-light" label={contactDetails.phone}>
+            {contactDetails.phone}
+          </Button>
         </Reveal>
       </div>
     </section>

@@ -1,37 +1,28 @@
-import { productCategories, services } from '@/data/siteContent';
+import { productCategories } from '@/data/siteContent';
 
-const rowA = services.map((service) => service.title);
-const rowB = productCategories.map((category) => category.name);
-
-function Row({ words, reverse = false }: { words: string[]; reverse?: boolean }) {
-  const loop = [...words, ...words];
-  return (
-    <div className="overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-      <ul className={`flex w-max items-center gap-10 pr-10 ${reverse ? 'animate-marquee-rev' : 'animate-marquee'}`}>
-        {loop.map((word, index) => (
-          <li
-            key={`${word}-${index}`}
-            aria-hidden={index >= words.length}
-            className="flex items-center gap-10 whitespace-nowrap font-display text-[44px] font-semibold uppercase leading-none tracking-display sm:text-7xl lg:text-[96px]"
-          >
-            <span className={reverse ? 'text-outline' : 'text-white'}>{word}</span>
-            <span aria-hidden="true" className="text-2xl text-accent sm:text-4xl">
-              ✦
-            </span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-/** Two oversized scrolling word rows (one solid, one outlined) running in opposite directions. */
+/** bluesqx-style strip under the hero: everything we trade, scrolling past. */
 export default function MarqueeBand() {
+  const items = [...productCategories, ...productCategories];
+
   return (
-    <section aria-label="What we do" className="relative overflow-hidden bg-canvas py-14 sm:py-20">
-      <div className="space-y-6 sm:space-y-9">
-        <Row words={rowA} />
-        <Row words={rowB} reverse />
+    <section aria-label="Product categories" className="marquee-pause border-y border-line bg-paper">
+      <div className="flex items-stretch">
+        <p className="mono-caps hidden shrink-0 items-center border-r border-line bg-mist px-8 text-muted md:flex lg:px-12">What we trade</p>
+        <div className="relative flex-1 overflow-hidden py-5">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-paper to-transparent" />
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-paper to-transparent" />
+          <ul className="flex w-max animate-marquee items-center">
+            {items.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <li key={`${item.name}-${i}`} aria-hidden={i >= productCategories.length} className="flex items-center gap-3 px-7 text-ink/70">
+                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" className="text-accent" />
+                  <span className="whitespace-nowrap font-display text-[17px] font-semibold uppercase tracking-tight">{item.name}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       </div>
     </section>
   );
