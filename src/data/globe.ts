@@ -28,6 +28,15 @@ export const corridors: Corridor[] = [
     ],
   },
   {
+    id: 'asia-pacific',
+    name: 'Indonesia & Australia',
+    summary: 'Commodities, materials and growing markets across Southeast Asia and Oceania.',
+    hubs: [
+      { name: 'Jakarta', lat: -6.21, lon: 106.85 },
+      { name: 'Sydney', lat: -33.87, lon: 151.21 },
+    ],
+  },
+  {
     id: 'europe',
     name: 'Europe',
     summary: 'Specialist manufacturers in Italy and Slovakia, and deliveries across Europe.',
