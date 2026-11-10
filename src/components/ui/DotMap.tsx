@@ -37,23 +37,23 @@ const LAT_SPAN = LAT_MAX - LAT_MIN;
 const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: string; comet: string; hub: string; home: string; labelBg: string; labelFg: string }> = {
   light: {
     dot: 'rgba(27,30,36,0.2)',
-    tint: '27,30,36',
-    arc: 'rgba(27,30,36,0.45)',
+    tint: '35,64,142',
+    arc: 'rgba(35,64,142,0.4)',
     arcDim: 'rgba(27,30,36,0.08)',
-    comet: '27,30,36',
-    hub: '#1B1E24',
-    home: '#1B1E24',
+    comet: '35,64,142',
+    hub: '#23408E',
+    home: '#23408E',
     labelBg: '#1B1E24',
     labelFg: '#FFFFFF',
   },
   dark: {
     dot: 'rgba(255,255,255,0.2)',
-    tint: '200,205,215',
-    arc: 'rgba(220,224,232,0.4)',
+    tint: '123,143,201',
+    arc: 'rgba(184,196,230,0.45)',
     arcDim: 'rgba(255,255,255,0.08)',
-    comet: '235,238,243',
-    hub: '#E6E8EC',
-    home: '#FFFFFF',
+    comet: '184,196,230',
+    hub: '#B8C4E6',
+    home: '#3E5BB0',
     labelBg: '#FFFFFF',
     labelFg: '#1B1E24',
   },
@@ -66,7 +66,7 @@ const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: 
     hub: '#FFFFFF',
     home: '#FFFFFF',
     labelBg: '#FFFFFF',
-    labelFg: '#1B1E24',
+    labelFg: '#23408E',
   },
 };
 
@@ -254,7 +254,7 @@ export default function DotMap({
       if (typeof ctx!.roundRect === 'function') ctx!.roundRect(bx, by, bw, bh, 3);
       else ctx!.rect(bx, by, bw, bh);
       ctx!.fill();
-      ctx!.fillStyle = strong ? (live.current.theme === 'light' ? '#FFFFFF' : '#0A0B0E') : pal.labelFg;
+      ctx!.fillStyle = strong ? (live.current.theme === 'blue' ? '#23408E' : '#FFFFFF') : pal.labelFg;
       ctx!.textBaseline = 'middle';
       ctx!.fillText(t, bx + 7, by + bh / 2 + 0.5);
     }
@@ -363,7 +363,7 @@ export default function DotMap({
         ctx!.arc(x, y, active ? 4 : 3, 0, Math.PI * 2);
         ctx!.fill();
         if (active) {
-          ctx!.fillStyle = live.current.theme === 'light' ? '#fff' : live.current.theme === 'blue' ? '#1B1E24' : '#1B1E24';
+          ctx!.fillStyle = live.current.theme === 'light' ? '#fff' : live.current.theme === 'blue' ? '#23408E' : '#1B1E24';
           ctx!.beginPath();
           ctx!.arc(x, y, 1.6, 0, Math.PI * 2);
           ctx!.fill();

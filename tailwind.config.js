@@ -3,21 +3,21 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      // Monochrome palette: white, cool greys, graphite and near-black.
+      // Palette taken from bluesqx.com: white, cool mist, near-black ink and the deep electric blue accent.
       colors: {
         paper: '#FFFFFF',
-        space: '#07080A',
+        space: '#05070F',
         navy: '#0A1640',
-        mist: '#F1F2F4',
-        haze: '#E6E8EC',
-        line: '#E1E3E8',
-        ink: '#111317',
-        ink2: '#2A2E36',
-        muted: '#5F6470',
+        mist: '#ECF0F8',
+        haze: '#E1E7F4',
+        line: '#DCE1EB',
+        ink: '#1B1E24',
+        ink2: '#2E333D',
+        muted: '#62677A',
         soft: '#9FA6B4',
-        accent: '#111317',
-        accent2: '#8A909B',
-        sky: '#C7CCD6',
+        accent: '#23408E',
+        accent2: '#3E5BB0',
+        sky: '#B8C4E6',
         signal: '#F73636',
       },
       fontFamily: {

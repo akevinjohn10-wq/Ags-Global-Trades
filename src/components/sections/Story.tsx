@@ -240,7 +240,7 @@ export default function Story() {
               className="h-full w-full object-cover"
             />
           </div>
-          <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(8,9,11,0.8),rgba(8,9,11,0.35)_45%,rgba(8,9,11,0.9))]" />
+          <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(8,16,40,0.75),rgba(35,64,142,0.35)_45%,rgba(8,16,40,0.85))]" />
 
           <div className="container-x relative flex h-full flex-col items-center justify-between py-28 text-center text-white sm:py-24">
             <div ref={r.seaTitle} style={{ opacity: 0 }}>

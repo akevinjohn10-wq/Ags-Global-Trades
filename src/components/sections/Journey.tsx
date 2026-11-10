@@ -149,7 +149,7 @@ export default function Journey() {
                 className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-[calc(50%+30px)]"
                 style={{ left: reduce ? `${(step / (count - 1)) * 100}%` : '0%' }}
               >
-                <div className="relative flex h-8 w-8 items-center justify-center bg-accent shadow-[0_8px_20px_-6px_rgba(17,19,23,0.5)]">
+                <div className="relative flex h-8 w-8 items-center justify-center bg-accent shadow-[0_8px_20px_-6px_rgba(35,64,142,0.7)]">
                   <span className="h-full w-[3px] bg-white/40" />
                   <span className="absolute h-[3px] w-full bg-white/40" />
                 </div>
