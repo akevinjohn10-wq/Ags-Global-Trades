@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Reveal from '@/components/ui/Reveal';
@@ -9,61 +9,11 @@ import { requestEnquiry } from '@/lib/enquiry';
 /** Numbered accordion of product categories (the unitedcarriers.com "Industries" list). */
 export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
-  const [hovered, setHovered] = useState<number | null>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const [finePointer] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  );
-
-  // Floating photo that trails the cursor and leans into the movement
-  const pos = useRef({ x: 0, y: 0, tx: 0, ty: 0, raf: 0 });
-  useEffect(() => () => cancelAnimationFrame(pos.current.raf), []);
-  const follow = (event: ReactMouseEvent) => {
-    if (!finePointer || !sectionRef.current) return;
-    const rect = sectionRef.current.getBoundingClientRect();
-    const p = pos.current;
-    p.tx = event.clientX - rect.left + 28;
-    p.ty = event.clientY - rect.top - 110;
-    if (p.raf) return;
-    const tick = () => {
-      const dx = p.tx - p.x;
-      p.x += dx * 0.14;
-      p.y += (p.ty - p.y) * 0.14;
-      const el = previewRef.current;
-      if (el) el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) rotate(${Math.max(-8, Math.min(8, dx * 0.06)).toFixed(2)}deg)`;
-      p.raf = Math.abs(dx) + Math.abs(p.ty - p.y) > 0.4 ? requestAnimationFrame(tick) : 0;
-    };
-    p.raf = requestAnimationFrame(tick);
-  };
-  const showPreview = finePointer && hovered !== null && hovered !== open;
   const names = productCategories.map((c) => c.name);
 
   return (
-    <section ref={sectionRef} id="catalogue" className="aurora-soft section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
+    <section id="catalogue" className="aurora-soft section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
       <div aria-hidden="true" className="dots-drift pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]" />
-
-      {finePointer && (
-        <div ref={previewRef} aria-hidden="true" className="hover-preview" data-show={showPreview}>
-          {productCategories.map((item, i) => (
-            <img
-              key={item.name}
-              src={item.image}
-              alt=""
-              loading="lazy"
-              className={`absolute inset-0 h-full w-full object-cover transition-[opacity,transform] duration-500 ease-expo ${
-                hovered === i ? 'scale-100 opacity-100' : 'scale-110 opacity-0'
-              }`}
-            />
-          ))}
-          <span className="mono-caps absolute bottom-3 left-3 rounded bg-white/90 px-2 py-1 text-[10px] text-ink">
-            {hovered !== null ? String(hovered + 1).padStart(2, '0') : ''} · Click to open
-          </span>
-        </div>
-      )}
 
       <div className="container-x">
         <SectionHeading
@@ -92,7 +42,7 @@ export default function Products() {
       </div>
 
       <div className="container-x">
-        <ul className="mt-6 border-b border-ink/10 lg:mt-10" onMouseMove={follow} onMouseLeave={() => setHovered(null)}>
+        <ul className="mt-6 border-b border-ink/10 lg:mt-10">
           {productCategories.map((item, i) => {
             const isOpen = open === i;
             const Icon = item.icon;
@@ -112,7 +62,6 @@ export default function Products() {
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                       onClick={() => setOpen(isOpen ? null : i)}
-                      onMouseEnter={() => setHovered(i)}
                       className="group relative isolate flex w-full items-center gap-4 py-6 text-left sm:gap-8 sm:py-8"
                     >
                       {/* Tint that sweeps across the row on hover */}
