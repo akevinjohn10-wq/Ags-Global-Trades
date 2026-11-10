@@ -90,7 +90,7 @@ export default function Preloader() {
         <div className="font-mono text-[12px] uppercase tracking-eyebrow text-white/60">
           <span className="mr-2 inline-block h-2 w-2 animate-blink bg-accent2" />
           <span className="sm:hidden">{word}</span>
-          <span className="hidden sm:inline">Connecting markets · Delivering globally</span>
+          <span className="hidden sm:inline">You name it · We source it</span>
         </div>
         <p className="font-display text-[64px] font-semibold leading-none tabular-nums sm:text-[96px]">
           {String(count).padStart(3, '0')}

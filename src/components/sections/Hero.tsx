@@ -7,7 +7,7 @@ import { heroStatements } from '@/data/siteContent';
 import { onReady } from '@/lib/ready';
 
 // Which corridors light up for each statement as the visitor scrolls through the hero
-const STAGES = [['middle-east', 'europe'], ['southeast-asia', 'east-asia', 'africa'], corridors.map((c) => c.id)];
+const STAGES = [['east-asia', 'southeast-asia'], ['middle-east', 'europe', 'africa'], corridors.map((c) => c.id)];
 
 /**
  * Pinned hero: giant headline over a live dotted world map. Scrolling steps through
@@ -77,7 +77,7 @@ export default function Hero() {
                 fit="cover"
                 focusX={0.62}
                 density={7.5}
-                label="Dotted world map with trade routes from New Delhi to ports in the Middle East, Europe, Asia, Africa and the Americas"
+                label="Dotted world map with routes from New Delhi to sourcing and delivery markets in Asia, the Middle East, Europe, Africa and the Americas"
               />
             )}
           </div>
@@ -89,16 +89,16 @@ export default function Hero() {
           <div
             className={`flex flex-wrap items-center justify-between gap-3 transition-opacity duration-700 ${entered ? 'opacity-100' : 'opacity-0'}`}
           >
-            <p className="eyebrow">Import-export trading</p>
-            <p className="mono-caps hidden text-soft sm:block">New Delhi · 28.61°N 77.21°E</p>
+            <p className="eyebrow">Sourcing &amp; supply</p>
+            <p className="mono-caps hidden text-soft sm:block">Any product · any quantity · worldwide</p>
           </div>
           <SplitText
             as="h1"
             play={entered}
             delay={100}
             stagger={90}
-            text={'Connecting markets.\nDelivering globally.'}
-            className="mt-5 text-[11vw] font-semibold leading-[0.95] text-ink sm:text-[8.4vw] xl:text-[7.6vw] 2xl:text-[124px]"
+            text={'You name it.\nWe source it.'}
+            className="mt-5 text-[10vw] font-semibold leading-[0.92] text-ink xl:text-[8.8vw] 2xl:text-[136px]"
           />
         </div>
 
@@ -144,7 +144,7 @@ export default function Hero() {
               }`}
             >
               <Button href="#contact" variant="accent">
-                Get a quote
+                Request a quote
               </Button>
               <Button href="#services" variant="outline" className="bg-paper">
                 Our services
@@ -153,7 +153,7 @@ export default function Hero() {
           </div>
 
           <div className="mt-6 hidden items-center justify-between border-t border-ink/10 pt-4 sm:flex">
-            <span className="mono-caps text-soft">Hover a port to see the route</span>
+            <span className="mono-caps text-soft">Hover a city to see the route</span>
             <a href="#about" className="mono-caps group flex items-center gap-3 text-ink">
               Scroll to explore
               <span aria-hidden="true" className="relative block h-5 w-px overflow-hidden bg-ink/15">

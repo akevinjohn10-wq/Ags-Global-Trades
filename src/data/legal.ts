@@ -104,7 +104,7 @@ export const legalDocuments: Record<LegalKey, LegalDocument> = {
       {
         heading: 'Who we are',
         body: [
-          `AGS Global Trade is an import-export and sourcing business based in New Delhi, India. For privacy questions, contact us at ${email}.`,
+          `AGS Global Trade is a sourcing and supply business based in New Delhi, India. For privacy questions, contact us at ${email}.`,
         ],
       },
       {

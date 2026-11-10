@@ -1,5 +1,5 @@
-// Trade corridors drawn on the world maps.
-// The ports are illustrative examples for each corridor; edit freely.
+// Sourcing and delivery markets drawn on the world maps.
+// The cities are illustrative examples for each region; edit freely.
 // Coordinates are latitude / longitude in degrees.
 export interface Hub {
   name: string;
@@ -18,9 +18,28 @@ export const homeHub: Hub = { name: 'New Delhi', lat: 28.61, lon: 77.21 };
 
 export const corridors: Corridor[] = [
   {
+    id: 'east-asia',
+    name: 'East Asia',
+    summary: 'Deep factory bases for electronics, consumer goods, machinery and custom OEM products.',
+    hubs: [
+      { name: 'Shenzhen', lat: 22.54, lon: 114.06 },
+      { name: 'Yiwu', lat: 29.31, lon: 120.08 },
+      { name: 'Busan', lat: 35.1, lon: 129.04 },
+    ],
+  },
+  {
+    id: 'southeast-asia',
+    name: 'Southeast Asia',
+    summary: 'Growing manufacturing for textiles, furniture, food products and components.',
+    hubs: [
+      { name: 'Ho Chi Minh City', lat: 10.82, lon: 106.63 },
+      { name: 'Bangkok', lat: 13.76, lon: 100.5 },
+    ],
+  },
+  {
     id: 'middle-east',
     name: 'Middle East',
-    summary: 'Short sea and air lanes between India and the Gulf’s trading hubs.',
+    summary: 'Trading hubs for fast regional supply and re-export across the Gulf.',
     hubs: [
       { name: 'Dubai', lat: 25.2, lon: 55.27 },
       { name: 'Jeddah', lat: 21.49, lon: 39.19 },
@@ -29,34 +48,16 @@ export const corridors: Corridor[] = [
   {
     id: 'europe',
     name: 'Europe',
-    summary: 'Ocean freight through Suez into Europe’s main gateway ports.',
+    summary: 'Specialist manufacturers and distributors, and deliveries into Europe’s gateway ports.',
     hubs: [
+      { name: 'Istanbul', lat: 41.01, lon: 28.98 },
       { name: 'Rotterdam', lat: 51.92, lon: 4.48 },
-      { name: 'Hamburg', lat: 53.55, lon: 9.99 },
-    ],
-  },
-  {
-    id: 'southeast-asia',
-    name: 'Southeast Asia',
-    summary: 'Fast transhipment links across the Bay of Bengal and the Malacca Strait.',
-    hubs: [
-      { name: 'Singapore', lat: 1.35, lon: 103.82 },
-      { name: 'Port Klang', lat: 3.0, lon: 101.39 },
-    ],
-  },
-  {
-    id: 'east-asia',
-    name: 'East Asia',
-    summary: 'Direct access to the manufacturing hubs of China and Korea.',
-    hubs: [
-      { name: 'Shanghai', lat: 31.23, lon: 121.47 },
-      { name: 'Busan', lat: 35.1, lon: 129.04 },
     ],
   },
   {
     id: 'africa',
     name: 'Africa',
-    summary: 'Growing lanes to East and Southern Africa across the Indian Ocean.',
+    summary: 'Agricultural produce and minerals, and deliveries to East and Southern Africa.',
     hubs: [
       { name: 'Mombasa', lat: -4.04, lon: 39.67 },
       { name: 'Durban', lat: -29.86, lon: 31.02 },
@@ -65,7 +66,7 @@ export const corridors: Corridor[] = [
   {
     id: 'americas',
     name: 'Americas',
-    summary: 'Long-haul ocean and air freight to North and South America.',
+    summary: 'Long-haul supply to buyers across North and South America.',
     hubs: [
       { name: 'New York', lat: 40.71, lon: -74.0 },
       { name: 'Los Angeles', lat: 34.05, lon: -118.24 },

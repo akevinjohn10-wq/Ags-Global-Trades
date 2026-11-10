@@ -16,13 +16,13 @@ export default function WhyChooseUs() {
             </Reveal>
             <SplitText
               as="h2"
-              text={'Built for\ntrade that\ncannot wait.'}
+              text={'Built for\norders that\ncannot wait.'}
               stagger={60}
               className="mt-5 text-[32px] font-semibold leading-[1.02] text-ink sm:text-[48px] lg:text-[64px]"
             />
             <Reveal delay={200}>
               <p className="mt-6 max-w-md text-base leading-[1.7] text-muted sm:text-lg">
-                A dedicated team, verified partners, and clear communication on every shipment.
+                A dedicated team, verified suppliers, and clear communication on every order.
               </p>
               <Button href="#contact" variant="outline" className="mt-8">
                 Talk to our team

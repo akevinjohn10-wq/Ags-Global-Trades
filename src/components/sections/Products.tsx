@@ -16,8 +16,8 @@ export default function Products() {
         <SectionHeading
           align="split"
           eyebrow="What we trade"
-          title={'We know\nyour products.'}
-          description="Eleven categories, each with its own sourcing, paperwork, and handling needs. Open a category to see how we support it."
+          title={'What we\nsource for you.'}
+          description="Eleven categories we source and supply, each with its own suppliers, checks and shipping needs. Open one to see how we handle it."
         />
 
         <ul className="mt-14 border-b border-ink/10 lg:mt-20">

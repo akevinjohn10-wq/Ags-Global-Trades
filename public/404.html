@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page not found | AGS Trade</title>
+    <link rel="icon" type="image/png" href="/images/logo.png" />
+    <meta name="robots" content="noindex" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Tomorrow:wght@600&family=JetBrains+Mono:wght@500&display=swap" />
+    <style>
+      :root { --ink: #1b1e24; --mist: #ecf0f8; --accent: #0229d5; --muted: #62677a; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { height: 100%; }
+      body { font-family: Inter, system-ui, sans-serif; background: #fff; color: var(--ink); overflow: hidden; display: flex; flex-direction: column; }
+      header { background: var(--ink); padding: 18px clamp(20px, 4vw, 48px); display: flex; align-items: center; justify-content: space-between; }
+      header img { height: 46px; width: auto; display: block; }
+      .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; font-weight: 500; }
+      header .mono { color: rgba(255,255,255,.6); }
+      main { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+      .backdrop { position: absolute; inset: 0; display: flex; align-items: center; overflow: hidden; pointer-events: none; }
+      .track { display: flex; width: max-content; animation: slide 28s linear infinite; }
+      .track span { font-family: Tomorrow, Inter, sans-serif; font-weight: 600; text-transform: uppercase; font-size: clamp(90px, 18vw, 260px); line-height: 1; color: transparent; -webkit-text-stroke: 2px #d3dcee; white-space: nowrap; padding-right: .4em; }
+      @keyframes slide { to { transform: translateX(-50%); } }
+      .scene { position: relative; height: clamp(170px, 26vw, 300px); margin-top: auto; }
+      .road { position: absolute; left: 0; right: 0; bottom: 0; height: 26%; background: var(--ink); }
+      .road::after { content: ''; position: absolute; left: 0; right: 0; top: 46%; height: 4px; background: repeating-linear-gradient(90deg, #fff 0 40px, transparent 40px 80px); animation: lane 0.8s linear infinite; opacity: .8; }
+      @keyframes lane { to { background-position: -80px 0; } }
+      .truck { position: absolute; bottom: 20%; left: 50%; width: clamp(280px, 44vw, 560px); transform: translateX(-50%); animation: drive 2.4s cubic-bezier(.16,1,.3,1) both, bob 0.6s ease-in-out 2.4s infinite alternate; }
+      @keyframes drive { from { transform: translateX(-180%); } to { transform: translateX(-50%); } }
+      @keyframes bob { from { transform: translateX(-50%) translateY(0); } to { transform: translateX(-50%) translateY(-2px); } }
+      .copy { position: relative; z-index: 2; padding: 0 clamp(20px, 4vw, 48px); margin-top: auto; }
+      .eyebrow { display: inline-flex; align-items: center; gap: 12px; color: var(--muted); }
+      .eyebrow::before { content: ''; width: 8px; height: 8px; background: var(--accent); }
+      h1 { font-family: Tomorrow, Inter, sans-serif; font-weight: 600; text-transform: uppercase; font-size: clamp(38px, 7vw, 96px); line-height: .95; margin-top: 16px; letter-spacing: -.015em; }
+      p.lead { margin-top: 16px; max-width: 460px; color: var(--muted); font-size: 18px; line-height: 1.6; }
+      .actions { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+      .btn { display: inline-flex; align-items: center; gap: 14px; height: 48px; padding: 0 6px 0 20px; border-radius: 6px; font-weight: 500; font-size: 15px; text-decoration: none; transition: background .3s, color .3s; }
+      .btn .box { width: 36px; height: 36px; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); }
+      .btn.primary { background: var(--accent); color: #fff; }
+      .btn.primary:hover { background: var(--ink); }
+      .btn.outline { border: 1px solid rgba(27,30,36,.15); color: var(--ink); }
+      .btn.outline .box { background: rgba(27,30,36,.05); }
+      .btn.outline:hover { background: var(--ink); color: #fff; }
+      @media (prefers-reduced-motion: reduce) { .track, .road::after, .truck { animation: none !important; transform: translateX(-50%); } .track { transform: none; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a href="/" aria-label="AGS Global Trade home"><img src="/images/logo.png" alt="AGS Global Trade logo" /></a>
+      <span class="mono">Error 404</span>
+    </header>
+    <main>
+      <div class="backdrop" aria-hidden="true">
+        <div class="track"><span>Page not found</span><span>Page not found</span></div>
+      </div>
+      <div class="copy">
+        <p class="mono eyebrow">Error 404</p>
+        <h1>You've taken<br />a wrong turn.</h1>
+        <p class="lead">The page you are looking for has moved or never existed. Let's get you back on route.</p>
+        <div class="actions">
+          <a class="btn primary" href="/">Back to home <span class="box" aria-hidden="true">&#8599;</span></a>
+          <a class="btn outline" href="/#contact">Request a quote <span class="box" aria-hidden="true">&#8599;</span></a>
+        </div>
+      </div>
+      <div class="scene" aria-hidden="true">
+        <div class="road"></div>
+        <svg class="truck" viewBox="0 0 560 170" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="18" width="380" height="118" rx="4" fill="#ECF0F8" stroke="#1B1E24" stroke-width="3" />
+          <g stroke="#C3CDE4" stroke-width="3">
+            <line x1="44" y1="26" x2="44" y2="128" /><line x1="84" y1="26" x2="84" y2="128" /><line x1="124" y1="26" x2="124" y2="128" />
+            <line x1="164" y1="26" x2="164" y2="128" /><line x1="204" y1="26" x2="204" y2="128" /><line x1="244" y1="26" x2="244" y2="128" />
+            <line x1="284" y1="26" x2="284" y2="128" /><line x1="324" y1="26" x2="324" y2="128" />
+          </g>
+          <rect x="150" y="56" width="90" height="40" fill="#0229D5" />
+          <text x="195" y="83" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="16" font-weight="600" fill="#fff">AGS</text>
+          <path d="M396 50 h80 l52 46 v40 h-132 z" fill="#1B1E24" />
+          <path d="M410 60 h58 l36 34 h-94 z" fill="#AEBDF3" />
+          <rect x="386" y="126" width="150" height="14" fill="#1B1E24" />
+          <rect x="520" y="110" width="14" height="10" fill="#F73636" />
+          <g fill="#1B1E24"><circle cx="70" cy="146" r="20" /><circle cx="118" cy="146" r="20" /><circle cx="300" cy="146" r="20" /><circle cx="460" cy="146" r="20" /></g>
+          <g fill="#9FA6B4"><circle cx="70" cy="146" r="8" /><circle cx="118" cy="146" r="8" /><circle cx="300" cy="146" r="8" /><circle cx="460" cy="146" r="8" /></g>
+        </svg>
+      </div>
+    </main>
+  </body>
+</html>

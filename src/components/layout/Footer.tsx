@@ -77,11 +77,11 @@ export default function Footer() {
         <div>
           <p className="eyebrow eyebrow-light">Work with us</p>
           <p className="mt-5 max-w-2xl font-display text-[30px] font-semibold uppercase leading-[1.05] sm:text-[44px]">
-            One partner. Every border. Every shipment.
+            One partner. Any product. Any quantity.
           </p>
         </div>
         <Button href="#contact" variant="light" className="self-start lg:self-auto">
-          Get a quote
+          Request a quote
         </Button>
       </div>
 
@@ -89,7 +89,7 @@ export default function Footer() {
         <div className="lg:col-span-3">
           <Logo height={72} />
           <p className="mt-5 max-w-xs text-[15px] leading-[1.7] text-white/60">
-            Import-export solutions connecting markets worldwide, from sourcing to final delivery.
+            A sourcing and supply company: we find, check, buy and ship the products your business needs.
           </p>
           <a
             href={contactDetails.linkedin}
@@ -149,7 +149,7 @@ export default function Footer() {
             </li>
           </ul>
           <p className="mono-caps mt-6 text-white/40">Hours · {contactDetails.hours}</p>
-          <p className="mt-6 text-[13px] leading-[1.7] text-white/40">{productCategories.length} product categories · {services.length} trade services</p>
+          <p className="mt-6 text-[13px] leading-[1.7] text-white/40">{productCategories.length} product categories · {services.length} services</p>
         </div>
       </div>
 

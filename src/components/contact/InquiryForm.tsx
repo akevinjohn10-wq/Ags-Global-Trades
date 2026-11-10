@@ -45,6 +45,9 @@ export default function InquiryForm() {
   const [values, setValues] = useState<InquiryValues>(emptyInquiry);
   const [errors, setErrors] = useState<InquiryErrors>({});
   const [status, setStatus] = useState<SubmitStatus>('idle');
+  // Quantity and destination are sent as part of the message, so the stored record format is unchanged
+  const [quantity, setQuantity] = useState('');
+  const [destination, setDestination] = useState('');
 
   const isSubmitting = status === 'submitting';
 
@@ -88,8 +91,13 @@ export default function InquiryForm() {
 
     setStatus('submitting');
     try {
-      await submitInquiry(values);
+      const extra = [quantity.trim() && `Quantity: ${quantity.trim()}`, destination.trim() && `Deliver to: ${destination.trim()}`]
+        .filter(Boolean)
+        .join('\n');
+      await submitInquiry({ ...values, message: extra ? `${extra}\n\n${values.message}` : values.message });
       setValues(emptyInquiry);
+      setQuantity('');
+      setDestination('');
       setStatus('success');
     } catch {
       setStatus('error');
@@ -163,7 +171,7 @@ export default function InquiryForm() {
           />
         </Field>
 
-        <Field id="productInterest" label="Product Interest" error={errors.productInterest}>
+        <Field id="productInterest" label="Product category" error={errors.productInterest}>
           <select
             id="productInterest"
             name="productInterest"
@@ -187,7 +195,40 @@ export default function InquiryForm() {
         </Field>
       </div>
 
-      <Field id="message" label="Message" error={errors.message}>
+      <div className="grid gap-6 sm:grid-cols-2">
+        <div>
+          <label htmlFor="quantity" className="mono-caps mb-2 block text-ink">
+            Quantity <span className="text-soft">(optional)</span>
+          </label>
+          <input
+            id="quantity"
+            name="quantity"
+            type="text"
+            inputMode="text"
+            placeholder="e.g. 500 units, 2 tonnes"
+            value={quantity}
+            onChange={(event) => setQuantity(event.target.value)}
+            className="field-input"
+          />
+        </div>
+        <div>
+          <label htmlFor="destination" className="mono-caps mb-2 block text-ink">
+            Deliver to <span className="text-soft">(optional)</span>
+          </label>
+          <input
+            id="destination"
+            name="destination"
+            type="text"
+            autoComplete="country-name"
+            placeholder="City, country"
+            value={destination}
+            onChange={(event) => setDestination(event.target.value)}
+            className="field-input"
+          />
+        </div>
+      </div>
+
+      <Field id="message" label="What do you need?" error={errors.message}>
         <textarea
           id="message"
           name="message"
@@ -197,7 +238,7 @@ export default function InquiryForm() {
           onBlur={handleBlur}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? 'message-error' : undefined}
-          placeholder="Tell us about volumes, origin or destination, and your timeline."
+          placeholder="Describe the product: specification, size, colour, target price and timeline."
           className="field-input resize-y"
         />
       </Field>

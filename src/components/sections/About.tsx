@@ -1,17 +1,11 @@
-import { ArrowDownToLine, ArrowUpFromLine, Search, Truck } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import Parallax from '@/components/ui/Parallax';
 import Reveal from '@/components/ui/Reveal';
-import SectionHeading from '@/components/ui/SectionHeading';
+import ScrubText from '@/components/ui/ScrubText';
 import { useInView } from '@/hooks/useInView';
+import { missionStatement } from '@/data/siteContent';
 
 const ABOUT_IMAGE = '/images/about.jpeg';
-
-const pillars = [
-  { label: 'Import', icon: ArrowDownToLine },
-  { label: 'Export', icon: ArrowUpFromLine },
-  { label: 'Sourcing', icon: Search },
-  { label: 'Freight', icon: Truck },
-];
 
 export default function About() {
   const { ref, isInView } = useInView<HTMLDivElement>(0.2);
@@ -19,14 +13,30 @@ export default function About() {
   return (
     <section id="about" className="section-y relative scroll-mt-24 overflow-hidden bg-paper">
       <div className="container-x">
-        <SectionHeading
-          align="split"
-          eyebrow="About AGS Trade"
-          title={'A dependable partner\nin global trade.'}
-          description="AGS Trade connects manufacturers, suppliers, and buyers across continents. We manage the sourcing, freight, and paperwork that cross-border trade demands, so our clients can focus on growing their business."
-        />
+        {/* Mission statement that lights up word by word */}
+        <div className="grid gap-8 lg:grid-cols-12">
+          <Reveal className="lg:col-span-3">
+            <p className="eyebrow">About AGS Trade</p>
+            <p className="mono-caps mt-4 text-soft">Sourcing &amp; supply · New Delhi</p>
+          </Reveal>
+          <div className="lg:col-span-9">
+            <ScrubText
+              text={missionStatement}
+              highlight={['sourcing', 'supply', 'verified', 'shipping']}
+              className="font-display text-[26px] font-semibold leading-[1.18] tracking-display text-ink sm:text-[38px] lg:text-[50px]"
+            />
+            <Reveal delay={100} className="mt-10 flex flex-wrap gap-3">
+              <Button href="#contact" variant="accent">
+                Request a quote
+              </Button>
+              <Button href="#process" variant="outline">
+                How it works
+              </Button>
+            </Reveal>
+          </div>
+        </div>
 
-        <div className="mt-16 grid gap-6 lg:mt-24 lg:grid-cols-12">
+        <div className="mt-20 grid gap-6 lg:mt-28 lg:grid-cols-12">
           {/* Photo with wipe reveal */}
           <div ref={ref} className={`relative lg:col-span-7 ${isInView ? 'is-visible' : ''}`}>
             <div className="clip-reveal overflow-hidden rounded-lg">
@@ -35,7 +45,7 @@ export default function About() {
                   src={ABOUT_IMAGE}
                   alt="The AGS Global Trade office"
                   loading="lazy"
-                  className="h-[360px] w-full scale-110 object-cover sm:h-[520px] lg:h-[620px]"
+                  className="h-[360px] w-full scale-110 object-cover sm:h-[520px] lg:h-[600px]"
                 />
               </Parallax>
             </div>
@@ -50,28 +60,15 @@ export default function About() {
               <p className="mono-caps text-accent">01 — Mission</p>
               <h3 className="mt-6 font-display text-[26px] uppercase text-ink sm:text-[30px]">Our Mission</h3>
               <p className="mt-4 text-[17px] leading-[1.7] text-muted">
-                To make international trade simple, transparent, and reliable for businesses of every size.
+                To make sourcing simple, transparent, and reliable for businesses of every size.
               </p>
             </Reveal>
             <Reveal delay={120} className="spot flex-1 rounded-lg bg-ink p-8 text-white sm:p-10">
               <p className="mono-caps text-sky">02 — Values</p>
               <h3 className="mt-6 font-display text-[26px] uppercase sm:text-[30px]">Our Values</h3>
               <p className="mt-4 text-[17px] leading-[1.7] text-white/70">
-                Integrity, precision, and long-term partnerships guide every shipment we manage.
+                Integrity, precision, and long-term partnerships guide every order we handle.
               </p>
-            </Reveal>
-            <Reveal delay={220}>
-              <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {pillars.map(({ label, icon: Icon }) => (
-                  <li
-                    key={label}
-                    className="group flex items-center gap-2 rounded-md border border-line px-3 py-3 transition-colors duration-300 hover:border-accent hover:bg-accent hover:text-white"
-                  >
-                    <Icon size={16} strokeWidth={1.5} aria-hidden="true" className="text-accent transition-colors group-hover:text-white" />
-                    <span className="mono-caps">{label}</span>
-                  </li>
-                ))}
-              </ul>
             </Reveal>
           </div>
         </div>

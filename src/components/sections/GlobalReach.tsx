@@ -21,14 +21,14 @@ export default function GlobalReach() {
       <div className="container-x">
         <SectionHeading
           align="split"
-          eyebrow="Global network"
-          title={'Your goods,\nconnected worldwide.'}
-          description="From our base in New Delhi we move cargo along the major trade corridors. Choose a region, or click a port on the map."
+          eyebrow="Sourcing network"
+          title={'Sourced worldwide,\ndelivered to you.'}
+          description="From our base in New Delhi we source from manufacturing hubs around the world and deliver to buyers wherever they are. Choose a region, or click a city on the map."
         />
 
         {/* Corridor tabs */}
         <Reveal className="mt-12 lg:mt-16">
-          <div role="tablist" aria-label="Trade corridors" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:px-0">
+          <div role="tablist" aria-label="Regions" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 sm:mx-0 sm:flex-wrap sm:px-0">
             {corridors.map((c) => {
               const selected = c.id === activeId;
               return (
@@ -72,7 +72,7 @@ export default function GlobalReach() {
               className="border-t border-line p-5 sm:absolute sm:bottom-6 sm:right-6 sm:w-[340px] sm:rounded-md sm:border sm:bg-paper/95 sm:p-6 sm:shadow-[0_20px_60px_-30px_rgba(27,30,36,0.4)] sm:backdrop-blur-md"
             >
               <div key={corridor.id} className="animate-panelin">
-                <p className="mono-caps text-accent">Corridor</p>
+                <p className="mono-caps text-accent">Region</p>
                 <h3 className="mt-2 font-display text-[26px] uppercase leading-none text-ink">{corridor.name}</h3>
                 <p className="mt-3 text-[15px] leading-[1.6] text-muted">{corridor.summary}</p>
                 <ul className="mt-4 flex flex-wrap gap-2">
@@ -87,7 +87,7 @@ export default function GlobalReach() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-[12px] text-soft">Example gateway ports shown for each corridor.</p>
+                <p className="mt-4 text-[12px] text-soft">Example cities shown for each region.</p>
               </div>
             </div>
           </div>

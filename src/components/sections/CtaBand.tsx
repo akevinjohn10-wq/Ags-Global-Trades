@@ -3,14 +3,14 @@ import DotMap from '@/components/ui/DotMap';
 import Reveal from '@/components/ui/Reveal';
 import { contactDetails } from '@/data/siteContent';
 
-const PHRASES = ['Connecting markets', 'Delivering globally'];
+const PHRASES = ['You name it', 'We source it'];
 
 /** Electric-blue closing band with an oversized moving headline. */
 export default function CtaBand() {
   const row = [...PHRASES, ...PHRASES, ...PHRASES];
 
   return (
-    <section aria-label="Start a shipment" className="relative isolate overflow-hidden bg-accent text-white">
+    <section aria-label="Start an order" className="relative isolate overflow-hidden bg-accent text-white">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-60">
         <DotMap theme="blue" labels="none" animated={false} intro={false} fit="cover" density={9} />
       </div>
@@ -36,13 +36,13 @@ export default function CtaBand() {
 
       <div className="container-x grid gap-10 py-14 sm:py-20 lg:grid-cols-12 lg:items-end">
         <Reveal className="lg:col-span-7">
-          <p className="eyebrow eyebrow-light [&::before]:bg-white">Start a shipment</p>
-          <h2 className="mt-5 text-[32px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[60px]">Ready to move your next shipment?</h2>
-          <p className="mt-5 max-w-xl text-lg text-white/75">Tell us what you trade and where it needs to go.</p>
+          <p className="eyebrow eyebrow-light [&::before]:bg-white">Start an order</p>
+          <h2 className="mt-5 text-[32px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[60px]">Need a product sourced?</h2>
+          <p className="mt-5 max-w-xl text-lg text-white/75">Tell us the product, the quantity and where it needs to go.</p>
         </Reveal>
         <Reveal delay={150} className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
           <Button href="#contact" variant="light">
-            Get a quote
+            Request a quote
           </Button>
           <Button href={`tel:${contactDetails.phone.replace(/\s/g, '')}`} variant="outline-light" label={contactDetails.phone}>
             {contactDetails.phone}

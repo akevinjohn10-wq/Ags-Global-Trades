@@ -1,21 +1,22 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { useInView } from '@/hooks/useInView';
 import { services } from '@/data/siteContent';
 
-const AUTO_MS = 6500;
+const AUTO_MS = 6000;
 
-/** Tabbed services: numbered tab list on the left, illustrated panel on the right. Auto-advances until clicked. */
+/**
+ * Expanding service panels (bluesqx "Innovation + Experience" layout): one panel is open,
+ * the rest are slim columns with vertical titles. Hover or click to open; auto-advances until touched.
+ */
 export default function Services() {
   const [active, setActive] = useState(0);
   const [auto, setAuto] = useState(true);
-  const [paused, setPaused] = useState(false);
   const { ref, isInView } = useInView<HTMLDivElement>(0.3);
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const running = auto && !paused && isInView && !reduce;
+  const running = auto && isInView && !reduce;
 
   useEffect(() => {
     if (!running) return;
@@ -23,28 +24,10 @@ export default function Services() {
     return () => window.clearTimeout(id);
   }, [running, active]);
 
-  const select = (i: number, focus = false) => {
+  const open = (i: number) => {
     setAuto(false);
     setActive(i);
-    if (focus) tabRefs.current[i]?.focus();
   };
-
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const keys: Record<string, number> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
-    if (event.key in keys) {
-      event.preventDefault();
-      select((active + keys[event.key] + services.length) % services.length, true);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      select(0, true);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      select(services.length - 1, true);
-    }
-  };
-
-  const service = services[active];
-  const Icon = service.icon;
 
   return (
     <section id="services" className="section-y scroll-mt-24 bg-mist">
@@ -52,111 +35,92 @@ export default function Services() {
         <SectionHeading
           align="split"
           eyebrow="Our services"
-          title={'Every leg of\ncross-border trade.'}
-          description="Six services, one accountable partner. Choose a service to see how we handle it."
+          title={'Sourcing +\nSupply, handled.'}
+          description="Six services that take an order from a product name and a quantity to goods at your door."
         />
 
-        <div
-          ref={ref}
-          className="mt-14 grid gap-6 lg:mt-20 lg:grid-cols-12"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onFocusCapture={() => setPaused(true)}
-          onBlurCapture={() => setPaused(false)}
-        >
-          {/* Tab list */}
-          <Reveal className="min-w-0 lg:col-span-5">
-            <div
-              role="tablist"
-              aria-label="Services"
-              aria-orientation="vertical"
-              onKeyDown={onKeyDown}
-              className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:-mx-8 sm:px-8 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0"
-            >
-              {services.map((item, i) => {
-                const selected = i === active;
-                return (
+        <Reveal className="mt-14 lg:mt-20">
+          <div ref={ref} className="flex flex-col gap-2 lg:h-[620px] lg:flex-row" role="list">
+            {services.map((service, i) => {
+              const isOpen = i === active;
+              const Icon = service.icon;
+              return (
+                <div
+                  key={service.title}
+                  role="listitem"
+                  onMouseEnter={() => window.matchMedia('(hover: hover)').matches && open(i)}
+                  className={`group relative overflow-hidden rounded-lg bg-ink text-white transition-[flex-grow,height] duration-700 ease-expo lg:h-full ${
+                    isOpen ? 'h-[460px] lg:flex-[6_1_0%]' : 'h-[76px] lg:flex-[1_1_0%]'
+                  }`}
+                >
+                  <img
+                    src={service.image}
+                    alt={service.alt}
+                    loading="lazy"
+                    className={`absolute inset-0 h-full w-full object-cover transition-all duration-1000 ease-expo ${
+                      isOpen ? 'scale-100 opacity-100' : 'scale-110 opacity-25 grayscale'
+                    }`}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className={`absolute inset-0 transition-opacity duration-700 ${
+                      isOpen ? 'bg-gradient-to-t from-ink via-ink/40 to-transparent' : 'bg-ink/70'
+                    }`}
+                  />
+
+                  {/* Collapsed: number + vertical title (desktop) / row title (mobile) */}
                   <button
-                    key={item.title}
-                    ref={(el) => {
-                      tabRefs.current[i] = el;
-                    }}
                     type="button"
-                    role="tab"
-                    id={`service-tab-${i}`}
-                    aria-selected={selected}
-                    aria-controls="service-panel"
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => select(i)}
-                    className={`group relative flex shrink-0 items-center gap-4 overflow-hidden rounded-md border px-4 py-3 text-left transition-colors duration-300 lg:rounded-none lg:border-0 lg:border-b lg:border-ink/10 lg:px-2 lg:py-6 ${
-                      selected ? 'border-ink bg-ink text-white lg:bg-transparent lg:text-ink' : 'border-ink/10 bg-paper text-ink/60 hover:text-ink lg:bg-transparent'
+                    onClick={() => open(i)}
+                    aria-expanded={isOpen}
+                    aria-controls={`service-body-${i}`}
+                    className={`absolute inset-0 z-10 flex items-center gap-4 px-5 text-left transition-opacity duration-500 lg:flex-col lg:items-center lg:justify-between lg:px-0 lg:py-6 ${
+                      isOpen ? 'pointer-events-none opacity-0' : 'opacity-100'
                     }`}
                   >
-                    <span className={`mono-caps transition-colors ${selected ? 'text-accent2 lg:text-accent' : 'text-soft group-hover:text-accent'}`}>
-                      {String(i + 1).padStart(2, '0')}
+                    <span className="mono-caps text-sky">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="font-display text-[18px] font-semibold uppercase lg:rotate-180 lg:text-[20px] lg:[writing-mode:vertical-rl]">
+                      {service.title}
                     </span>
-                    <span className="whitespace-nowrap font-display text-[15px] font-semibold uppercase transition-transform duration-500 ease-expo group-hover:translate-x-1 lg:whitespace-normal lg:text-[24px] xl:text-[28px]">
-                      {item.title}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={`ml-auto hidden h-8 w-8 shrink-0 items-center justify-center rounded transition-all duration-500 ease-expo lg:flex ${
-                        selected ? 'translate-x-0 bg-accent opacity-100' : '-translate-x-3 opacity-0'
-                      }`}
-                    >
-                      <span className="h-2 w-2 bg-white" />
-                    </span>
-                    {/* auto-advance progress */}
-                    <span aria-hidden="true" className="absolute inset-x-0 bottom-0 hidden h-[2px] lg:block">
-                      {selected && (
-                        <span
-                          key={`${active}-${running}`}
-                          className="block h-full origin-left bg-accent"
-                          style={running ? { animation: `progress ${AUTO_MS}ms linear both` } : { transform: 'scaleX(1)' }}
-                        />
-                      )}
+                    <span className="ml-auto flex h-8 w-8 items-center justify-center rounded bg-white/10 lg:ml-0">
+                      <Icon size={16} strokeWidth={1.5} aria-hidden="true" />
                     </span>
                   </button>
-                );
-              })}
-            </div>
-          </Reveal>
 
-          {/* Panel */}
-          <Reveal delay={150} className="min-w-0 lg:col-span-7">
-            <div
-              id="service-panel"
-              role="tabpanel"
-              aria-labelledby={`service-tab-${active}`}
-              className="overflow-hidden rounded-lg border border-line bg-paper"
-            >
-              <div className="relative aspect-[4/3] overflow-hidden bg-mist sm:aspect-[16/10]">
-                <img
-                  key={service.image}
-                  src={service.image}
-                  alt={service.alt}
-                  className="h-full w-full animate-imgin object-cover"
-                />
-                <div className="absolute left-4 top-4 flex items-center gap-2 rounded bg-ink px-3 py-2 text-white">
-                  <Icon size={16} strokeWidth={1.5} aria-hidden="true" />
-                  <span className="mono-caps">{service.short}</span>
+                  {/* Open: full content */}
+                  <div
+                    id={`service-body-${i}`}
+                    className={`absolute inset-x-0 bottom-0 z-10 p-6 transition-all duration-700 ease-expo sm:p-10 ${
+                      isOpen ? 'translate-y-0 opacity-100 delay-200' : 'pointer-events-none translate-y-6 opacity-0'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-md bg-accent">
+                        <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
+                      </span>
+                      <span className="mono-caps text-white/70">
+                        {String(i + 1).padStart(2, '0')} / {String(services.length).padStart(2, '0')} · {service.short}
+                      </span>
+                    </div>
+                    <h3 className="mt-5 font-display text-[30px] uppercase leading-none sm:text-[44px]">{service.title}</h3>
+                    <div className="mt-4 flex flex-wrap items-end justify-between gap-6">
+                      <p className="max-w-lg text-[16px] leading-[1.7] text-white/80 sm:text-[17px]">{service.description}</p>
+                      <Button href="#contact" variant="light" className={isOpen ? '' : 'pointer-events-none'}>
+                        Request a quote
+                      </Button>
+                    </div>
+                    {/* auto-advance progress */}
+                    <span aria-hidden="true" className="mt-6 block h-[2px] w-full bg-white/15">
+                      {running && (
+                        <span key={active} className="block h-full origin-left bg-white" style={{ animation: `progress ${AUTO_MS}ms linear both` }} />
+                      )}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div key={active} className="grid animate-panelin gap-6 p-6 sm:grid-cols-[1fr_auto] sm:items-end sm:p-10">
-                <div>
-                  <p className="mono-caps text-soft">
-                    <span className="text-accent">{String(active + 1).padStart(2, '0')}</span> / {String(services.length).padStart(2, '0')}
-                  </p>
-                  <h3 className="mt-3 font-display text-[28px] uppercase leading-none text-ink sm:text-[36px]">{service.title}</h3>
-                  <p className="mt-4 max-w-lg text-[17px] leading-[1.7] text-muted">{service.description}</p>
-                </div>
-                <Button href="#contact" variant="dark" className="self-start sm:self-end">
-                  Work with us
-                </Button>
-              </div>
-            </div>
-          </Reveal>
-        </div>
+              );
+            })}
+          </div>
+        </Reveal>
       </div>
     </section>
   );

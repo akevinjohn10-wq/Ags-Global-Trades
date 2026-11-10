@@ -7,7 +7,7 @@ export default function MarqueeBand() {
   return (
     <section aria-label="Product categories" className="marquee-pause border-y border-line bg-paper">
       <div className="flex items-stretch">
-        <p className="mono-caps hidden shrink-0 items-center border-r border-line bg-mist px-8 text-muted md:flex lg:px-12">What we trade</p>
+        <p className="mono-caps hidden shrink-0 items-center border-r border-line bg-mist px-8 text-muted md:flex lg:px-12">What we source</p>
         <div className="relative flex-1 overflow-hidden py-5">
           <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-paper to-transparent" />
           <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-paper to-transparent" />

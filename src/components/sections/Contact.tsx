@@ -19,8 +19,8 @@ export default function Contact() {
         <div className="lg:col-span-5">
           <SectionHeading
             eyebrow="Contact"
-            title={'Tell us what you\nneed to move.'}
-            description="Share your product and route, and a member of our team will prepare a tailored quote."
+            title={'Tell us what\nyou need sourced.'}
+            description="Share the product, the quantity and the destination, and a member of our team will come back with a quote."
           />
 
           <Reveal delay={150}>

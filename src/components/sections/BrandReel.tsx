@@ -84,7 +84,7 @@ export default function BrandReel() {
           </div>
           <div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-end gap-4 p-5 text-white sm:justify-between sm:p-8">
             <ul className="hidden flex-wrap gap-2 sm:flex">
-              {['Import', 'Export', 'Sourcing', 'Freight', 'Customs'].map((tag) => (
+              {['Sourcing', 'Verification', 'Quality', 'Shipping', 'Delivery'].map((tag) => (
                 <li key={tag} className="mono-caps rounded border border-white/25 bg-ink/30 px-3 py-1.5 backdrop-blur-sm">
                   {tag}
                 </li>

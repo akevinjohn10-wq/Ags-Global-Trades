@@ -1,27 +1,29 @@
 import {
-  ArrowDownToLine,
-  ArrowUpFromLine,
+  BadgeCheck,
   Blocks,
+  ClipboardList,
   Cog,
-  Container,
   Cpu,
   Eye,
   FileCheck,
   Globe,
+  Handshake,
+  Layers,
   MessageSquare,
   Network,
   Package,
   PackageCheck,
+  PackageSearch,
+  Receipt,
   Search,
   Ship,
   ShieldCheck,
   ShoppingBag,
-  Stamp,
   Truck,
   Users,
   Warehouse,
   Wheat,
-  Layers,
+  Boxes,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -30,16 +32,28 @@ export const navLinks = [
   { label: 'About', href: '#about' },
   { label: 'Services', href: '#services' },
   { label: 'Products', href: '#products' },
+  { label: 'How it works', href: '#process' },
   { label: 'Network', href: '#network' },
-  { label: 'Process', href: '#process' },
   { label: 'Contact', href: '#contact' },
 ];
 
 /** Rotating statements in the hero (change as you scroll). */
 export const heroStatements = [
-  'Reliable import-export solutions that move your goods across borders.',
-  'From sourcing and customs clearance to final delivery.',
-  'One trading partner for every stage of the shipment.',
+  'Tell us the product and the quantity. We find the right supplier.',
+  'Every order is checked before it leaves the factory.',
+  'Shipped to your door through trusted shipping and courier partners.',
+];
+
+/** The company in one paragraph; shown word-by-word as the visitor scrolls. */
+export const missionStatement =
+  'AGS Trade is a sourcing and supply company. You tell us what you need and how many. We find verified suppliers, negotiate the price, check the goods and arrange shipping through established shipping lines and courier partners, so your order arrives ready to sell or use.';
+
+/** Four pillars shown as scattered cards (bluesqx "Vision + Experience" layout). */
+export const pillars: { title: string; text: string; icon: LucideIcon }[] = [
+  { title: 'Source', text: 'Any product, any quantity: matched to manufacturers and suppliers that can deliver it.', icon: PackageSearch },
+  { title: 'Verify', text: 'Supplier checks, samples and quality inspection before you pay for the full order.', icon: BadgeCheck },
+  { title: 'Ship', text: 'Booked with established shipping lines and courier partners, with tracking shared.', icon: Ship },
+  { title: 'Support', text: 'One named contact from first enquiry to the day your goods arrive.', icon: Handshake },
 ];
 
 export interface Service {
@@ -53,52 +67,52 @@ export interface Service {
 
 export const services: Service[] = [
   {
-    title: 'Import Services',
-    short: 'Supplier to warehouse',
-    description: 'Bring goods into your market with end-to-end handling, from supplier to warehouse.',
-    icon: ArrowDownToLine,
-    image: '/images/art/service-import.svg',
-    alt: 'Illustration of a container ship arriving at a port with cranes and stacked containers',
-  },
-  {
-    title: 'Export Services',
-    short: 'New markets, reliably',
-    description: 'Reach new markets with export planning, documentation, and reliable dispatch.',
-    icon: ArrowUpFromLine,
-    image: '/images/art/service-export.svg',
-    alt: 'Illustration of a loaded container ship departing a port',
-  },
-  {
-    title: 'Freight and Logistics',
-    short: 'Sea, air and road',
-    description: 'Sea, air, and road freight coordinated on one plan with live shipment tracking.',
-    icon: Truck,
-    image: '/images/art/service-freight.svg',
-    alt: 'Illustration of freight trucks on a highway seen from above',
-  },
-  {
-    title: 'Customs Clearance',
-    short: 'Cargo keeps moving',
-    description: 'Accurate declarations and duty management that keep your cargo moving across borders.',
-    icon: Stamp,
-    image: '/images/art/service-customs.svg',
-    alt: 'Illustration of customs documents with a cleared stamp',
-  },
-  {
-    title: 'Sourcing and Procurement',
-    short: 'Vetted suppliers',
-    description: 'Vetted supplier networks and quality checks before every order leaves the factory.',
+    title: 'Product Sourcing',
+    short: 'Any product, any quantity',
+    description: 'Tell us what you need and how many. We search our supplier network and manufacturing hubs to find the right maker at the right price.',
     icon: Search,
     image: '/images/art/service-sourcing.svg',
     alt: 'Illustration of factory buildings and loading docks seen from above',
   },
   {
-    title: 'Documentation and Compliance',
-    short: 'Filed on time',
-    description: 'Licences, certificates, and regulatory filings prepared and verified on time.',
-    icon: FileCheck,
+    title: 'Supplier Verification',
+    short: 'Checked before you commit',
+    description: 'We check supplier credentials, certifications and samples before any order is placed, so you only deal with makers who can deliver.',
+    icon: ShieldCheck,
     image: '/images/art/service-documentation.svg',
-    alt: 'Illustration of trade documents and a compliance checklist',
+    alt: 'Illustration of supplier documents and a verification checklist',
+  },
+  {
+    title: 'Quotes & Negotiation',
+    short: 'One clear price',
+    description: 'We negotiate on your behalf and send one clear quote covering the product, packing and shipping to your destination.',
+    icon: Receipt,
+    image: '/images/art/service-quote.svg',
+    alt: 'Illustration of order documents with an approved stamp',
+  },
+  {
+    title: 'Bulk & Custom Orders',
+    short: 'Trial runs to full loads',
+    description: 'From trial quantities to full container loads, including private-label, OEM and made-to-specification products.',
+    icon: Boxes,
+    image: '/images/art/product-general-trading.svg',
+    alt: 'Illustration of pallets of mixed goods ready for dispatch',
+  },
+  {
+    title: 'Quality Inspection',
+    short: 'Right goods, right count',
+    description: 'Pre-shipment checks on quantity, packing and finish, so what arrives matches what you ordered.',
+    icon: ClipboardList,
+    image: '/images/art/product-wholesale.svg',
+    alt: 'Illustration of a warehouse with goods being checked and moved',
+  },
+  {
+    title: 'Shipping & Delivery',
+    short: 'Sea, air and courier',
+    description: 'We book your goods with established shipping lines, freight agents or courier services and share tracking until delivery.',
+    icon: Truck,
+    image: '/images/art/service-export.svg',
+    alt: 'Illustration of a loaded container ship departing a port',
   },
 ];
 
@@ -119,23 +133,23 @@ export const productCategories: ProductCategory[] = [
     icon: Package,
     image: '/images/art/product-general-trading.svg',
     alt: 'Illustration of pallets of mixed goods in a distribution centre',
-    points: ['One contact for mixed orders', 'Sourcing matched to your specification', 'Consolidated shipping where it saves cost'],
+    points: ['One contact for mixed orders', 'Sourcing matched to your specification', 'Combined shipping where it saves cost'],
   },
   {
-    name: 'Import & Export',
-    description: 'End-to-end handling of cross-border shipments, from documentation to delivery.',
-    icon: Container,
+    name: 'Cross-Border Supply',
+    description: 'Products sourced in one country and delivered to buyers in another, with paperwork prepared for both ends.',
+    icon: Globe,
     image: '/images/art/product-import-export.svg',
     alt: 'Illustration of a container yard with stacked shipping containers',
-    points: ['Documentation prepared for both ends of the route', 'Freight booked on a single plan', 'Updates at every milestone'],
+    points: ['Suppliers matched to your destination market', 'Export paperwork prepared with the supplier', 'Shipping booked through trusted partners'],
   },
   {
     name: 'Global Sourcing',
     description: 'Verified suppliers and competitive pricing from manufacturing hubs worldwide.',
-    icon: Globe,
+    icon: Search,
     image: '/images/art/product-global-sourcing.svg',
-    alt: 'Illustration of a dotted world map with sourcing routes from New Delhi',
-    points: ['Suppliers audited before we place an order', 'Pricing negotiated on your behalf', 'Quality checks before dispatch'],
+    alt: 'Illustration of a dotted world map with sourcing routes',
+    points: ['Suppliers checked before we place an order', 'Prices negotiated on your behalf', 'Samples arranged before bulk production'],
   },
   {
     name: 'Wholesale Trading',
@@ -143,7 +157,7 @@ export const productCategories: ProductCategory[] = [
     icon: Warehouse,
     image: '/images/art/product-wholesale.svg',
     alt: 'Illustration of warehouse racking with forklifts in the aisles',
-    points: ['Bulk volumes for distributors and resellers', 'Packing suited to onward distribution', 'Scheduled replenishment shipments'],
+    points: ['Bulk volumes for distributors and resellers', 'Packing suited to onward distribution', 'Repeat orders on a schedule'],
   },
   {
     name: 'Industrial Machinery',
@@ -151,7 +165,7 @@ export const productCategories: ProductCategory[] = [
     icon: Cog,
     image: '/images/art/product-machinery.svg',
     alt: 'Illustration of interlocking machine gears',
-    points: ['Machinery and spare parts sourced to specification', 'Heavy and oversized cargo coordinated', 'Technical documents checked before shipping'],
+    points: ['Machinery and spares sourced to specification', 'Technical documents checked before dispatch', 'Heavy cargo booked with specialist carriers'],
   },
   {
     name: 'Agricultural Commodities',
@@ -159,7 +173,7 @@ export const productCategories: ProductCategory[] = [
     icon: Wheat,
     image: '/images/art/product-agriculture.svg',
     alt: 'Illustration of crop fields, a harvester and grain silos from above',
-    points: ['Produce sourced directly from growers', 'Phytosanitary and origin paperwork handled', 'Shipments timed to harvest cycles'],
+    points: ['Produce sourced directly from growers', 'Origin and quality certificates collected', 'Shipments timed to harvest cycles'],
   },
   {
     name: 'Metals & Minerals',
@@ -167,7 +181,7 @@ export const productCategories: ProductCategory[] = [
     icon: Layers,
     image: '/images/art/product-metals.svg',
     alt: 'Illustration of steel coils and beams ready for shipment',
-    points: ['Grades supplied to your specification', 'Test certificates collected from mills', 'Bulk and break-bulk freight arranged'],
+    points: ['Grades supplied to your specification', 'Mill test certificates collected', 'Bulk and break-bulk shipping arranged'],
   },
   {
     name: 'Consumer Goods',
@@ -175,7 +189,7 @@ export const productCategories: ProductCategory[] = [
     icon: ShoppingBag,
     image: '/images/art/product-consumer-goods.svg',
     alt: 'Illustration of boxed consumer goods on conveyor belts',
-    points: ['Retail-ready packing and labelling', 'Market compliance checked before shipping', 'Flexible order sizes'],
+    points: ['Retail-ready packing and labelling', 'Flexible order sizes', 'Courier shipping for smaller orders'],
   },
   {
     name: 'Construction Materials',
@@ -191,15 +205,15 @@ export const productCategories: ProductCategory[] = [
     icon: Cpu,
     image: '/images/art/product-oem-odm.svg',
     alt: 'Illustration of a circuit board representing custom OEM and ODM manufacturing',
-    points: ['Manufacturers matched to your design', 'Samples and quality checks before production runs', 'White-label packaging coordinated'],
+    points: ['Manufacturers matched to your design', 'Samples approved before production runs', 'Private-label packaging coordinated'],
   },
   {
-    name: 'Supply Chain & Logistics Coordination',
-    description: 'Freight, customs, and tracking managed so shipments arrive on schedule.',
+    name: 'Shipping Coordination',
+    description: 'Your sourced goods booked with established shipping lines and courier partners, door to door.',
     icon: Network,
     image: '/images/art/product-supply-chain.svg',
-    alt: 'Illustration of a supply chain network with goods moving between hubs',
-    points: ['Every leg managed on one plan', 'Customs and tracking in one place', 'A named contact for each shipment'],
+    alt: 'Illustration of a network with goods moving between hubs',
+    points: ['Sea, air or courier chosen to suit the order', 'Tracking shared until delivery', 'A named contact for each shipment'],
   },
 ];
 
@@ -207,61 +221,86 @@ export interface ProcessStep {
   title: string;
   description: string;
   icon: LucideIcon;
+  image: string;
+  alt: string;
 }
 
+/** The order journey, told as the visitor scrolls. */
 export const processSteps: ProcessStep[] = [
   {
-    title: 'Inquiry',
-    description: 'Share your product, volumes, and timeline. We reply with a tailored proposal within one business day.',
+    title: 'Request',
+    description: 'Send us the product, the quantity, your target price and where it needs to go.',
     icon: MessageSquare,
+    image: '/images/art/service-documentation.svg',
+    alt: 'Illustration of an order request with a checklist',
   },
   {
-    title: 'Sourcing',
-    description: 'We identify vetted suppliers, verify quality and pricing, and negotiate terms on your behalf.',
+    title: 'Source',
+    description: 'We shortlist verified suppliers and manufacturers that can make your order.',
     icon: Search,
+    image: '/images/art/service-sourcing.svg',
+    alt: 'Illustration of factories seen from above',
   },
   {
-    title: 'Shipping',
-    description: 'We book freight, prepare customs paperwork, and track every consignment from origin to port.',
+    title: 'Quote',
+    description: 'You receive one clear quote for the goods, packing and shipping. Approve it and we place the order.',
+    icon: FileCheck,
+    image: '/images/art/service-quote.svg',
+    alt: 'Illustration of order documents with an approved stamp',
+  },
+  {
+    title: 'Inspect',
+    description: 'Goods are checked for quantity, packing and finish before they leave the supplier.',
+    icon: Eye,
+    image: '/images/art/product-general-trading.svg',
+    alt: 'Illustration of packed pallets ready for inspection',
+  },
+  {
+    title: 'Ship',
+    description: 'We book sea, air or courier freight with trusted partners and share the tracking with you.',
     icon: Ship,
+    image: '/images/art/service-export.svg',
+    alt: 'Illustration of a container ship leaving port',
   },
   {
-    title: 'Delivery',
-    description: 'Goods clear customs and reach your warehouse on schedule, with proof of delivery on record.',
+    title: 'Deliver',
+    description: 'Your order arrives at your door or warehouse, with proof of delivery on record.',
     icon: PackageCheck,
+    image: '/images/art/service-freight.svg',
+    alt: 'Illustration of delivery trucks on a highway',
   },
 ];
 
 export const valuePoints = [
   {
-    title: 'Verified Supplier Network',
-    description: 'Every partner is audited for quality, certification, and ethical standards before we place an order.',
+    title: 'Verified Suppliers',
+    description: 'Every supplier is checked for quality, certification, and reliability before we place an order.',
     icon: ShieldCheck,
   },
   {
-    title: 'Real-Time Visibility',
-    description: 'Follow each shipment across air, sea, and road, with a clear update at every milestone.',
-    icon: Eye,
+    title: 'Clear, Honest Quotes',
+    description: 'One price for the product, packing and shipping, with no surprises when the goods arrive.',
+    icon: Receipt,
   },
   {
-    title: 'Dedicated Account Team',
-    description: 'A named manager who knows your products, your markets, and your priorities.',
+    title: 'One Point of Contact',
+    description: 'A named manager who knows your products, your quantities, and your deadlines.',
     icon: Users,
   },
   {
-    title: 'Full Compliance',
-    description: 'Customs, tax, and trade documentation handled to the letter, reducing delays and penalties.',
-    icon: FileCheck,
+    title: 'Shipping Handled',
+    description: 'We work with established shipping lines and courier partners and keep you updated until delivery.',
+    icon: Truck,
   },
 ];
 
 export const tickerItems = [
-  'Import services',
-  'Export services',
-  'Freight & logistics',
-  'Customs clearance',
-  'Sourcing & procurement',
-  'Documentation & compliance',
+  'Product sourcing',
+  'Supplier verification',
+  'Bulk & custom orders',
+  'Quality inspection',
+  'Shipping & delivery',
+  'Any product · any quantity',
 ];
 
 export const contactDetails = {

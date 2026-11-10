@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import PageTransition from '@/components/layout/PageTransition';
 import Preloader from '@/components/layout/Preloader';
 import About from '@/components/sections/About';
 import BrandReel from '@/components/sections/BrandReel';
@@ -9,7 +10,8 @@ import CtaBand from '@/components/sections/CtaBand';
 import GlobalReach from '@/components/sections/GlobalReach';
 import Hero from '@/components/sections/Hero';
 import MarqueeBand from '@/components/sections/MarqueeBand';
-import Process from '@/components/sections/Process';
+import Journey from '@/components/sections/Journey';
+import Pillars from '@/components/sections/Pillars';
 import Products from '@/components/sections/Products';
 import Services from '@/components/sections/Services';
 import WhyChooseUs from '@/components/sections/WhyChooseUs';
@@ -44,17 +46,19 @@ export default function App() {
         Skip to content
       </a>
       <Preloader />
+      <PageTransition />
       <ScrollProgress />
       <Navbar />
       <main id="main">
         <Hero />
         <MarqueeBand />
         <About />
+        <Pillars />
         <BrandReel />
         <Services />
         <Products />
+        <Journey />
         <GlobalReach />
-        <Process />
         <WhyChooseUs />
         <CtaBand />
         <Contact />
