@@ -16,7 +16,19 @@ export default function Contact() {
   ];
 
   return (
-    <section id="contact" className="section-y scroll-mt-[72px] bg-surface">
+    <section id="contact" className="section-y relative isolate scroll-mt-24 overflow-hidden bg-deep">
+      {/* World map backdrop */}
+      <img
+        src="/images/world-map.jpg"
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="absolute inset-0 -z-20 h-full w-full object-cover opacity-50"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,#030712_0%,rgba(3,7,18,0.55)_25%,rgba(3,7,18,0.7)_75%,#030712_100%)]"
+      />
       <div className="container-x grid gap-16 lg:grid-cols-[5fr_7fr] lg:gap-20">
         <Reveal>
           <SectionHeading
@@ -61,7 +73,7 @@ export default function Contact() {
         </Reveal>
 
         <Reveal delay={150}>
-          <div className="rounded-[4px] border border-line bg-canvas p-8 sm:p-10">
+          <div className="rounded-3xl border border-white/10 bg-canvas/80 p-7 shadow-[0_30px_80px_-30px_rgba(61,139,255,0.35)] backdrop-blur-xl sm:p-10">
             <InquiryForm />
           </div>
         </Reveal>

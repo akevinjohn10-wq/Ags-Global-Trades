@@ -16,7 +16,7 @@
   h1,
   h2,
   h3 {
-    @apply font-semibold leading-[1.2] tracking-tightest;
+    @apply font-semibold leading-[1.15] tracking-tightest;
   }
 
   :focus-visible {
@@ -31,7 +31,7 @@
   }
 
   .section-y {
-    @apply py-14 sm:py-20 lg:py-[120px];
+    @apply py-16 sm:py-24 lg:py-[130px];
   }
 
   .eyebrow {
@@ -39,11 +39,46 @@
   }
 
   .icon-box {
-    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[4px] border border-line text-accent transition-colors duration-300 sm:h-12 sm:w-12;
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-surface/60 text-accent transition-colors duration-300 sm:h-12 sm:w-12;
   }
 
   .field-input {
-    @apply w-full rounded-[4px] border border-line bg-deep px-4 py-3 text-[16px] text-ink transition-colors duration-200 placeholder:text-muted/70 hover:border-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent aria-[invalid=true]:border-ink aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-ink;
+    @apply w-full rounded-[10px] border border-line bg-deep px-4 py-3 text-[16px] text-ink transition-colors duration-200 placeholder:text-muted/70 hover:border-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent aria-[invalid=true]:border-ink aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-ink;
+  }
+
+  /* Glassy dark card with a soft blue glow on hover (cinematic sections) */
+  .glow-card {
+    @apply relative overflow-hidden rounded-2xl border border-line bg-surface/70 backdrop-blur-sm transition-all duration-500;
+  }
+
+  .glow-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(420px circle at 50% 0%, rgba(61, 139, 255, 0.22), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+
+  .glow-card:hover {
+    @apply -translate-y-1 border-accent/60;
+    box-shadow: 0 20px 60px -20px rgba(61, 139, 255, 0.45);
+  }
+
+  .glow-card:hover::before {
+    opacity: 1;
+  }
+
+  /* Faint blue grid used behind dark sections */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgba(61, 139, 255, 0.07) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(61, 139, 255, 0.07) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 }
 
@@ -69,5 +104,11 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .animate-sway,
+  .animate-marquee,
+  .animate-glow {
+    animation: none !important;
   }
 }

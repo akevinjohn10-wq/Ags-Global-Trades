@@ -4,7 +4,7 @@ import { valuePoints } from '@/data/siteContent';
 
 export default function WhyChooseUs() {
   return (
-    <section id="why-choose-us" className="section-y scroll-mt-[72px] bg-deep">
+    <section id="why-choose-us" className="section-y scroll-mt-24 bg-canvas">
       <div className="container-x">
         <Reveal>
           <SectionHeading
@@ -14,16 +14,16 @@ export default function WhyChooseUs() {
           />
         </Reveal>
 
-        <div className="mt-16 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-14 grid gap-5 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4">
           {valuePoints.map((point, index) => {
             const Icon = point.icon;
             return (
-              <Reveal key={point.title} delay={index * 100}>
-                <div className="border-t border-line pt-8">
-                  <span className="icon-box">
+              <Reveal key={point.title} delay={index * 100} className="h-full">
+                <div className="glow-card group h-full p-8">
+                  <span className="icon-box transition-colors duration-300 group-hover:border-accent">
                     <Icon size={22} strokeWidth={1.5} aria-hidden="true" />
                   </span>
-                  <h3 className="mt-6 text-lg">{point.title}</h3>
+                  <h3 className="mt-8 text-lg text-white">{point.title}</h3>
                   <p className="mt-3 text-[16px] leading-[1.7] text-muted">{point.description}</p>
                 </div>
               </Reveal>

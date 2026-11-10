@@ -4,7 +4,7 @@ import '@/lib/translateFix';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import LegalModal from '@/components/layout/LegalModal';
-import { contactDetails } from '@/data/siteContent';
+import { contactDetails, navLinks } from '@/data/siteContent';
 import { legalDocuments } from '@/data/legal';
 import type { LegalKey } from '@/data/legal';
 
@@ -64,13 +64,34 @@ export default function Footer() {
   const [language, setLanguage] = useState(getCurrentLanguage);
 
   return (
-    <footer className="border-t-[6px] border-accent bg-deep text-ink">
-      <div className="container-x grid gap-10 py-14 md:grid-cols-3 lg:py-16">
+    <footer className="relative overflow-hidden bg-deep text-ink">
+      <div
+        aria-hidden="true"
+        className="h-px w-full bg-gradient-to-r from-transparent via-accent to-transparent"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 left-1/2 h-[360px] w-[800px] -translate-x-1/2 rounded-full bg-accent/10 blur-[120px]"
+      />
+      <div className="container-x relative grid gap-12 py-16 md:grid-cols-2 lg:grid-cols-4 lg:py-20">
         <div>
-          <Logo height={64} />
+          <Logo height={72} />
           <p className="mt-5 max-w-xs text-[15px] leading-[1.7] text-muted">
             Import-export solutions connecting markets worldwide, from sourcing to final delivery.
           </p>
+        </div>
+
+        <div>
+          <p className="eyebrow">Explore</p>
+          <ul className="mt-5 space-y-3 text-[15px] text-muted">
+            {navLinks.map((link) => (
+              <li key={link.href}>
+                <a href={link.href} className="transition-colors duration-200 hover:text-white">
+                  {link.label}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div>
@@ -129,7 +150,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <nav aria-label="Legal" className="border-t border-line">
+      <nav aria-label="Legal" className="relative border-t border-line">
         <ul className="container-x flex flex-wrap items-center justify-center gap-y-2 py-6 text-sm text-muted">
           <li>
             <a href="#about" className="px-4 transition-colors duration-200 hover:text-ink">
@@ -150,7 +171,7 @@ export default function Footer() {
         </ul>
       </nav>
 
-      <div className="border-t border-line">
+      <div className="relative border-t border-line">
         <div className="container-x flex flex-col gap-4 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
           <p>&copy; {year} AGS Global Trade. All rights reserved.</p>
           <label className="flex items-center gap-2">
@@ -162,7 +183,7 @@ export default function Footer() {
                 setLanguage(event.target.value);
                 changeLanguage(event.target.value);
               }}
-              className="rounded-[4px] border border-line bg-deep px-3 py-2 text-sm text-ink focus:border-accent focus:outline-none"
+              className="rounded-full border border-line bg-deep px-4 py-2 text-sm text-ink focus:border-accent focus:outline-none"
             >
               {languages.map((item) => (
                 <option key={item.code} value={item.code}>
