@@ -463,25 +463,6 @@
   to { background-position: 240px 120px; }
 }
 
-/* Inspection scan over the open product photo */
-.scan::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 0;
-  height: 30%;
-  pointer-events: none;
-  background: linear-gradient(to bottom, transparent, rgba(184, 196, 230, 0.28) 85%, rgba(255, 255, 255, 0.85) 100%);
-  animation: scan 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-}
-
-@keyframes scan {
-  0% { transform: translateY(-100%); opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { transform: translateY(340%); opacity: 0; }
-}
-
 /* Footer map: slow drift and a light sweeping over it */
 .map-drift {
   animation: map-drift 36s ease-in-out infinite alternate;
@@ -510,7 +491,6 @@
 @media (prefers-reduced-motion: reduce) {
   .aurora-soft::before,
   .dots-drift,
-  .scan::after,
   .map-drift,
   .map-sweep::after {
     animation: none;

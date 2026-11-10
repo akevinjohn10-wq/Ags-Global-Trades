@@ -9,7 +9,6 @@ import { requestEnquiry } from '@/lib/enquiry';
 /** Numbered accordion of product categories (the unitedcarriers.com "Industries" list). */
 export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
-  const names = productCategories.map((c) => c.name);
 
   return (
     <section id="catalogue" className="aurora-soft section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
@@ -23,26 +22,7 @@ export default function Products() {
           description="Eleven categories we source and supply, each with its own suppliers, checks and shipping needs. Open one to see how we handle it."
         />
 
-      </div>
-
-      {/* Moving strip of category names */}
-      <div aria-hidden="true" className="marquee-pause mt-14 overflow-hidden border-y border-ink/10 py-5 lg:mt-20">
-        <div className="flex w-max animate-marquee [animation-duration:60s]">
-          {[0, 1].map((copy) => (
-            <p key={copy} className="flex shrink-0 items-center whitespace-nowrap font-display text-[34px] font-medium leading-none sm:text-[48px]">
-              {names.map((name, i) => (
-                <span key={name} className="flex items-center">
-                  <span className={i % 2 ? 'text-accent' : 'text-transparent [-webkit-text-stroke:1px_rgba(27,30,36,0.35)]'}>{name}</span>
-                  <span className="mx-6 inline-block h-2 w-2 bg-accent sm:mx-10" />
-                </span>
-              ))}
-            </p>
-          ))}
-        </div>
-      </div>
-
-      <div className="container-x">
-        <ul className="mt-6 border-b border-ink/10 lg:mt-10">
+        <ul className="mt-14 border-b border-ink/10 lg:mt-20">
           {productCategories.map((item, i) => {
             const isOpen = open === i;
             const Icon = item.icon;
@@ -131,23 +111,10 @@ export default function Products() {
 
                         <div
                           data-tilt
-                          className={`scan relative overflow-hidden rounded-lg bg-mist transition-transform duration-300 ease-out lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}
+                          className={`relative overflow-hidden rounded-lg bg-mist transition-transform duration-300 ease-out lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}
                         >
                           {isOpen && (
-                            <>
-                              <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />
-                              {/* Inspection viewfinder */}
-                              <span aria-hidden="true" className="pointer-events-none absolute inset-4">
-                                <span className="absolute left-0 top-0 h-5 w-5 border-l-2 border-t-2 border-white/90" />
-                                <span className="absolute right-0 top-0 h-5 w-5 border-r-2 border-t-2 border-white/90" />
-                                <span className="absolute bottom-0 left-0 h-5 w-5 border-b-2 border-l-2 border-white/90" />
-                                <span className="absolute bottom-0 right-0 h-5 w-5 border-b-2 border-r-2 border-white/90" />
-                              </span>
-                              <span className="mono-caps absolute left-6 top-6 flex items-center gap-2 rounded bg-ink/70 px-2.5 py-1 text-[10px] text-white backdrop-blur">
-                                <span className="h-1.5 w-1.5 animate-blink rounded-full bg-[#5BE38B]" />
-                                Checked · {String(i + 1).padStart(2, '0')}
-                              </span>
-                            </>
+                            <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />
                           )}
                         </div>
                       </div>

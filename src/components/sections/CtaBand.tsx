@@ -1,44 +1,27 @@
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
 import Reveal from '@/components/ui/Reveal';
+import { allHubs } from '@/data/globe';
 import { contactDetails } from '@/data/siteContent';
 
-const PHRASES = ['You name it', 'We source it'];
-
-/** Electric-blue closing band with an oversized moving headline. */
+/** Closing call to action, styled to match the footer: dark navy, dotted map, restrained type. */
 export default function CtaBand() {
-  const row = [...PHRASES, ...PHRASES, ...PHRASES];
-
   return (
-    <section aria-label="Start an order" className="aurora grain relative isolate overflow-hidden bg-accent text-white">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-60">
-        <DotMap theme="blue" labels="none" animated={false} intro={false} fit="cover" density={9} />
-      </div>
-
-      <div className="marquee-pause overflow-hidden border-b border-white/15 py-8 sm:py-12">
-        <div className="flex w-max animate-marquee">
-          {[0, 1].map((copy) => (
-            <p
-              key={copy}
-              aria-hidden={copy === 1}
-              className="flex shrink-0 items-center whitespace-nowrap font-display text-[64px] font-medium leading-none sm:text-[120px] lg:text-[160px]"
-            >
-              {row.map((phrase, i) => (
-                <span key={`${phrase}-${i}`} className="flex items-center">
-                  <span style={i % 2 ? { color: 'transparent', WebkitTextStroke: '2px #fff' } : undefined}>{phrase}</span>
-                  <span aria-hidden="true" className="mx-8 inline-block h-[0.32em] w-[0.32em] bg-white sm:mx-12" />
-                </span>
-              ))}
-            </p>
-          ))}
+    <section aria-label="Start an order" className="aurora grain relative isolate overflow-hidden bg-ink text-white">
+      <div aria-hidden="true" className="map-sweep pointer-events-none absolute inset-0 -z-10 overflow-hidden opacity-40">
+        <div className="map-drift h-full w-full">
+          <DotMap theme="dark" hubs={allHubs} labels="none" intro={false} fit="cover" density={8} />
         </div>
       </div>
+      <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 -z-10 w-2/3 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
 
-      <div className="container-x grid gap-10 py-14 sm:py-20 lg:grid-cols-12 lg:items-end">
+      <div className="container-x grid gap-10 py-20 sm:py-28 lg:grid-cols-12 lg:items-end">
         <Reveal className="lg:col-span-7">
-          <p className="eyebrow eyebrow-light [&::before]:bg-white">Start an order</p>
-          <h2 className="mt-5 text-[32px] font-medium leading-[1.02] sm:text-[48px] lg:text-[60px]">Need a product sourced?</h2>
-          <p className="mt-5 max-w-xl text-lg text-white/75">Tell us the product, the quantity and where it needs to go.</p>
+          <p className="eyebrow eyebrow-light">Start an order</p>
+          <h2 className="mt-5 max-w-2xl font-display text-[30px] font-medium leading-[1.05] sm:text-[44px]">Need a product sourced?</h2>
+          <p className="mt-5 max-w-lg text-[16px] leading-[1.7] text-white/60 sm:text-[17px]">
+            Tell us the product, the quantity and where it needs to go. We will come back with suppliers, prices and a delivery plan.
+          </p>
         </Reveal>
         <Reveal delay={150} className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">
           <Button href="#contact" variant="light">
