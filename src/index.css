@@ -25,12 +25,12 @@
   }
 
   :focus-visible {
-    outline: 2px solid #111317;
+    outline: 2px solid #0229d5;
     outline-offset: 3px;
   }
 
   ::selection {
-    background: #111317;
+    background: #0229d5;
     color: #fff;
   }
 }
@@ -51,15 +51,11 @@
 
   .eyebrow::before {
     content: '';
-    @apply h-1.5 w-1.5 shrink-0 rounded-full bg-accent;
+    @apply h-2 w-2 shrink-0 bg-accent;
   }
 
   .eyebrow-light {
-    @apply text-white/60;
-  }
-
-  .eyebrow-light::before {
-    @apply bg-white/70;
+    @apply text-white/70;
   }
 
   .mono-caps {
@@ -81,7 +77,7 @@
     inset: 0;
     z-index: -1;
     border-radius: inherit;
-    background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(17, 19, 23, 0.06), transparent 65%);
+    background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(2, 41, 213, 0.1), transparent 65%);
     opacity: 0;
     transition: opacity 0.4s ease;
     pointer-events: none;
@@ -99,7 +95,7 @@
       radial-gradient(1.5px 1.5px at 58% 34%, rgba(255, 255, 255, 0.6), transparent 60%),
       radial-gradient(1px 1px at 81% 12%, rgba(255, 255, 255, 0.5), transparent 60%),
       radial-gradient(1px 1px at 91% 64%, rgba(255, 255, 255, 0.4), transparent 60%),
-      radial-gradient(1.5px 1.5px at 22% 88%, rgba(220, 224, 232, 0.6), transparent 60%),
+      radial-gradient(1.5px 1.5px at 22% 88%, rgba(174, 189, 243, 0.6), transparent 60%),
       radial-gradient(1px 1px at 47% 9%, rgba(255, 255, 255, 0.45), transparent 60%),
       radial-gradient(1px 1px at 69% 81%, rgba(255, 255, 255, 0.35), transparent 60%);
     background-size: 340px 340px;
@@ -129,8 +125,8 @@
 /* ---------- Story: open sea and clouds ---------- */
 .sea {
   background:
-    radial-gradient(120% 70% at 50% 0%, rgba(120, 126, 140, 0.35), transparent 60%),
-    linear-gradient(180deg, #2A2E36 0%, #15171C 55%, #08090B 100%);
+    radial-gradient(120% 70% at 50% 0%, rgba(76, 107, 255, 0.55), transparent 60%),
+    linear-gradient(180deg, #0B2BD9 0%, #071C8C 55%, #04114F 100%);
 }
 
 .sea::before {

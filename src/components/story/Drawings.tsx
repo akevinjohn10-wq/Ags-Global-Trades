@@ -4,9 +4,9 @@ import type { ReactElement } from 'react';
 // Palette: ink #1B1E24, accent #0229D5, mist #ECF0F8, sky #AEBDF3, signal #F73636.
 
 const INK = '#1B1E24';
-const BLUE = '#3A3F4A';
+const BLUE = '#0229D5';
 const MIST = '#ECF0F8';
-const SKY = '#C7CCD6';
+const SKY = '#AEBDF3';
 
 export function Crate({ className = '' }: { className?: string }) {
   return (
@@ -59,7 +59,7 @@ export function Forklift({ lift = 0, crate = true, className = '' }: { lift?: nu
       <circle cx="62" cy="198" r="9" fill="#9FA6B4" />
       <circle cx="166" cy="194" r="30" fill={INK} />
       <circle cx="166" cy="194" r="11" fill="#9FA6B4" />
-      <rect x="10" y="150" width="8" height="10" fill="#8A909B" />
+      <rect x="10" y="150" width="8" height="10" fill="#F73636" />
     </svg>
   );
 }
@@ -85,7 +85,7 @@ export function TruckSide({ className = '' }: { className?: string }) {
       {/* cab */}
       <path d="M384 64 L470 64 Q484 64 492 78 L520 130 L520 186 L384 186 Z" fill={INK} />
       <path d="M398 78 L462 78 Q470 78 476 88 L500 130 L398 130 Z" fill={SKY} />
-      <rect x="506" y="150" width="14" height="12" fill="#8A909B" />
+      <rect x="506" y="150" width="14" height="12" fill="#F73636" />
       <rect x="384" y="146" width="136" height="6" fill={BLUE} />
       {/* wheels */}
       {[86, 150, 444].map((cx) => (
@@ -119,7 +119,7 @@ export function TruckTop({ className = '' }: { className?: string }) {
 
 /** Container ship seen from above, heading up the screen. */
 export function ShipTop({ className = '' }: { className?: string }) {
-  const colors = [BLUE, '#F4F6FB', SKY, INK, '#555B67', '#8A909B', '#2A2E36', '#DCE1EB'];
+  const colors = [BLUE, '#F4F6FB', SKY, INK, '#2546E0', '#6F86EA', '#F73636', '#DCE1EB'];
   const rows: ReactElement[] = [];
   for (let r = 0; r < 18; r++) {
     for (let c = 0; c < 4; c++) {

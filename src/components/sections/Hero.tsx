@@ -1,19 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/components/ui/Button';
-import Globe from '@/components/ui/Globe';
+import DotMap from '@/components/ui/DotMap';
 import SplitText from '@/components/ui/SplitText';
+import { allHubs, corridors } from '@/data/globe';
 import { onReady } from '@/lib/ready';
 
+// Which regions light up as the visitor scrolls through the hero
+const STAGES = [['east-asia', 'southeast-asia'], ['middle-east', 'europe', 'africa'], corridors.map((c) => c.id)];
+const STAGE_LABELS = ['Sourcing from Asia', 'Supplying the Gulf, Europe & Africa', 'Delivering worldwide'];
+
 /**
- * Dark hero with an interactive 3D globe. Scrolling "dives" towards the planet:
- * the globe grows, the copy fades, and a blue atmosphere rises into the white page below.
+ * Dark hero over an interactive dotted world map. Scrolling lights up new sourcing routes,
+ * then zooms towards New Delhi while a blue atmosphere rises into the white page below.
  */
 export default function Hero() {
   const sectionRef = useRef<HTMLElement>(null);
-  const globeRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const copyRef = useRef<HTMLDivElement>(null);
   const skyRef = useRef<HTMLDivElement>(null);
   const [entered, setEntered] = useState(false);
+  const [stage, setStage] = useState(0);
+  // Whole world on wide screens; cropped around New Delhi on narrow ones
+  const [wide] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [reduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   useEffect(() => onReady(() => setEntered(true)), []);
@@ -28,18 +36,19 @@ export default function Hero() {
       const rect = el.getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? Math.min(1, Math.max(0, -rect.top / span)) : 0;
-      const e = p * p * (3 - 2 * p);
-      if (globeRef.current) {
-        globeRef.current.style.transform = `translate3d(${(-e * 18).toFixed(2)}%, ${(e * 22).toFixed(2)}%, 0) scale(${(1 + e * 1.9).toFixed(4)})`;
-      }
+      // first 60%: step through the route stages; last 40%: dive into the page
+      setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
+      const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
+      const e = d * d * (3 - 2 * d);
+      if (mapRef.current) mapRef.current.style.transform = `scale(${(1 + e * 1.6).toFixed(4)})`;
       if (copyRef.current) {
-        const c = Math.min(1, p / 0.4);
+        const c = Math.min(1, d / 0.6);
         copyRef.current.style.opacity = String(1 - c);
         copyRef.current.style.transform = `translate3d(0, ${(-c * 60).toFixed(1)}px, 0)`;
         copyRef.current.style.filter = `blur(${(c * 6).toFixed(1)}px)`;
       }
       if (skyRef.current) {
-        const s = Math.min(1, Math.max(0, (p - 0.35) / 0.65));
+        const s = Math.min(1, Math.max(0, (d - 0.25) / 0.75));
         skyRef.current.style.transform = `translate3d(0, ${((1 - s) * 100).toFixed(2)}%, 0)`;
       }
     };
@@ -56,34 +65,49 @@ export default function Hero() {
     };
   }, [reduce]);
 
+  const activeHubs = useMemo(
+    () => corridors.filter((c) => STAGES[stage].includes(c.id)).flatMap((c) => c.hubs.map((h) => h.name)),
+    [stage],
+  );
+
   return (
-    <section
-      id="home"
-      ref={sectionRef}
-      aria-label="Introduction"
-      className={`relative bg-space text-white ${reduce ? '' : 'h-[240vh]'}`}
-    >
+    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[280vh]'}`}>
       <div className={`${reduce ? 'relative' : 'sticky top-0'} h-[100svh] min-h-[640px] overflow-hidden`}>
-        {/* Stars */}
-        <div aria-hidden="true" className="stars pointer-events-none absolute inset-0 opacity-70" />
+        <div aria-hidden="true" className="stars pointer-events-none absolute inset-0 opacity-50" />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_75%_55%,rgba(170,176,190,0.12),transparent_70%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_68%_48%,rgba(2,41,213,0.32),transparent_70%)]"
         />
 
-        {/* Globe */}
+        {/* Interactive map */}
         <div
-          className={`absolute bottom-[-30vw] left-1/2 aspect-square w-[150vw] -translate-x-1/2 transition-opacity duration-[1600ms] sm:bottom-[-34vw] sm:w-[118vw] lg:bottom-auto lg:left-auto lg:right-[-14vw] lg:top-[-4vh] lg:w-[min(78vw,1400px)] lg:translate-x-0 ${
+          className={`absolute inset-x-0 bottom-0 top-[46%] transition-opacity duration-[1400ms] sm:top-[34%] lg:inset-y-0 lg:left-[26%] lg:right-[-2%] ${
             entered ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div ref={globeRef} className="h-full w-full origin-center will-change-transform">
-            <Globe />
+          <div ref={mapRef} className="h-full w-full origin-[62%_45%] will-change-transform">
+            {entered && (
+              <DotMap
+                theme="dark"
+                hubs={allHubs}
+                activeHubs={activeHubs}
+                interactive
+                fit={wide ? 'width' : 'cover'}
+                focusX={0.6}
+                density={wide ? 6.5 : 7.5}
+                label="Interactive dotted world map with routes from New Delhi to sourcing and delivery cities"
+              />
+            )}
           </div>
         </div>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-space via-space/80 to-transparent lg:block" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-space to-transparent" />
 
         {/* Copy */}
-        <div ref={copyRef} className="container-x pointer-events-none relative z-10 flex h-full flex-col justify-start pb-10 pt-32 sm:justify-end sm:pb-16 lg:justify-center lg:pb-0 lg:pt-24">
+        <div
+          ref={copyRef}
+          className="container-x pointer-events-none relative z-10 flex h-full flex-col justify-start pb-10 pt-32 lg:justify-center lg:pb-0 lg:pt-24"
+        >
           <div className={`transition-all duration-1000 ease-expo ${entered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
             <p className="eyebrow eyebrow-light">Sourcing &amp; supply</p>
           </div>
@@ -93,11 +117,9 @@ export default function Hero() {
             delay={150}
             stagger={110}
             text={'Sourced.\nChecked.\nDelivered.'}
-            className="mt-5 text-[15vw] font-medium leading-[0.9] sm:text-[12vw] lg:text-[8.2vw] 2xl:text-[132px] [&_.block:last-child]:text-white/40"
+            className="mt-5 text-[15vw] font-medium leading-[0.92] sm:text-[11vw] lg:text-[7.6vw] 2xl:text-[124px] [&_.block:last-child]:text-sky"
           />
-          <div
-            className={`mt-7 max-w-md transition-all delay-700 duration-1000 ease-expo ${entered ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}
-          >
+          <div className={`mt-7 max-w-md transition-all delay-700 duration-1000 ease-expo ${entered ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0'}`}>
             <p className="text-[16px] leading-[1.65] text-white/75 sm:text-[18px]">
               Tell us the product and the quantity. We find verified suppliers, check the goods and ship them to your door.
             </p>
@@ -112,12 +134,24 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Bottom strip */}
+        {/* Bottom strip: current route stage */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 hidden sm:block">
-          <div className="container-x flex items-center justify-between pb-6">
-            <span className="mono-caps text-white/45">Drag the globe</span>
-            <span className="mono-caps flex items-center gap-3 text-white/70">
-              Scroll to explore
+          <div className="container-x flex items-center justify-between gap-6 pb-6">
+            <div className="flex items-center gap-4">
+              <span className="mono-caps text-white/80">{String(stage + 1).padStart(2, '0')}</span>
+              <span className="flex gap-1.5" aria-hidden="true">
+                {STAGES.map((_, i) => (
+                  <span key={i} className="h-[2px] w-10 overflow-hidden bg-white/15">
+                    <span className={`block h-full origin-left bg-white transition-transform duration-700 ease-expo ${i <= stage ? 'scale-x-100' : 'scale-x-0'}`} />
+                  </span>
+                ))}
+              </span>
+              <span key={stage} className="mono-caps animate-panelin text-white/60" aria-live="polite">
+                {STAGE_LABELS[stage]}
+              </span>
+            </div>
+            <span className="mono-caps hidden items-center gap-3 text-white/60 md:flex">
+              Hover a city · scroll to explore
               <span aria-hidden="true" className="relative block h-5 w-px overflow-hidden bg-white/20">
                 <span className="absolute inset-0 animate-scrollcue bg-white" />
               </span>
@@ -130,7 +164,7 @@ export default function Hero() {
           ref={skyRef}
           aria-hidden="true"
           style={{ transform: 'translate3d(0, 100%, 0)' }}
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full bg-[linear-gradient(to_top,#FFFFFF_0%,#FFFFFF_28%,#E6E8EC_42%,#8D929D_62%,rgba(40,43,50,0.7)_80%,rgba(40,43,50,0)_100%)]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full bg-[linear-gradient(to_top,#FFFFFF_0%,#FFFFFF_28%,#C9D3F5_42%,#4C6BFF_62%,rgba(2,41,213,0.65)_80%,rgba(2,41,213,0)_100%)]"
         />
       </div>
     </section>
