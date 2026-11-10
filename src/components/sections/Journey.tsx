@@ -74,7 +74,7 @@ export default function Journey() {
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="eyebrow">How it works</p>
-              <h2 className="mt-4 text-[30px] font-semibold leading-none text-ink sm:text-[44px] lg:text-[56px]">
+              <h2 className="mt-4 text-[30px] font-medium leading-none text-ink sm:text-[44px] lg:text-[56px]">
                 From request to your door.
               </h2>
             </div>
@@ -89,14 +89,14 @@ export default function Journey() {
             <div className="order-2 flex flex-col justify-center lg:order-1 lg:col-span-5">
               <div key={step} className="animate-panelin">
                 <div className="flex items-center gap-4">
-                  <span className="font-display text-[64px] font-semibold leading-none text-accent sm:text-[96px] lg:text-[128px]">
+                  <span className="font-display text-[64px] font-medium leading-none text-accent sm:text-[96px] lg:text-[128px]">
                     {String(step + 1).padStart(2, '0')}
                   </span>
                   <span className="flex h-12 w-12 items-center justify-center rounded-md bg-ink text-white">
                     <CurrentIcon size={22} strokeWidth={1.5} aria-hidden="true" />
                   </span>
                 </div>
-                <h3 className="mt-3 font-display text-[30px] uppercase leading-none text-ink sm:text-[44px]">{current.title}</h3>
+                <h3 className="mt-3 font-display text-[30px] leading-none text-ink sm:text-[44px]">{current.title}</h3>
                 <p className="mt-4 max-w-md text-[16px] leading-[1.7] text-muted sm:text-[18px]">{current.description}</p>
               </div>
             </div>
@@ -149,7 +149,7 @@ export default function Journey() {
                 className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-[calc(50%+30px)]"
                 style={{ left: reduce ? `${(step / (count - 1)) * 100}%` : '0%' }}
               >
-                <div className="relative flex h-8 w-8 items-center justify-center bg-accent shadow-[0_8px_20px_-6px_rgba(2,41,213,0.7)]">
+                <div className="relative flex h-8 w-8 items-center justify-center bg-accent shadow-[0_8px_20px_-6px_rgba(17,19,23,0.5)]">
                   <span className="h-full w-[3px] bg-white/40" />
                   <span className="absolute h-[3px] w-full bg-white/40" />
                 </div>

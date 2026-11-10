@@ -62,7 +62,7 @@ export default function PageTransition() {
     >
       <div className="flex flex-col items-center gap-5">
         <span className="h-4 w-4 animate-blink bg-white" />
-        <p className="font-display text-[44px] font-semibold uppercase leading-none sm:text-[88px]">{label}</p>
+        <p className="font-display text-[44px] font-medium leading-none sm:text-[88px]">{label}</p>
       </div>
     </div>
   );

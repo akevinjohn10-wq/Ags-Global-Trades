@@ -42,7 +42,7 @@ export default function Faq() {
           <Reveal>
             <p className="eyebrow">Questions</p>
           </Reveal>
-          <SplitText as="h2" text="F.A.Q" className="mt-5 text-[56px] font-semibold leading-none text-ink sm:text-[88px]" />
+          <SplitText as="h2" text="F.A.Q" className="mt-5 text-[56px] font-medium leading-none text-ink sm:text-[88px]" />
           <Reveal delay={150}>
             <p className="mt-5 max-w-xs text-[16px] leading-[1.7] text-muted">Straight answers, so you can order with confidence.</p>
             <p className="mono-caps mt-8 text-soft">Still have questions?</p>

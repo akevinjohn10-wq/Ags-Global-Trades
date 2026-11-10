@@ -109,7 +109,7 @@ export default function InquiryForm() {
       <div className="flex h-full flex-col items-start justify-center gap-6 py-8" role="status">
         <CircleCheck size={40} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
         <div>
-          <h3 className="font-display text-2xl uppercase text-ink">Thank you for your enquiry.</h3>
+          <h3 className="font-display text-2xl text-ink">Thank you for your enquiry.</h3>
           <p className="mt-3 text-[16px] leading-[1.7] text-muted">
             Your message has reached our team. A member of staff will respond within one business day.
           </p>

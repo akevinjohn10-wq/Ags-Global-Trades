@@ -75,7 +75,7 @@ export default function Catalogue() {
               as="h2"
               text={'Any product.\nAny quantity.\nSourced for you.'}
               stagger={70}
-              className="mt-5 text-[38px] font-semibold leading-[0.95] sm:text-[60px] lg:text-[80px] [&_.block:nth-child(-n+2)]:opacity-40"
+              className="mt-5 text-[38px] font-medium leading-[0.95] sm:text-[60px] lg:text-[80px] [&_.block:nth-child(-n+2)]:opacity-40"
             />
           </div>
           <Reveal delay={150} className="lg:col-span-4">
@@ -143,7 +143,7 @@ export default function Catalogue() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <p className={`mono-caps ${tone.faint}`}>{String(i + 1).padStart(2, '0')} / {productCategories.length}</p>
-                        <h3 className="mt-2 font-display text-[26px] uppercase leading-none sm:text-[34px]">{item.name}</h3>
+                        <h3 className="mt-2 font-display text-[26px] leading-none sm:text-[34px]">{item.name}</h3>
                       </div>
                       <Icon size={24} strokeWidth={1.5} aria-hidden="true" className={`shrink-0 ${light ? 'text-accent' : 'text-sky'}`} />
                     </div>

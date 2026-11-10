@@ -37,7 +37,7 @@ export default function LegalModal({ doc, onClose }: LegalModalProps) {
       >
         <div className="flex items-start justify-between gap-4 border-b border-line p-5 sm:p-6">
           <div>
-            <h2 id="legal-title" className="text-xl font-semibold text-ink sm:text-2xl">
+            <h2 id="legal-title" className="text-xl font-medium text-ink sm:text-2xl">
               {doc.title}
             </h2>
             <p className="mt-1 text-sm text-muted">Last updated: {doc.updated}</p>
@@ -57,7 +57,7 @@ export default function LegalModal({ doc, onClose }: LegalModalProps) {
           <p>{doc.intro}</p>
           {doc.sections.map((section) => (
             <section key={section.heading} className="mt-6">
-              <h3 className="text-base font-semibold text-ink">{section.heading}</h3>
+              <h3 className="text-base font-medium text-ink">{section.heading}</h3>
               {section.body.map((paragraph) => (
                 <p key={paragraph} className="mt-2">
                   {paragraph}

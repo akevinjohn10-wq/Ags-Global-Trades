@@ -66,7 +66,7 @@ export default function Contact() {
         <Reveal delay={150} className="lg:col-span-6 lg:col-start-7">
           <div className="rounded-lg border border-line bg-paper p-6 shadow-[0_40px_90px_-50px_rgba(27,30,36,0.35)] sm:p-10">
             <div className="mb-8 flex items-center justify-between border-b border-line pb-6">
-              <p className="font-display text-[22px] font-semibold uppercase text-ink">Request a quote</p>
+              <p className="font-display text-[22px] font-medium text-ink">Request a quote</p>
               <span className="mono-caps flex items-center gap-2 text-soft">
                 <span className="h-2 w-2 animate-blink bg-accent" aria-hidden="true" />
                 Reply in 1 business day

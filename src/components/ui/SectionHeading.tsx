@@ -25,7 +25,7 @@ export default function SectionHeading({
 }: SectionHeadingProps) {
   const titleColor = tone === 'light' ? 'text-white' : 'text-ink';
   const descColor = tone === 'light' ? 'text-white/70' : 'text-muted';
-  const titleClass = `mt-5 text-[32px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[64px] ${titleColor}`;
+  const titleClass = `mt-5 text-[32px] font-medium leading-[1.02] sm:text-[48px] lg:text-[64px] ${titleColor}`;
 
   if (align === 'split') {
     return (

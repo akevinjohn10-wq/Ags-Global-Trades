@@ -18,8 +18,8 @@ interface ButtonProps {
 }
 
 const variantClass: Record<ButtonVariant, { root: string; box: string }> = {
-  dark: { root: 'bg-ink text-white hover:bg-accent', box: 'bg-white/10' },
-  accent: { root: 'bg-accent text-white hover:bg-ink', box: 'bg-white/15' },
+  dark: { root: 'bg-ink text-white hover:bg-ink2', box: 'bg-white/10' },
+  accent: { root: 'bg-accent text-white hover:bg-ink2', box: 'bg-white/15' },
   outline: { root: 'border border-ink/15 bg-transparent text-ink hover:border-ink hover:bg-ink hover:text-white', box: 'bg-ink/5 group-hover:bg-white/10' },
   light: { root: 'bg-white text-ink hover:bg-mist', box: 'bg-ink/5' },
   'outline-light': { root: 'border border-white/30 text-white hover:bg-white hover:text-ink', box: 'bg-white/10 group-hover:bg-ink/5' },
@@ -39,7 +39,7 @@ export default function Button({
 }: ButtonProps) {
   const v = variantClass[variant];
   const text = label ?? (typeof children === 'string' ? children : undefined);
-  const classes = `group inline-flex h-12 items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[15px] font-medium transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
+  const classes = `group inline-flex h-12 items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[15px] font-normal tracking-[-0.01em] transition-colors duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
 
   const content = (
     <>

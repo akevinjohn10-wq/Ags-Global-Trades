@@ -77,7 +77,7 @@ export default function Footer() {
       <div className="container-x flex flex-col gap-8 border-b border-white/10 py-16 sm:py-20 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="eyebrow eyebrow-light">Work with us</p>
-          <p className="mt-5 max-w-2xl font-display text-[30px] font-semibold uppercase leading-[1.05] sm:text-[44px]">
+          <p className="mt-5 max-w-2xl font-display text-[30px] font-medium leading-[1.05] sm:text-[44px]">
             One partner. Any product. Any quantity.
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function Footer() {
       <div className="marquee-pause overflow-hidden border-t border-white/10 py-4">
         <ul className="flex w-max animate-marquee items-center whitespace-nowrap">
           {[...productCategories, ...productCategories].map((c, i) => (
-            <li key={`${c.name}-${i}`} aria-hidden={i >= productCategories.length} className="flex items-center gap-6 pr-6 font-display text-[18px] uppercase text-white/30">
+            <li key={`${c.name}-${i}`} aria-hidden={i >= productCategories.length} className="flex items-center gap-6 pr-6 font-display text-[18px] text-white/30">
               <span className="h-1.5 w-1.5 bg-accent2" aria-hidden="true" />
               {c.name}
             </li>

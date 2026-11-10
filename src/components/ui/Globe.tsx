@@ -158,9 +158,9 @@ export default function Globe({ className = '' }: GlobeProps) {
 
       // Atmosphere glow behind the sphere
       const halo = ctx.createRadialGradient(cx + R * 0.12, cy + R * 0.18, R * 0.94, cx, cy, R * 1.45);
-      halo.addColorStop(0, 'rgba(37,70,224,0.55)');
-      halo.addColorStop(0.3, 'rgba(2,41,213,0.22)');
-      halo.addColorStop(1, 'rgba(2,41,213,0)');
+      halo.addColorStop(0, 'rgba(190,196,208,0.22)');
+      halo.addColorStop(0.3, 'rgba(150,156,170,0.08)');
+      halo.addColorStop(1, 'rgba(150,156,170,0)');
       ctx.fillStyle = halo;
       ctx.beginPath();
       ctx.arc(cx, cy, R * 1.45, 0, TAU);
@@ -168,9 +168,9 @@ export default function Globe({ className = '' }: GlobeProps) {
 
       // Sphere body
       const body = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.08, cx, cy, R);
-      body.addColorStop(0, '#0B1430');
-      body.addColorStop(0.6, '#060A1A');
-      body.addColorStop(1, '#03050D');
+      body.addColorStop(0, '#14161B');
+      body.addColorStop(0.6, '#0B0C10');
+      body.addColorStop(1, '#060709');
       ctx.fillStyle = body;
       ctx.beginPath();
       ctx.arc(cx, cy, R, 0, TAU);
@@ -183,7 +183,7 @@ export default function Globe({ className = '' }: GlobeProps) {
 
       // Graticule
       ctx.lineWidth = 0.7;
-      ctx.strokeStyle = 'rgba(174,189,243,0.07)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
       const tmp = new Float32Array(3);
       for (let lon = -180; lon < 180; lon += 30) {
         ctx.beginPath();
@@ -235,7 +235,7 @@ export default function Globe({ className = '' }: GlobeProps) {
       for (let b = 0; b < BUCKETS; b++) {
         const arr = bucketXY[b];
         const n = bucketN[b];
-        ctx.fillStyle = `rgba(214,224,250,${bucketAlpha[b]})`;
+        ctx.fillStyle = `rgba(226,229,235,${bucketAlpha[b]})`;
         ctx.beginPath();
         for (let i = 0; i < n; i++) {
           const px = arr[i * 3];
@@ -256,9 +256,9 @@ export default function Globe({ className = '' }: GlobeProps) {
 
       // Bright limb (fresnel-style rim)
       const rim = ctx.createRadialGradient(cx, cy, R * 0.8, cx, cy, R);
-      rim.addColorStop(0, 'rgba(37,70,224,0)');
-      rim.addColorStop(0.7, 'rgba(37,70,224,0.16)');
-      rim.addColorStop(1, 'rgba(120,150,255,0.85)');
+      rim.addColorStop(0, 'rgba(200,205,215,0)');
+      rim.addColorStop(0.7, 'rgba(200,205,215,0.08)');
+      rim.addColorStop(1, 'rgba(225,229,236,0.75)');
       ctx.fillStyle = rim;
       ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
       ctx.restore();
@@ -272,7 +272,7 @@ export default function Globe({ className = '' }: GlobeProps) {
 
         // Faint full route
         ctx.lineWidth = 1;
-        ctx.strokeStyle = 'rgba(174,189,243,0.22)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.16)';
         ctx.beginPath();
         let pen = false;
         for (let i = 0; i < ARC_POINTS; i++) {
@@ -303,7 +303,7 @@ export default function Globe({ className = '' }: GlobeProps) {
         if (u <= 1 && arcScreen[i1 * 3 + 2] > 0) {
           const hx = arcScreen[i1 * 3];
           const hy = arcScreen[i1 * 3 + 1];
-          ctx.fillStyle = 'rgba(120,150,255,0.4)';
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
           ctx.beginPath();
           ctx.arc(hx, hy, 6, 0, TAU);
           ctx.fill();
@@ -315,7 +315,7 @@ export default function Globe({ className = '' }: GlobeProps) {
       }
 
       // Hub markers + labels
-      ctx.font = '600 10.5px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+      ctx.font = '600 10.5px "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
       ctx.textBaseline = 'middle';
       const pos = new Float32Array(3);
       for (const hub of hubs) {
@@ -332,11 +332,11 @@ export default function Globe({ className = '' }: GlobeProps) {
         ctx.arc(px, py, (hub.home ? 7 : 5) + pulse * (hub.home ? 22 : 15), 0, TAU);
         ctx.stroke();
 
-        ctx.fillStyle = hub.home ? `rgba(2,41,213,${fade})` : `rgba(255,255,255,${fade})`;
+        ctx.fillStyle = hub.home ? `rgba(255,255,255,${fade})` : `rgba(255,255,255,${fade})`;
         ctx.beginPath();
         ctx.arc(px, py, hub.home ? 5 : 3.6, 0, TAU);
         ctx.fill();
-        ctx.fillStyle = hub.home ? `rgba(255,255,255,${fade})` : `rgba(2,41,213,${fade})`;
+        ctx.fillStyle = hub.home ? `rgba(255,255,255,${fade})` : `rgba(255,255,255,${fade})`;
         ctx.beginPath();
         ctx.arc(px, py, hub.home ? 2.1 : 1.4, 0, TAU);
         ctx.fill();
@@ -348,9 +348,9 @@ export default function Globe({ className = '' }: GlobeProps) {
           const by = py - 26;
           ctx.globalAlpha = fade;
           chipPath(ctx, bx, by, tw + 16, 20, 2);
-          ctx.fillStyle = hub.home ? '#0229D5' : 'rgba(255,255,255,0.92)';
+          ctx.fillStyle = hub.home ? '#FFFFFF' : 'rgba(255,255,255,0.14)';
           ctx.fill();
-          ctx.fillStyle = hub.home ? '#FFFFFF' : '#1B1E24';
+          ctx.fillStyle = hub.home ? '#0A0B0E' : '#E6E8EC';
           ctx.fillText(label, bx + 8, by + 10.5);
           ctx.globalAlpha = 1;
         }

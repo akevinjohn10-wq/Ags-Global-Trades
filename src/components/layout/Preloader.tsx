@@ -103,7 +103,7 @@ export default function Preloader() {
           <span className="sm:hidden">{word}</span>
           <span className="hidden sm:inline">You name it · We source it</span>
         </div>
-        <p className="font-display text-[64px] font-semibold leading-none tabular-nums sm:text-[96px]">
+        <p className="font-display text-[64px] font-medium leading-none tabular-nums sm:text-[96px]">
           {String(count).padStart(3, '0')}
         </p>
       </div>

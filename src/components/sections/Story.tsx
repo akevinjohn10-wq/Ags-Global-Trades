@@ -145,7 +145,7 @@ export default function Story() {
         <div className="absolute inset-0">
           <div ref={r.loadCopy} className="container-x relative z-10 pt-28 sm:pt-32">
             <p className="eyebrow">Our services</p>
-            <p className="mt-4 max-w-xl font-display text-[30px] font-semibold uppercase leading-none text-ink sm:text-[48px]">
+            <p className="mt-4 max-w-xl font-display text-[30px] font-medium leading-none text-ink sm:text-[48px]">
               Every order, packed and on its way.
             </p>
           </div>
@@ -154,7 +154,7 @@ export default function Story() {
           <p
             ref={r.giant}
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 whitespace-nowrap font-display text-[26vw] font-semibold uppercase leading-[0.78] text-transparent [-webkit-text-stroke:2px_#DCE1EB] sm:text-[18vw]"
+            className="pointer-events-none absolute left-0 whitespace-nowrap font-display text-[26vw] font-medium leading-[0.78] text-transparent [-webkit-text-stroke:2px_#DCE1EB] sm:text-[18vw]"
           >
             Our services
           </p>
@@ -171,7 +171,7 @@ export default function Story() {
             <div aria-hidden="true" className="absolute inset-x-0 top-0 h-[3px] bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.5)_0_40px,transparent_40px_80px)]" />
             <div className="container-x flex h-full flex-col gap-6 pb-8 pt-8 lg:flex-row lg:items-start lg:gap-12 lg:pt-12">
               <div ref={r.bandCopy} className="shrink-0 lg:w-[34%]" style={{ opacity: 0 }}>
-                <h2 className="text-[26px] font-semibold leading-[0.98] text-white sm:text-[44px]">
+                <h2 className="text-[26px] font-medium leading-[0.98] text-white sm:text-[44px]">
                   Everything your order needs.
                   <span className="block text-white/40">Under one roof.</span>
                 </h2>
@@ -194,7 +194,7 @@ export default function Story() {
                           <Icon size={22} strokeWidth={1.5} aria-hidden="true" className="text-sky" />
                           <span className="mono-caps text-white/40">{String(i + 1).padStart(2, '0')}</span>
                         </div>
-                        <h3 className="mt-4 font-display text-[22px] uppercase leading-tight">{s.title}</h3>
+                        <h3 className="mt-4 font-display text-[22px] leading-tight">{s.title}</h3>
                         <p className="mt-2 text-[14px] leading-[1.6] text-white/60">{s.description}</p>
                       </article>
                     );
@@ -216,7 +216,7 @@ export default function Story() {
           <div ref={r.roadCopy} className="container-x pointer-events-none relative grid h-full items-center gap-6 sm:grid-cols-2" style={{ opacity: 0 }}>
             <div className="self-start pr-[30%] pt-28 sm:self-center sm:pr-[110px] sm:pt-0">
               <p className="eyebrow">On the road</p>
-              <p className="mt-4 font-display text-[34px] font-semibold uppercase leading-[0.95] text-ink sm:text-[56px]">
+              <p className="mt-4 font-display text-[34px] font-medium leading-[0.95] text-ink sm:text-[56px]">
                 Reliable at <span className="text-soft">every step.</span>
               </p>
             </div>
@@ -239,7 +239,7 @@ export default function Story() {
           <div className="container-x relative flex h-full flex-col items-center justify-between py-28 text-center text-white sm:py-24">
             <div ref={r.seaTitle} style={{ opacity: 0 }}>
               <p className="eyebrow eyebrow-light justify-center [&::before]:bg-white">Why AGS Trade</p>
-              <h2 className="mx-auto mt-4 max-w-3xl text-[34px] font-semibold leading-[0.95] sm:text-[60px] lg:text-[76px]">
+              <h2 className="mx-auto mt-4 max-w-3xl text-[34px] font-medium leading-[0.95] sm:text-[60px] lg:text-[76px]">
                 Sourcing that works as hard as you do.
               </h2>
             </div>
@@ -249,7 +249,7 @@ export default function Story() {
                 return (
                   <li key={v.title} className={`text-left ${i % 2 ? 'sm:text-left' : 'sm:text-right'}`} style={{ opacity: 0 }}>
                     <Icon size={22} strokeWidth={1.5} aria-hidden="true" className={`text-sky ${i % 2 ? '' : 'sm:ml-auto'}`} />
-                    <p className="mt-3 font-display text-[16px] uppercase leading-tight sm:text-[20px]">{v.title}</p>
+                    <p className="mt-3 font-display text-[16px] leading-tight sm:text-[20px]">{v.title}</p>
                     <p className="mt-1.5 text-[13px] leading-[1.55] text-white/70 sm:text-[15px]">{v.text}</p>
                   </li>
                 );
@@ -270,11 +270,11 @@ function StoryStatic() {
       <div className="bg-ink py-20 text-white">
         <div className="container-x">
           <p className="eyebrow eyebrow-light">Our services</p>
-          <h2 className="mt-4 text-[32px] font-semibold leading-none sm:text-[48px]">Everything your order needs. Under one roof.</h2>
+          <h2 className="mt-4 text-[32px] font-medium leading-none sm:text-[48px]">Everything your order needs. Under one roof.</h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {services.map((s) => (
               <article key={s.title} className="border-l border-white/15 pl-5">
-                <h3 className="font-display text-[22px] uppercase">{s.title}</h3>
+                <h3 className="font-display text-[22px]">{s.title}</h3>
                 <p className="mt-2 text-[15px] text-white/65">{s.description}</p>
               </article>
             ))}
@@ -283,11 +283,11 @@ function StoryStatic() {
       </div>
       <div className="bg-accent py-20 text-white">
         <div className="container-x">
-          <h2 className="text-[32px] font-semibold leading-none sm:text-[48px]">Sourcing that works as hard as you do.</h2>
+          <h2 className="text-[32px] font-medium leading-none sm:text-[48px]">Sourcing that works as hard as you do.</h2>
           <ul className="mt-10 grid gap-8 sm:grid-cols-2">
             {VALUES.map((v) => (
               <li key={v.title}>
-                <p className="font-display text-[20px] uppercase">{v.title}</p>
+                <p className="font-display text-[20px]">{v.title}</p>
                 <p className="mt-1 text-white/75">{v.text}</p>
               </li>
             ))}

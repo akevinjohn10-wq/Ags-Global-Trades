@@ -73,7 +73,7 @@ export default function GlobalReach() {
             >
               <div key={corridor.id} className="animate-panelin">
                 <p className="mono-caps text-accent">Region</p>
-                <h3 className="mt-2 font-display text-[26px] uppercase leading-none text-ink">{corridor.name}</h3>
+                <h3 className="mt-2 font-display text-[26px] leading-none text-ink">{corridor.name}</h3>
                 <p className="mt-3 text-[15px] leading-[1.6] text-muted">{corridor.summary}</p>
                 <ul className="mt-4 flex flex-wrap gap-2">
                   <li className="flex items-center gap-1.5 rounded bg-accent px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow text-white">

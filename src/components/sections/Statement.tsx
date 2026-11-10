@@ -54,7 +54,7 @@ export default function Statement() {
           <ScrubText
             text="You name it. We source it. We own the outcome."
             highlight={['source', 'outcome']}
-            className="mt-8 font-display text-[44px] font-semibold uppercase leading-[0.95] tracking-display text-ink sm:text-[72px] lg:text-[92px]"
+            className="mt-8 font-display text-[44px] font-medium leading-[0.95] tracking-display text-ink sm:text-[72px] lg:text-[92px]"
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
             <Reveal className="border-t border-ink/10 pt-5">
@@ -86,7 +86,7 @@ export default function Statement() {
           <ul className="mt-10">
             {FACTS.map((fact, i) => (
               <Reveal as="li" key={fact.label} delay={i * 120} className="border-t border-ink/10 py-6">
-                <p className="font-display text-[64px] font-semibold leading-none text-ink sm:text-[80px]">
+                <p className="font-display text-[64px] font-medium leading-none text-ink sm:text-[80px]">
                   <CountUp to={fact.value} play={isInView} />
                   {fact.suffix}
                 </p>

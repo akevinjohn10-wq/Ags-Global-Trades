@@ -21,7 +21,7 @@ export default function CtaBand() {
             <p
               key={copy}
               aria-hidden={copy === 1}
-              className="flex shrink-0 items-center whitespace-nowrap font-display text-[64px] font-semibold uppercase leading-none sm:text-[120px] lg:text-[160px]"
+              className="flex shrink-0 items-center whitespace-nowrap font-display text-[64px] font-medium leading-none sm:text-[120px] lg:text-[160px]"
             >
               {row.map((phrase, i) => (
                 <span key={`${phrase}-${i}`} className="flex items-center">
@@ -37,7 +37,7 @@ export default function CtaBand() {
       <div className="container-x grid gap-10 py-14 sm:py-20 lg:grid-cols-12 lg:items-end">
         <Reveal className="lg:col-span-7">
           <p className="eyebrow eyebrow-light [&::before]:bg-white">Start an order</p>
-          <h2 className="mt-5 text-[32px] font-semibold leading-[1.02] sm:text-[48px] lg:text-[60px]">Need a product sourced?</h2>
+          <h2 className="mt-5 text-[32px] font-medium leading-[1.02] sm:text-[48px] lg:text-[60px]">Need a product sourced?</h2>
           <p className="mt-5 max-w-xl text-lg text-white/75">Tell us the product, the quantity and where it needs to go.</p>
         </Reveal>
         <Reveal delay={150} className="flex flex-wrap gap-3 lg:col-span-5 lg:justify-end">

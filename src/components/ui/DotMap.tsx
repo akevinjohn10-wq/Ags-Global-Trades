@@ -37,23 +37,23 @@ const LAT_SPAN = LAT_MAX - LAT_MIN;
 const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: string; comet: string; hub: string; home: string; labelBg: string; labelFg: string }> = {
   light: {
     dot: 'rgba(27,30,36,0.2)',
-    tint: '2,41,213',
-    arc: 'rgba(2,41,213,0.4)',
+    tint: '27,30,36',
+    arc: 'rgba(27,30,36,0.45)',
     arcDim: 'rgba(27,30,36,0.08)',
-    comet: '2,41,213',
-    hub: '#0229D5',
-    home: '#0229D5',
+    comet: '27,30,36',
+    hub: '#1B1E24',
+    home: '#1B1E24',
     labelBg: '#1B1E24',
     labelFg: '#FFFFFF',
   },
   dark: {
     dot: 'rgba(255,255,255,0.2)',
-    tint: '111,134,234',
-    arc: 'rgba(174,189,243,0.45)',
+    tint: '200,205,215',
+    arc: 'rgba(220,224,232,0.4)',
     arcDim: 'rgba(255,255,255,0.08)',
-    comet: '174,189,243',
-    hub: '#AEBDF3',
-    home: '#2546E0',
+    comet: '235,238,243',
+    hub: '#E6E8EC',
+    home: '#FFFFFF',
     labelBg: '#FFFFFF',
     labelFg: '#1B1E24',
   },
@@ -66,7 +66,7 @@ const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: 
     hub: '#FFFFFF',
     home: '#FFFFFF',
     labelBg: '#FFFFFF',
-    labelFg: '#0229D5',
+    labelFg: '#1B1E24',
   },
 };
 
@@ -229,7 +229,7 @@ export default function DotMap({
     let placed: { x: number; y: number; w: number; h: number }[] = [];
 
     function drawLabel(text: string, x: number, y: number, pal: (typeof PALETTES)[Theme], strong = false) {
-      ctx!.font = `600 ${layout.w < 640 ? 9 : 11}px "JetBrains Mono", ui-monospace, monospace`;
+      ctx!.font = `600 ${layout.w < 640 ? 9 : 11}px "Geist Mono", ui-monospace, monospace`;
       const t = text.toUpperCase();
       const bw = ctx!.measureText(t).width + 14;
       const bh = layout.w < 640 ? 18 : 22;
@@ -254,7 +254,7 @@ export default function DotMap({
       if (typeof ctx!.roundRect === 'function') ctx!.roundRect(bx, by, bw, bh, 3);
       else ctx!.rect(bx, by, bw, bh);
       ctx!.fill();
-      ctx!.fillStyle = strong ? (live.current.theme === 'blue' ? '#0229D5' : '#FFFFFF') : pal.labelFg;
+      ctx!.fillStyle = strong ? (live.current.theme === 'light' ? '#FFFFFF' : '#0A0B0E') : pal.labelFg;
       ctx!.textBaseline = 'middle';
       ctx!.fillText(t, bx + 7, by + bh / 2 + 0.5);
     }
@@ -363,7 +363,7 @@ export default function DotMap({
         ctx!.arc(x, y, active ? 4 : 3, 0, Math.PI * 2);
         ctx!.fill();
         if (active) {
-          ctx!.fillStyle = live.current.theme === 'light' ? '#fff' : live.current.theme === 'blue' ? '#0229D5' : '#1B1E24';
+          ctx!.fillStyle = live.current.theme === 'light' ? '#fff' : live.current.theme === 'blue' ? '#1B1E24' : '#1B1E24';
           ctx!.beginPath();
           ctx!.arc(x, y, 1.6, 0, Math.PI * 2);
           ctx!.fill();

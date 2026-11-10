@@ -39,11 +39,11 @@ export default function DotWordmark({ text, className = '' }: DotWordmarkProps) 
       o.fillStyle = '#fff';
       o.textBaseline = 'middle';
       let size = h * 0.95;
-      o.font = `600 ${size}px Tomorrow, Inter, sans-serif`;
+      o.font = `600 ${size}px Geist, Inter, sans-serif`;
       const tw = o.measureText(text).width;
       if (tw > w) {
         size *= w / tw;
-        o.font = `600 ${size}px Tomorrow, Inter, sans-serif`;
+        o.font = `600 ${size}px Geist, Inter, sans-serif`;
       }
       const realW = o.measureText(text).width;
       o.fillText(text, (w - realW) / 2, h / 2);
