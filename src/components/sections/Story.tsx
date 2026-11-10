@@ -332,10 +332,9 @@ function StoryFilm() {
               className="absolute bottom-0 left-0"
               style={{ width: unit(CRATE_W), height: unit(CRATE_H) }}
             />
-            {/* truck, with the real AGS logo on the cargo box */}
+            {/* truck */}
             <div ref={truckRef} className="absolute bottom-0 left-0" style={{ width: unit(TRUCK_W), height: unit(1) }}>
               <img src={PART('truck')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
-              <img src="/images/logo.png" alt="" draggable={false} className="absolute" style={{ left: '19%', top: '10%', width: '35%' }} />
             </div>
           </div>
         </div>
@@ -357,12 +356,6 @@ function StoryFilm() {
             style={{ filter: 'drop-shadow(40px 60px 40px rgba(10,22,64,0.35))' }}
           >
             <img src={PART('plane')} alt="" draggable={false} className="block w-full" />
-            <img
-              src="/images/logo.png"
-              alt=""
-              draggable={false}
-              className="absolute left-1/2 top-[27%] w-[15%] -translate-x-1/2 -rotate-90"
-            />
           </div>
           <div
             ref={cloudsFrontRef}
