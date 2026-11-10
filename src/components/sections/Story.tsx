@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Handshake, Receipt, Truck } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { Forklift, ShipTop, TruckSide, TruckTop } from '@/components/story/Drawings';
+import { Forklift, TruckSide, TruckTop } from '@/components/story/Drawings';
 import { services } from '@/data/siteContent';
 
 const VALUES = [
@@ -108,7 +108,7 @@ export default function Story() {
       const seaIn = ease(seg(p, 0.68, 0.74));
       set(r.sea.current, { clipPath: `inset(${((1 - seaIn) * 100).toFixed(2)}% 0 0 0)`, visibility: seaIn > 0 ? 'visible' : 'hidden' });
       const sail = seg(p, 0.71, 1);
-      set(r.ship.current, { transform: `translate3d(-50%, ${(70 - sail * 150).toFixed(2)}vh, 0)` });
+      set(r.ship.current, { transform: `scale(${(1.25 - sail * 0.2).toFixed(4)}) translate3d(0, ${(sail * -3).toFixed(2)}%, 0)` });
       const st = seg(p, 0.74, 0.8) * (1 - seg(p, 0.93, 0.97));
       set(r.seaTitle.current, { opacity: String(st), transform: `translate3d(0, ${(1 - st) * 30}px, 0) scale(${(0.96 + st * 0.04).toFixed(3)})` });
       const items = r.values.current?.children;
@@ -231,10 +231,16 @@ export default function Story() {
 
         {/* ---------- Scene D (open sea) ---------- */}
         <div ref={r.sea} className="sea absolute inset-0 z-30" style={{ clipPath: 'inset(100% 0 0 0)', visibility: 'hidden' }}>
-          <div ref={r.ship} className="absolute left-1/2 top-0 w-[110px] sm:w-[150px]" style={{ transform: 'translate3d(-50%, 70vh, 0)' }}>
-            <div aria-hidden="true" className="absolute left-1/2 top-[96%] h-[60vh] w-[60%] -translate-x-1/2 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.55),transparent)] blur-md" />
-            <ShipTop className="relative block h-auto w-full" />
+          {/* Real port photo that slowly pushes in as you scroll */}
+          <div ref={r.ship} className="absolute inset-0 will-change-transform">
+            <img
+              src="/images/photos/import-export.jpg"
+              alt="Container ship leaving a port at sunrise"
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
           </div>
+          <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,60,0.75),rgba(2,41,213,0.35)_45%,rgba(2,10,60,0.85))]" />
 
           <div className="container-x relative flex h-full flex-col items-center justify-between py-28 text-center text-white sm:py-24">
             <div ref={r.seaTitle} style={{ opacity: 0 }}>

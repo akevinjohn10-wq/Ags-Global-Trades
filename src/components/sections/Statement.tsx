@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Reveal from '@/components/ui/Reveal';
 import ScrubText from '@/components/ui/ScrubText';
 import { useInView } from '@/hooks/useInView';
@@ -34,22 +34,13 @@ function CountUp({ to, play }: { to: number; play: boolean }) {
 /** White statement block right after the hero dive: scroll-lit headline, mission and quick facts. */
 export default function Statement() {
   const { ref, isInView } = useInView<HTMLDivElement>(0.3);
-  const imgRef = useRef<HTMLDivElement>(null);
 
   return (
     <section id="about" className="relative scroll-mt-24 bg-paper pb-20 pt-10 sm:pb-28 lg:pb-36">
       <div className="container-x grid gap-14 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7">
           <Reveal>
-            <div ref={imgRef} className="flex items-end gap-5">
-              <img
-                src="/images/about.jpeg"
-                alt="The AGS Global Trade office in New Delhi"
-                loading="lazy"
-                className="h-24 w-36 rounded-md object-cover sm:h-32 sm:w-48"
-              />
-              <p className="eyebrow pb-1">About AGS Trade</p>
-            </div>
+            <p className="eyebrow">About AGS Trade</p>
           </Reveal>
           <ScrubText
             text="You name it. We source it. We own the outcome."
