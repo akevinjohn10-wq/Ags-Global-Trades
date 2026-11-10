@@ -1,3 +1,4 @@
+import Parallax from '@/components/ui/Parallax';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 
@@ -9,6 +10,7 @@ export default function About() {
       <div aria-hidden="true" className="bg-grid pointer-events-none absolute inset-0 opacity-70" />
       <div className="container-x relative grid items-center gap-12 sm:gap-16 lg:grid-cols-2 lg:gap-20">
         <Reveal>
+          <Parallax speed={0.07}>
           <figure className="relative">
             {/* Blue glow behind the photo */}
             <div
@@ -22,6 +24,7 @@ export default function About() {
               className="relative h-[320px] w-full rounded-3xl border border-white/10 object-cover sm:h-[560px]"
             />
           </figure>
+          </Parallax>
         </Reveal>
 
         <Reveal delay={150}>

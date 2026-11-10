@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import { ArrowUpRight } from 'lucide-react';
 
-type ButtonVariant = 'solid' | 'outline' | 'pill' | 'pill-light';
+type ButtonVariant = 'solid' | 'outline' | 'accent';
 
 interface ButtonProps {
   children: ReactNode;
@@ -14,16 +13,12 @@ interface ButtonProps {
 }
 
 const baseClass =
-  'group inline-flex h-12 items-center justify-center gap-2 text-sm font-semibold tracking-wide transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60';
+  'group inline-flex h-12 items-center justify-center gap-2 rounded-full px-7 font-mono text-[13px] font-medium uppercase tracking-[0.06em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60';
 
 const variantClass: Record<ButtonVariant, string> = {
-  // Dark sections: light button
-  solid: 'rounded-full bg-ink px-7 text-canvas hover:bg-white hover:shadow-[0_0_40px_-8px_rgba(61,139,255,0.8)]',
-  outline: 'rounded-full border border-muted/60 bg-transparent px-7 text-ink hover:border-ink hover:bg-ink hover:text-canvas',
-  // Light hero: dark pill with a blue arrow bubble
-  pill: 'h-14 rounded-full bg-graphite pl-7 pr-2 text-white hover:bg-black',
-  'pill-light':
-    'h-14 rounded-full border border-graphite/20 bg-transparent px-7 text-graphite hover:border-graphite hover:bg-graphite hover:text-white',
+  solid: 'bg-white text-canvas hover:bg-ice hover:shadow-[0_0_44px_-6px_rgba(47,123,255,0.9)]',
+  outline: 'border border-white/25 bg-transparent text-white hover:border-white hover:bg-white hover:text-canvas',
+  accent: 'bg-accent text-white hover:bg-[#4E8FFF] hover:shadow-[0_0_44px_-6px_rgba(47,123,255,0.95)]',
 };
 
 export default function Button({
@@ -36,31 +31,18 @@ export default function Button({
   className = '',
 }: ButtonProps) {
   const classes = `${baseClass} ${variantClass[variant]} ${className}`;
-  const content = (
-    <>
-      {children}
-      {variant === 'pill' && (
-        <span
-          aria-hidden="true"
-          className="ml-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white transition-transform duration-300 group-hover:rotate-45"
-        >
-          <ArrowUpRight size={18} />
-        </span>
-      )}
-    </>
-  );
 
   if (href) {
     return (
       <a href={href} className={classes} onClick={onClick}>
-        {content}
+        {children}
       </a>
     );
   }
 
   return (
     <button type={type} disabled={disabled} onClick={onClick} className={classes}>
-      {content}
+      {children}
     </button>
   );
 }

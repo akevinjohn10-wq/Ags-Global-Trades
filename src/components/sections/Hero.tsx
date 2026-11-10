@@ -1,89 +1,77 @@
 import Reveal from '@/components/ui/Reveal';
 import Button from '@/components/ui/Button';
-import HangingContainer from '@/components/ui/HangingContainer';
-import { productCategories } from '@/data/siteContent';
-
-const strip = productCategories.map((category) => category.name);
+import Globe from '@/components/ui/Globe';
+import SplitText from '@/components/ui/SplitText';
+import Starfield from '@/components/ui/Starfield';
 
 export default function Hero() {
   return (
-    <section
-      id="home"
-      className="relative flex min-h-[100svh] scroll-mt-0 flex-col overflow-hidden bg-paper text-graphite"
-    >
-      {/* Soft vignette so the paper background feels lit, not flat */}
+    <section id="home" className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-canvas">
+      <Starfield />
+
+      {/* Deep blue light pooling behind the globe */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,#ffffff_0%,rgba(244,244,242,0)_62%)]"
+        className="pointer-events-none absolute -right-[20vw] top-[-10vh] -z-10 h-[90vh] w-[80vw] animate-drift rounded-full bg-[radial-gradient(circle,rgba(30,90,230,0.34),rgba(10,30,110,0.12)_45%,transparent_70%)] blur-2xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-canvas to-transparent"
       />
 
-      {/* Hanging containers (decorative, hidden on small screens) */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-[-9vw] top-[8vh] hidden w-[clamp(200px,24vw,360px)] origin-top animate-sway md:block"
-        style={{ ['--sway-from' as string]: '-1.5deg', ['--sway-to' as string]: '2.5deg' }}
-      >
-        <HangingContainer tone="charcoal" />
-      </div>
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-[-9vw] top-[16vh] hidden w-[clamp(200px,24vw,360px)] origin-top animate-sway md:block"
-        style={{ ['--sway-from' as string]: '2deg', ['--sway-to' as string]: '-2.5deg', animationDelay: '-3s' }}
-      >
-        <HangingContainer tone="blue" mark />
+      {/* Globe: large and cropped by the right edge on desktop, behind the copy on mobile */}
+      <div className="pointer-events-none absolute inset-0 -z-[5]">
+        <div className="pointer-events-auto absolute bottom-[-32vw] left-1/2 aspect-square w-[130vw] -translate-x-1/2 animate-fadein sm:bottom-[-22vw] sm:w-[110vw] lg:bottom-auto lg:left-auto lg:right-[-16vw] lg:top-1/2 lg:w-[min(72vw,1250px)] lg:-translate-y-1/2 lg:translate-x-0">
+          <Globe />
+        </div>
       </div>
 
-      <div className="container-x relative z-10 flex flex-1 flex-col items-center justify-center pb-10 pt-36 text-center sm:pt-40">
+      <div className="relative z-10 mx-auto flex w-full max-w-[1800px] flex-1 flex-col justify-center px-5 pb-24 pt-36 sm:px-6 sm:pt-44 lg:px-11 lg:pb-28">
         <Reveal>
-          <p className="inline-flex items-center gap-2 rounded-full border border-graphite/10 bg-white/70 px-4 py-1.5 text-xs font-medium uppercase tracking-eyebrow text-slate backdrop-blur">
-            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-accent" />
+          <p className="eyebrow inline-flex items-center gap-3">
+            <span aria-hidden="true" className="h-px w-8 bg-accent" />
             Import-Export Trading
           </p>
         </Reveal>
 
-        <Reveal delay={100}>
-          <h1 className="mx-auto mt-7 max-w-4xl text-[42px] font-medium leading-[1.02] tracking-display text-graphite sm:text-[68px] lg:text-[88px]">
-            Connecting Markets.
-            <br />
-            Delivering Globally.
-          </h1>
-        </Reveal>
+        <SplitText
+          as="h1"
+          text={'Connecting\nMarkets.\nDelivering\nGlobally.'}
+          delay={250}
+          stagger={110}
+          className="mt-6 text-[38px] font-semibold uppercase leading-[0.98] tracking-display text-white sm:text-[62px] lg:text-[70px] xl:text-[92px]"
+        />
 
-        <Reveal delay={200}>
-          <p className="mx-auto mt-6 max-w-xl text-base leading-[1.65] text-slate sm:mt-8 sm:text-lg">
+        <Reveal delay={900}>
+          <p className="mt-8 max-w-md text-base leading-[1.65] text-muted sm:mt-10 sm:text-lg">
             Reliable import-export solutions that move your goods across borders, from sourcing and customs clearance
             to final delivery.
           </p>
         </Reveal>
 
-        <Reveal delay={300}>
-          <div className="mt-9 flex flex-col items-center gap-3 sm:mt-11 sm:flex-row sm:gap-4">
-            <Button href="#contact" variant="pill">
+        <Reveal delay={1100}>
+          <div className="mt-9 flex flex-col gap-3 sm:mt-11 sm:flex-row sm:gap-4">
+            <Button href="#contact" className="sm:min-w-[170px]">
               Get a Quote
             </Button>
-            <Button href="#services" variant="pill-light">
+            <Button href="#services" variant="outline" className="sm:min-w-[170px]">
               Our Services
             </Button>
           </div>
         </Reveal>
       </div>
 
-      {/* What we trade strip */}
-      <div className="relative z-10 pb-8 sm:pb-10">
-        <p className="text-center text-sm text-slate">What we trade, source, and deliver</p>
-        <div
-          className="mt-5 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
-          aria-label="Product categories"
-        >
-          <ul className="flex w-max animate-marquee gap-12 pr-12 text-lg font-semibold tracking-tightest text-graphite/45 sm:gap-16 sm:pr-16 sm:text-xl">
-            {[...strip, ...strip].map((name, index) => (
-              <li key={`${name}-${index}`} className="whitespace-nowrap" aria-hidden={index >= strip.length}>
-                {name}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      {/* Scroll cue */}
+      <a
+        href="#about"
+        aria-label="Scroll to content"
+        className="absolute bottom-7 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 font-mono text-[11px] uppercase tracking-eyebrow text-muted transition-colors hover:text-white sm:flex"
+      >
+        Scroll
+        <span aria-hidden="true" className="relative block h-12 w-px overflow-hidden bg-white/15">
+          <span className="absolute inset-0 animate-scrollcue bg-accent" />
+        </span>
+      </a>
     </section>
   );
 }

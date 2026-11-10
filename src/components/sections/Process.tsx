@@ -16,11 +16,11 @@ export default function Process() {
           />
         </Reveal>
 
-        <ol className="relative mt-16 grid gap-5 sm:mt-24 md:grid-cols-2 lg:grid-cols-4">
+        <ol className="is-visible relative mt-16 grid gap-5 sm:mt-24 md:grid-cols-2 lg:grid-cols-4">
           {/* Glowing route line behind the cards (desktop) */}
           <span
             aria-hidden="true"
-            className="absolute left-[12%] right-[12%] top-[52px] hidden h-px bg-gradient-to-r from-transparent via-accent/70 to-transparent lg:block"
+            className="draw-line absolute left-[12%] right-[12%] top-[52px] hidden h-px bg-gradient-to-r from-transparent via-accent to-transparent shadow-[0_0_12px_rgba(47,123,255,0.9)] lg:block"
           />
           {processSteps.map((step, index) => {
             const Icon = step.icon;

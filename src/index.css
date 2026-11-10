@@ -19,9 +19,19 @@
     @apply font-semibold leading-[1.15] tracking-tightest;
   }
 
+  h1,
+  h2 {
+    @apply font-display;
+  }
+
   :focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 3px;
+  }
+
+  ::selection {
+    background: rgba(47, 123, 255, 0.45);
+    color: #fff;
   }
 }
 
@@ -31,11 +41,11 @@
   }
 
   .section-y {
-    @apply py-16 sm:py-24 lg:py-[130px];
+    @apply py-20 sm:py-28 lg:py-[140px];
   }
 
   .eyebrow {
-    @apply text-xs font-medium uppercase tracking-eyebrow text-accent;
+    @apply font-mono text-xs font-medium uppercase tracking-eyebrow text-accent;
   }
 
   .icon-box {
@@ -46,7 +56,7 @@
     @apply w-full rounded-[10px] border border-line bg-deep px-4 py-3 text-[16px] text-ink transition-colors duration-200 placeholder:text-muted/70 hover:border-muted focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent aria-[invalid=true]:border-ink aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-ink;
   }
 
-  /* Glassy dark card with a soft blue glow on hover (cinematic sections) */
+  /* Glassy dark card; a blue spotlight follows the cursor (see useSpotlight in App) */
   .glow-card {
     @apply relative overflow-hidden rounded-2xl border border-line bg-surface/70 backdrop-blur-sm transition-all duration-500;
   }
@@ -56,15 +66,15 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: radial-gradient(420px circle at 50% 0%, rgba(61, 139, 255, 0.22), transparent 60%);
+    background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), rgba(47, 123, 255, 0.24), transparent 62%);
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity 0.4s ease;
     pointer-events: none;
   }
 
   .glow-card:hover {
     @apply -translate-y-1 border-accent/60;
-    box-shadow: 0 20px 60px -20px rgba(61, 139, 255, 0.45);
+    box-shadow: 0 24px 70px -24px rgba(47, 123, 255, 0.5);
   }
 
   .glow-card:hover::before {
@@ -74,20 +84,27 @@
   /* Faint blue grid used behind dark sections */
   .bg-grid {
     background-image:
-      linear-gradient(to right, rgba(61, 139, 255, 0.07) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(61, 139, 255, 0.07) 1px, transparent 1px);
+      linear-gradient(to right, rgba(47, 123, 255, 0.08) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(47, 123, 255, 0.08) 1px, transparent 1px);
     background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 72%);
+  }
+
+  /* Outlined display text for the marquee bands */
+  .text-outline {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(156, 201, 255, 0.34);
   }
 }
 
+/* Reveal on scroll */
 .reveal {
   opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(28px);
   transition:
-    opacity 0.8s ease,
-    transform 0.8s ease;
+    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
 .reveal.is-visible {
@@ -95,20 +112,57 @@
   transform: none;
 }
 
+/* Word-by-word headline reveal (SplitText) */
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.split-word > span {
+  display: inline-block;
+  transform: translateY(115%);
+  transition: transform 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.split-root.is-visible .split-word > span {
+  transform: none;
+}
+
+/* Process line that draws itself when scrolled into view */
+.draw-line {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.2s;
+}
+
+.is-visible .draw-line,
+.draw-line.is-visible {
+  transform: scaleX(1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
 
-  .reveal {
+  .reveal,
+  .split-word > span,
+  .draw-line {
     opacity: 1;
     transform: none;
     transition: none;
   }
 
-  .animate-sway,
   .animate-marquee,
-  .animate-glow {
+  .animate-marquee-rev,
+  .animate-glow,
+  .animate-drift,
+  .animate-float,
+  .animate-scrollcue,
+  .animate-fadein {
     animation: none !important;
   }
 }

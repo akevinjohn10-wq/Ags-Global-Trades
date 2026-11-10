@@ -23,12 +23,6 @@ export const navLinks = [
   { label: 'Contact', href: '#contact' },
 ];
 
-export const stats = [
- 
-  { value: '3+', label: 'Years Experience' },
-  { value: '100%', label: 'Compliance Rate' },
-];
-
 export interface Service {
   title: string;
   description: string;
@@ -133,14 +127,14 @@ export const productCategories: ProductCategory[] = [
   {
     name: 'OEM & ODM Procurement',
     description: 'Custom-manufactured and white-label products built to your specifications.',
-    image: 'https://images.pexels.com/photos/3520692/pexels-photo-3520692.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    alt: 'Circuit board with precision electronic components',
+    image: '/images/oem-odm.jpg',
+    alt: 'Illustration of a circuit board representing custom OEM and ODM manufacturing',
   },
   {
     name: 'Supply Chain & Logistics Coordination',
     description: 'Freight, customs, and tracking managed so shipments arrive on schedule.',
-    image: 'https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
-    alt: 'Stacked shipping containers in a logistics yard',
+    image: '/images/supply-chain.jpg',
+    alt: 'Illustration of stacked shipping containers with a glowing freight route',
   },
 ];
 export interface ProcessStep {

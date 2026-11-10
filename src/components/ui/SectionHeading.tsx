@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import SplitText from '@/components/ui/SplitText';
 
 interface SectionHeadingProps {
   eyebrow: string;
@@ -16,9 +17,12 @@ export default function SectionHeading({ eyebrow, title, description, align = 'l
         <span aria-hidden="true" className="h-px w-8 bg-accent" />
         {eyebrow}
       </p>
-      <h2 className="mt-4 text-[30px] font-semibold tracking-display text-ink sm:mt-5 sm:text-5xl lg:text-[56px]">
-        {title}
-      </h2>
+      <SplitText
+        as="h2"
+        text={title}
+        stagger={55}
+        className="mt-4 text-[26px] font-semibold leading-[1.12] tracking-display text-white sm:mt-5 sm:text-4xl lg:text-[46px]"
+      />
       {description && (
         <p className="mt-5 text-base leading-[1.65] text-muted sm:mt-6 sm:text-lg sm:leading-[1.7]">{description}</p>
       )}
