@@ -178,12 +178,6 @@ function StoryFilm() {
       const ih = img.naturalHeight;
       const cover = Math.max(cw / iw, ch / ih);
       ctx!.drawImage(img, (cw - iw * cover) / 2, (ch - ih * cover) / 2, iw * cover, ih * cover);
-      if (cw / ch < 1) {
-        ctx!.fillStyle = 'rgba(5,7,15,0.55)';
-        ctx!.fillRect(0, 0, cw, ch);
-        const fit = (cw / iw) * 1.55;
-        ctx!.drawImage(img, (cw - iw * fit) / 2, (ch - ih * fit) / 2, iw * fit, ih * fit);
-      }
     }
 
     // ---------- layout ----------
