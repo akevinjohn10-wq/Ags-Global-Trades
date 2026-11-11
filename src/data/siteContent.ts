@@ -32,6 +32,7 @@ export const navLinks = [
   { label: 'About', href: '#about' },
   { label: 'Services', href: '#services' },
   { label: 'Products', href: '#catalogue' },
+  { label: 'Catalogues', href: '#catalogues' },
   { label: 'Network', href: '#network' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Contact', href: '#contact' },
@@ -324,3 +325,24 @@ export const contactDetails = {
   linkedin: 'https://www.linkedin.com/in/aditya-dey-07708634a/',
   instagram: 'https://www.instagram.com/agstrades.in/',
 };
+
+export interface Catalogue {
+  slug: string;
+  title: string;
+  /** Contact-form category this catalogue belongs to */
+  category: string;
+  pages: number;
+  summary: string;
+  tags: string[];
+}
+
+/** Product catalogues: five sample pages are public, the full PDF is sent on request. */
+export const catalogues: Catalogue[] = [
+  { slug: 'sofas', title: 'Sofas & Lounge Chairs', category: 'Consumer Goods', pages: 42, summary: 'Folding, compressed and modular sofas, sofa beds and lounge chairs, shipped compressed and ready to use.', tags: ['Furniture', 'Compressed packing'] },
+  { slug: 'oem-sofas', title: 'OEM / ODM Sofas', category: 'OEM & ODM Procurement', pages: 9, summary: 'Sofas made to your design, fabric and size, with full carton and container loading details.', tags: ['Furniture', 'Custom builds'] },
+  { slug: 'beds', title: 'Adjustable Electric Beds', category: 'Consumer Goods', pages: 15, summary: 'Motorised adjustable bases and bed frames with remotes, massage and under-bed lighting options.', tags: ['Furniture', 'Electricals'] },
+  { slug: 'bicycles', title: 'Mountain & City Bicycles', category: 'Consumer Goods', pages: 35, summary: 'Hardtail, full-suspension, city, kids and BMX bikes in steel, aluminium and magnesium frames.', tags: ['Bicycles', '20" to 27.5"'] },
+  { slug: 'vanities', title: 'Bathroom Vanities', category: 'Construction Materials', pages: 64, summary: '24 vanity series plus tallboys, basins and vanity tops, mirrors and shaving cabinets.', tags: ['Bathroom', 'Fit-out'] },
+  { slug: 'wardrobes', title: 'Wardrobes & Closets', category: 'Construction Materials', pages: 28, summary: 'Sliding, pull-out, folding and walk-in closets, modular wardrobes, organisers and door styles.', tags: ['Bedroom', 'Fit-out'] },
+  { slug: 'chandeliers', title: 'Chandeliers & Lighting', category: 'Consumer Goods', pages: 41, summary: 'Sculptural pendants, crystal and statement chandeliers, glass and brass fittings and wall lights.', tags: ['Lighting', 'Hotels & homes'] },
+];

@@ -2,7 +2,7 @@ import { useEffect, useState, type ChangeEvent, type FocusEvent, type FormEvent,
 import { CircleCheck, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { productCategories } from '@/data/siteContent';
-import { ENQUIRY_EVENT } from '@/lib/enquiry';
+import { ENQUIRY_EVENT, type EnquiryDetail } from '@/lib/enquiry';
 import {
   emptyInquiry,
   submitInquiry,
@@ -54,10 +54,12 @@ export default function InquiryForm() {
   // "Enquire about this" buttons elsewhere on the page pre-select the product
   useEffect(() => {
     const onEnquire = (event: Event) => {
-      const product = (event as CustomEvent<string>).detail;
+      const detail = (event as CustomEvent<EnquiryDetail | string>).detail;
+      const product = typeof detail === 'string' ? detail : detail?.product;
+      const message = typeof detail === 'string' ? undefined : detail?.message;
       if (!product) return;
       setStatus('idle');
-      setValues((current) => ({ ...current, productInterest: product }));
+      setValues((current) => ({ ...current, productInterest: product, message: message ?? current.message }));
       setErrors((current) => ({ ...current, productInterest: undefined }));
     };
     window.addEventListener(ENQUIRY_EVENT, onEnquire);

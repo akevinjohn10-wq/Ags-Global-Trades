@@ -500,3 +500,14 @@
 body { top: 0 !important; }
 .goog-te-banner-frame, .skiptranslate iframe, #goog-gt-tt, .goog-te-balloon-frame, .VIpgJd-ZVi9od-ORHb-OEVmcd { display: none !important; }
 .goog-text-highlight { background: none !important; box-shadow: none !important; }
+
+/* ---------- catalogue library ---------- */
+.cat-sheet { transform: translate3d(0, 0, 0) rotate(0deg); transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
+.cat-card:hover .cat-sheet, .cat-card:focus-visible .cat-sheet { transform: translate3d(var(--x), -4px, 0) rotate(var(--r)); }
+.cat-cover { transform: translate3d(0, 0, 0); transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform; }
+.cat-card:hover .cat-cover, .cat-card:focus-visible .cat-cover { transform: translate3d(0, -8px, 0); }
+.cat-viewer { animation: cat-fade 0.35s ease-out both; }
+.cat-page { animation: cat-page 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes cat-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cat-page { from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.985); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cat-sheet, .cat-cover { transition: none; } .cat-viewer, .cat-page { animation: none; } }

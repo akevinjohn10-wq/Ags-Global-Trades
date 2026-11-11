@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import PageTransition from '@/components/layout/PageTransition';
 import Preloader from '@/components/layout/Preloader';
 import Products from '@/components/sections/Products';
+import Catalogues from '@/components/sections/Catalogues';
 import Contact from '@/components/sections/Contact';
 import CtaBand from '@/components/sections/CtaBand';
 import Faq from '@/components/sections/Faq';
@@ -103,6 +104,7 @@ export default function App() {
         <Statement />
         <Story />
         <Products />
+        <Catalogues />
         <GlobalReach />
         <Faq />
         <CtaBand />
