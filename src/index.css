@@ -563,3 +563,24 @@ html.brand-cursor select {
 @media (prefers-reduced-motion: reduce) {
   .nav-cursor-arrow svg { animation: none; }
 }
+
+/* Over links and buttons the cursor becomes a small round "go" badge */
+.nav-cursor-link {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9999;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  pointer-events: none;
+  color: #0a1640;
+  background: radial-gradient(circle at 30% 25%, #ffffff, #dfe7ff 70%, #b7c8f7);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 14px rgba(127, 155, 234, 0.7), 0 6px 16px rgba(10, 22, 64, 0.35);
+  will-change: transform;
+  transition: opacity 0.3s ease;
+}

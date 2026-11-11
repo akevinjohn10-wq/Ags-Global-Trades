@@ -8,33 +8,35 @@ import { useEffect, useRef } from 'react';
  */
 export default function BrandCursor() {
   const arrowRef = useRef<HTMLDivElement>(null);
+  const linkRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const arrow = arrowRef.current;
-    if (!arrow) return;
+    const link = linkRef.current;
+    if (!arrow || !link) return;
     if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.documentElement.classList.add('brand-cursor');
 
     const REST = -45; // at rest the arrow points up and to the left, like a normal pointer
     let tx = -100, ty = -100, px = -100, py = -100;
-    let heading = REST, ang = REST, sc = 1, scT = 1;
+    let heading = REST, ang = REST, sc = 1, scT = 1, hk = 0;
     let still = 0, shown = false, raf = 0, down = false, hover = false;
 
     const kick = () => { if (!raf) raf = requestAnimationFrame(tick); };
     const onMove = (e: PointerEvent) => {
       tx = e.clientX;
       ty = e.clientY;
-      if (!shown) { px = tx; py = ty; shown = true; arrow.style.opacity = '1'; }
+      if (!shown) { px = tx; py = ty; shown = true; arrow.style.opacity = link.style.opacity = '1'; }
       const t = e.target instanceof Element ? e.target : null;
       const native = !!t?.closest('input, textarea, select, [contenteditable="true"]');
       hover = !native && !!t?.closest('a, button, [role="button"], label, summary, [data-magnetic]');
-      arrow.style.visibility = native ? 'hidden' : 'visible';
+      arrow.style.visibility = link.style.visibility = native ? 'hidden' : 'visible';
       kick();
     };
     const onDown = () => { down = true; kick(); };
     const onUp = () => { down = false; kick(); };
-    const onLeave = () => { shown = false; arrow.style.opacity = '0'; };
+    const onLeave = () => { shown = false; arrow.style.opacity = link.style.opacity = '0'; };
 
     let last = performance.now();
     function tick(now: number) {
@@ -48,10 +50,15 @@ export default function BrandCursor() {
       const target = still > 0.35 || reduce ? REST : heading;
       let d = target - ang; d = ((d + 540) % 360) - 180;
       ang += d * Math.min(1, dt * 12);
-      scT = down ? 0.8 : hover ? 0.85 : 1;
+      scT = down ? 0.8 : 1;
       sc += (scT - sc) * Math.min(1, dt * 14);
-      arrow.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${ang.toFixed(2)}deg) scale(${sc.toFixed(3)})`;
-      if (Math.abs(d) > 0.2 || Math.abs(sc - scT) > 0.002 || still < 0.4) raf = requestAnimationFrame(tick);
+      // over links the arrow folds away and a small "go" badge opens in its place
+      const hkT = hover ? 1 : 0;
+      hk += (hkT - hk) * Math.min(1, dt * (reduce ? 60 : 13));
+      const e = hk * hk * (3 - 2 * hk);
+      arrow.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${ang.toFixed(2)}deg) scale(${(sc * (1 - e)).toFixed(3)})`;
+      link.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${(-45 * (1 - e)).toFixed(2)}deg) scale(${(e * (down ? 0.86 : 1)).toFixed(3)})`;
+      if (Math.abs(d) > 0.2 || Math.abs(sc - scT) > 0.002 || Math.abs(hk - hkT) > 0.002 || still < 0.4) raf = requestAnimationFrame(tick);
     }
 
     document.addEventListener('pointermove', onMove, { passive: true });
@@ -70,6 +77,13 @@ export default function BrandCursor() {
 
   // arrowhead with its tip on the pointer; drawn pointing up, rotated in JS
   return (
+    <>
+    <div ref={linkRef} aria-hidden="true" className="nav-cursor-link" style={{ opacity: 0, transform: 'scale(0)' }}>
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M7 17 17 7" />
+        <path d="M8 7h9v9" />
+      </svg>
+    </div>
     <div ref={arrowRef} aria-hidden="true" className="nav-cursor-arrow" style={{ opacity: 0 }}>
       <svg viewBox="0 0 14 16" width="20" height="23">
         <defs>
@@ -82,5 +96,6 @@ export default function BrandCursor() {
         <path d="M7 0.8 L13.2 15 L7 11.4 L0.8 15 Z" fill="url(#nav-cursor-fill)" />
       </svg>
     </div>
+    </>
   );
 }

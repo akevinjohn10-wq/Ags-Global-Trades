@@ -3,6 +3,7 @@ import { Linkedin, Mail, Phone } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
+import { allHubs } from '@/data/globe';
 import { contactDetails, navLinks } from '@/data/siteContent';
 
 /** Header: logo bar and a full-screen "Menu" overlay (unitedcarriers.com style). */
@@ -105,8 +106,8 @@ export default function Navbar() {
           open ? 'visible [clip-path:inset(0_0_0_0)]' : 'invisible [clip-path:inset(0_0_100%_0)]'
         }`}
       >
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] opacity-50">
-          {open && <DotMap theme="dark" labels="none" animated={false} density={8} />}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] opacity-70 [mask-image:linear-gradient(to_bottom,transparent,#000_30%)]">
+          {open && <DotMap theme="night" hubs={allHubs} labels="none" density={8} label="World map with live routes from New Delhi" />}
         </div>
         <div className="container-x relative grid min-h-full gap-12 pb-12 pt-40 lg:grid-cols-12 lg:items-center lg:pt-28">
           <ul className="lg:col-span-6">

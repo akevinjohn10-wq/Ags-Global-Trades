@@ -85,7 +85,7 @@ const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: 
   },
   // night Earth, matching the hero globe: dark textured map, pale-blue land dots, amber routes
   night: {
-    dot: 'rgba(170,190,255,0)', // the textured land replaces the dot grid
+    dot: 'rgba(78,104,180,0.85)', // until the texture is ready (and during the intro sweep)
     tint: '255,200,130',
     arc: 'rgba(255,214,170,0.6)',
     arcDim: 'rgba(255,255,255,0.07)',
@@ -317,7 +317,7 @@ export default function DotMap({
       const pal = PALETTES[live.current.theme];
       const activePts = live.current.hubs.filter(isActive).map((hub) => project(layout, hub.lon, hub.lat));
       activePts.push(project(layout, homeHub.lon, homeHub.lat));
-      const key = `${layout.w}x${layout.h}|${layout.ox.toFixed(1)},${layout.oy.toFixed(1)},${layout.scale.toFixed(4)}|${live.current.theme}|${activePts.map((p) => p.join(',')).join(';')}`;
+      const key = `${layout.w}x${layout.h}|${layout.ox.toFixed(1)},${layout.oy.toFixed(1)},${layout.scale.toFixed(4)}|${live.current.theme}|${tex ? 1 : 0}|${activePts.map((p) => p.join(',')).join(';')}`;
       if (key === dotLayerKey && dotLayer) return;
       dotLayerKey = key;
       dotLayer = dotLayer ?? document.createElement('canvas');
@@ -326,13 +326,27 @@ export default function DotMap({
       const g = dotLayer.getContext('2d')!;
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, layout.w, layout.h);
-      g.fillStyle = pal.dot;
+      const night = live.current.theme === 'night';
+      const r = night ? dotR * 1.3 : dotR;
+      g.fillStyle = night && tex ? '#FFFFFF' : pal.dot;
       g.beginPath();
       for (let i = 0; i < dots.length; i += 3) {
-        g.moveTo(dots[i] + dotR, dots[i + 1]);
-        g.arc(dots[i], dots[i + 1], dotR, 0, Math.PI * 2);
+        g.moveTo(dots[i] + r, dots[i + 1]);
+        g.arc(dots[i], dots[i + 1], r, 0, Math.PI * 2);
       }
       g.fill();
+      if (live.current.theme === 'night' && tex) {
+        // night theme: the dots take their colour from the night-Earth texture (blue land, amber city lights)
+        g.globalCompositeOperation = 'source-in';
+        g.drawImage(tex.base, layout.ox, layout.oy, LON_SPAN * layout.scale, LAT_SPAN * layout.scale);
+        // light up the dots around cities in amber, fading outwards
+        g.globalCompositeOperation = 'source-atop';
+        g.globalAlpha = 0.95;
+        g.drawImage(tex.glow, layout.ox, layout.oy, LON_SPAN * layout.scale, LAT_SPAN * layout.scale);
+        g.drawImage(tex.glow, layout.ox, layout.oy, LON_SPAN * layout.scale, LAT_SPAN * layout.scale);
+        g.globalAlpha = 1;
+        g.globalCompositeOperation = 'source-over';
+      }
       for (let i = 0; live.current.theme !== 'night' && i < dots.length; i += 3) {
         const t = tintFor(dots[i], dots[i + 1], activePts);
         if (t <= 0) continue;
@@ -437,7 +451,6 @@ export default function DotMap({
       // Night-Earth texture under the dots (same look as the hero globe), with gently pulsing city glow
       if (tex && live.current.theme === 'night') {
         const tw = LON_SPAN * layout.scale, th = LAT_SPAN * layout.scale;
-        ctx!.drawImage(tex.base, layout.ox, layout.oy, tw, th);
         const tS = now / 1000;
         ctx!.globalCompositeOperation = 'lighter';
         ctx!.globalAlpha = doAnimate ? 0.55 + 0.25 * Math.sin(tS * 0.8) : 0.6;
