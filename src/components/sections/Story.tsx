@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Handshake, Receipt, Truck } from 'lucide-react';
-import Button from '@/components/ui/Button';
 import { services } from '@/data/siteContent';
 
 const VALUES = [
@@ -16,9 +15,9 @@ const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 
 // Scroll share of each leg
-const P_LOAD = 0.28;
-const P_ROAD = 0.56;
-const P_SEA = 0.82;
+const P_LOAD = 0.3;
+const P_ROAD = 0.6;
+const P_SEA = 0.88;
 const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
 
 // Side-view sprite geometry, in units of the truck's height (H), measured from the cut-outs
@@ -123,7 +122,7 @@ function StoryFilm() {
   const cloudsFrontRef = useRef<HTMLDivElement>(null);
   const bankRef = useRef<HTMLDivElement>(null);
   const bankTopRef = useRef<HTMLDivElement>(null);
-  const copyRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
+  const copyRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
   const serviceRefs = useRef<(HTMLLIElement | null)[]>([]);
   const valueRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [scene, setScene] = useState(0);
@@ -321,7 +320,6 @@ function StoryFilm() {
       const u = seg(p, P_SEA, 1);
       set(skyRef.current, { visibility: p > P_SEA - 0.005 ? 'visible' : 'hidden' });
       if (p > P_SEA - 0.01) {
-        set(skyLightRef.current, { opacity: String(ease(seg(u, 0.3, 0.85))) });
         set(cloudsBackRef.current, { transform: `translate3d(0,${(-55 + u * 70).toFixed(2)}%,0)` });
         set(cloudsFrontRef.current, { transform: `translate3d(0,${(-65 + u * 110).toFixed(2)}%,0)` });
         set(bankRef.current, { transform: `translate3d(0,${(100 - easeOut(seg(u, 0.5, 1)) * 100).toFixed(2)}%,0)` });
@@ -332,7 +330,6 @@ function StoryFilm() {
         [-1, P_LOAD - 0.06],
         [P_LOAD + 0.02, P_ROAD - 0.015],
         [P_ROAD + 0.02, P_SEA - 0.02],
-        [P_SEA + 0.01, P_SEA + 0.1],
       ];
       ranges.forEach(([a, b], k) => {
         const el = copyRefs[k].current;
@@ -375,7 +372,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[700vh] scroll-mt-24 bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[640vh] scroll-mt-24 bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
@@ -424,12 +421,11 @@ function StoryFilm() {
 
         {/* ---------- Leg 4: sky ---------- */}
         <div ref={skyRef} className="absolute inset-0 overflow-hidden" style={{ visibility: 'hidden' }}>
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0B1430_0%,#1C2D63_55%,#3E5BB0_100%)]" />
-          <div ref={skyLightRef} className="absolute inset-0 bg-[linear-gradient(to_bottom,#AEBBDF_0%,#DCE3F3_55%,#FFFFFF_100%)]" style={{ opacity: 0 }} />
+          <div ref={skyLightRef} className="absolute inset-0 bg-[linear-gradient(to_bottom,#C9D1E4_0%,#E4E8F1_55%,#FFFFFF_100%)]" />
           <div ref={cloudsBackRef} aria-hidden="true" className="absolute inset-x-0 top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
           <div ref={cloudsFrontRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
           <div ref={bankRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[150%] will-change-transform" style={{ transform: 'translate3d(0,100%,0)' }}>
-            <div ref={bankTopRef} className="absolute inset-x-0 top-0 h-[40%]" style={{ backgroundSize: '100% 100%' }} />
+            <div ref={bankTopRef} className="absolute inset-x-0 top-0 h-[40%]" style={{ backgroundSize: '100% 100%', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 45%)', maskImage: 'linear-gradient(to bottom, transparent, #000 45%)' }} />
             <div className="absolute inset-x-0 bottom-0 top-[22%] bg-[linear-gradient(to_bottom,rgba(255,255,255,0),#FFFFFF_25%)]" />
           </div>
         </div>
@@ -493,17 +489,6 @@ function StoryFilm() {
               );
             })}
           </ul>
-        </div>
-
-        <div ref={copyRefs[3]} className="container-x absolute inset-x-0 top-0 flex flex-col gap-6 pt-28 sm:pt-32" style={{ opacity: 0 }}>
-          <div>
-            <p className="eyebrow eyebrow-light">Delivered</p>
-            <h3 className="mt-4 max-w-xl font-display text-[30px] font-medium leading-[1.05] sm:text-[48px]">Delivered to your door, as promised.</h3>
-            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-white/75">By sea or courier, we pick the route that fits your deadline and budget, and track it all the way.</p>
-          </div>
-          <Button href="#contact" variant="light" className="pointer-events-auto self-start">
-            Request a quote
-          </Button>
         </div>
 
         {/* Journey indicator */}
