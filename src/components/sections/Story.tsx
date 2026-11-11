@@ -9,15 +9,15 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg plays from the brand film (public/story/001-060.webp, 24 fps)
-const FRAME_COUNT = 60;
+// The sea leg plays from the brand film (public/story/001-097.webp, frames interpolated for a longer, smooth shot)
+const FRAME_COUNT = 97;
 const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 
 // Scroll share of each leg
-const P_LOAD = 0.3;
-const P_ROAD = 0.6;
-const P_SEA = 0.88;
+const P_LOAD = 0.25;
+const P_ROAD = 0.5;
+const P_SEA = 0.9;
 const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
 
 // Side-view sprite geometry, in units of the truck's height (H), measured from the cut-outs
@@ -385,7 +385,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[640vh] scroll-mt-24 bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[745vh] scroll-mt-24 bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />

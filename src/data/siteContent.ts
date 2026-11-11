@@ -122,6 +122,8 @@ export interface ProductCategory {
   icon: LucideIcon;
   image: string;
   alt: string;
+  /** Optional looping animation shown instead of the photo when the row is opened */
+  video?: string;
   /** "Why choose us" points shown when the row is opened */
   points: string[];
 }
@@ -129,6 +131,7 @@ export interface ProductCategory {
 export const productCategories: ProductCategory[] = [
   {
     name: 'General Trading',
+    video: '/videos/general-trading.mp4',
     description: 'A wide range of goods sourced and supplied to match your business needs.',
     icon: Package,
     image: '/images/photos/general-trading.jpg',
@@ -137,6 +140,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Cross-Border Supply',
+    video: '/videos/cross-border-supply.mp4',
     description: 'Products sourced in one country and delivered to buyers in another, with paperwork prepared for both ends.',
     icon: Globe,
     image: '/images/photos/import-export.jpg',
@@ -145,6 +149,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Global Sourcing',
+    video: '/videos/global-sourcing.mp4',
     description: 'Verified suppliers and competitive pricing from manufacturing hubs worldwide.',
     icon: Search,
     image: '/images/photos/global-sourcing.jpg',
@@ -153,6 +158,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Wholesale Trading',
+    video: '/videos/wholesale-trading.mp4',
     description: 'Bulk supply for distributors, retailers, and resellers at scale.',
     icon: Warehouse,
     image: '/images/photos/wholesale-trading.jpg',

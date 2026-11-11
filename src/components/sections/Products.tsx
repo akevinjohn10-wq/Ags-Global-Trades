@@ -114,7 +114,21 @@ export default function Products() {
                           className={`relative overflow-hidden rounded-lg bg-mist transition-transform duration-300 ease-out lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}
                         >
                           {isOpen && (
-                            <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />
+                            item.video ? (
+                              <video
+                                src={item.video}
+                                poster={item.video.replace('.mp4', '.jpg')}
+                                aria-label={item.alt}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                preload="metadata"
+                                className="aspect-video w-full object-cover"
+                              />
+                            ) : (
+                              <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />
+                            )
                           )}
                         </div>
                       </div>
