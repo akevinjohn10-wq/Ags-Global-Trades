@@ -182,6 +182,7 @@ export default function DotMap({
     let target: View = { k: 1, tx: 0, ty: 0 };
     let pinStart = -1;
     let dots = new Float32Array(0); // x, y, delay
+    let dotSizes = new Float32Array(0); // per-dot size factor
     let dotR = 1.5;
     let dotLayer: HTMLCanvasElement | null = null;
     let dotLayerKey = '';
@@ -194,7 +195,7 @@ export default function DotMap({
     let last = performance.now();
     let tex: NightTexture | null = null;
     const unsubTex = live.current.theme === 'night'
-      ? subscribeNightTexture((t) => { tex = t; kick(); }, { lonMin: LON_MIN, latMax: LAT_MAX, lonSpan: LON_SPAN, latSpan: LAT_SPAN })
+      ? subscribeNightTexture((t) => { tex = t; if (base.w > 0) applyView(); kick(); }, { lonMin: LON_MIN, latMax: LAT_MAX, lonSpan: LON_SPAN, latSpan: LAT_SPAN })
       : () => {};
 
     const isActive = (hub: Hub) => {
@@ -245,7 +246,8 @@ export default function DotMap({
 
       // Grid density doubles at each zoom level, so the dots stay steady while panning
       const level = Math.pow(2, Math.floor(Math.log2(view.k) + 1e-6));
-      const stepDeg = gap / base.scale / level;
+      const smoothLand = live.current.theme === 'night' && tex ? tex : null;
+      const stepDeg = (gap * (smoothLand ? 0.8 : 1)) / base.scale / level;
       dotR = Math.max(1, gap * 0.26 * Math.min(1.5, Math.sqrt(view.k / level)));
       const pad = gap * 2;
       const lonFrom = LON_MIN + (-pad - layout.ox) / s;
@@ -257,20 +259,32 @@ export default function DotMap({
       const j0 = Math.max(0, Math.floor((LAT_MAX - latFrom) / stepDeg));
       const j1 = Math.min(Math.ceil(LAT_SPAN / stepDeg), Math.ceil((LAT_MAX - latTo) / stepDeg));
       const list: number[] = [];
-      for (let j = j0; j <= j1; j++) {
-        const lat = LAT_MAX - stepDeg / 2 - j * stepDeg;
+      const sizes: number[] = [];
+      // night theme: a staggered (hex) grid read from the smooth coastline, with dots tapering at the coast
+      const rowStep = smoothLand ? stepDeg * 0.866 : stepDeg;
+      const jj0 = Math.floor((j0 * stepDeg) / rowStep), jj1 = Math.ceil((j1 * stepDeg) / rowStep);
+      for (let j = jj0; j <= jj1; j++) {
+        const lat = LAT_MAX - rowStep / 2 - j * rowStep;
         if (lat <= LAT_MIN) break;
+        const shift = smoothLand && j % 2 ? stepDeg / 2 : 0;
         for (let i = i0; i <= i1; i++) {
-          const l = LON_MIN + stepDeg / 2 + i * stepDeg;
+          const l = LON_MIN + stepDeg / 2 + i * stepDeg + shift;
           if (l >= LON_MIN + LON_SPAN) break;
           const lon = l > 180 ? l - 360 : l;
-          if (!isLand(mask, lon, lat)) continue;
+          let size = 1;
+          if (smoothLand) {
+            const f = smoothLand.landAt(l - LON_MIN, lat);
+            if (f < 0.5) continue;
+            size = 0.55 + 0.45 * Math.min(1, (f - 0.5) / 0.22);
+          } else if (!isLand(mask, lon, lat)) continue;
           const [x, y] = project(layout, lon, lat);
           const delay = ((l - LON_MIN) / LON_SPAN) * 0.75 + Math.random() * 0.25;
           list.push(x, y, delay);
+          sizes.push(size);
         }
       }
       dots = new Float32Array(list);
+      dotSizes = new Float32Array(sizes);
       dotLayerKey = '';
     }
 
@@ -327,12 +341,13 @@ export default function DotMap({
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, layout.w, layout.h);
       const night = live.current.theme === 'night';
-      const r = night ? dotR * 1.3 : dotR;
+      const r = night ? dotR * 1.12 : dotR;
       g.fillStyle = night && tex ? '#FFFFFF' : pal.dot;
       g.beginPath();
       for (let i = 0; i < dots.length; i += 3) {
-        g.moveTo(dots[i] + r, dots[i + 1]);
-        g.arc(dots[i], dots[i + 1], r, 0, Math.PI * 2);
+        const rr = r * (dotSizes[i / 3] ?? 1);
+        g.moveTo(dots[i] + rr, dots[i + 1]);
+        g.arc(dots[i], dots[i + 1], rr, 0, Math.PI * 2);
       }
       g.fill();
       if (live.current.theme === 'night' && tex) {
@@ -453,7 +468,7 @@ export default function DotMap({
         const tw = LON_SPAN * layout.scale, th = LAT_SPAN * layout.scale;
         const tS = now / 1000;
         ctx!.globalCompositeOperation = 'lighter';
-        ctx!.globalAlpha = doAnimate ? 0.55 + 0.25 * Math.sin(tS * 0.8) : 0.6;
+        ctx!.globalAlpha = doAnimate ? 0.28 + 0.14 * Math.sin(tS * 0.8) : 0.3;
         ctx!.drawImage(tex.glow, layout.ox, layout.oy, tw, th);
         ctx!.globalAlpha = 1;
         // twinkling city sparks

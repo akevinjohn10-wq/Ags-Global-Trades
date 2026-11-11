@@ -11,6 +11,8 @@ export interface NightTexture {
   glow: HTMLCanvasElement;
   /** City points (x, y in 0-1 of the texture) used for twinkles */
   sparks: Float32Array;
+  /** Smooth land field: 0 sea, 0.5 coastline, 1 inland. Degrees are offsets from the map window's top-left. */
+  landAt: (lonOffsetDeg: number, latDeg: number) => number;
 }
 
 interface MapWindow { lonMin: number; latMax: number; lonSpan: number; latSpan: number }
@@ -70,6 +72,8 @@ function build(win: MapWindow): NightTexture {
   const left = (-180 - lonMin) * PX_PER_DEG;
   for (const dx of [left - fullW, left, left + fullW]) fg.drawImage(small, dx, -(90 - latMax) * PX_PER_DEG, fullW, fullH);
   const fd = fg.getImageData(0, 0, W, H).data;
+  const field01 = new Float32Array(W * H);
+  for (let i = 0; i < field01.length; i++) field01[i] = fd[i * 4] / 255;
 
   // 2) Land: smooth blue gradient with gentle tonal variation and a thin light rim along the coast
   const base = document.createElement('canvas');
@@ -161,7 +165,11 @@ function build(win: MapWindow): NightTexture {
   gl.filter = 'blur(8px)';
   gl.drawImage(lights, 0, 0, glow.width, glow.height);
 
-  return { base, glow, sparks: new Float32Array(sparks) };
+  const landAt = (lonOff: number, lat: number) => {
+    const x = Math.min(W - 1, Math.max(0, Math.round(lonOff * PX_PER_DEG))), y = Math.min(H - 1, Math.max(0, Math.round((latMax - lat) * PX_PER_DEG)));
+    return field01[y * W + x];
+  };
+  return { base, glow, sparks: new Float32Array(sparks), landAt };
 }
 
 const cache = new Map<string, NightTexture>();
