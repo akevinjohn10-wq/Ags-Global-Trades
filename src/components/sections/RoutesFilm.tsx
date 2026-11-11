@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { LogoMark } from '@/components/ui/Logo';
+import Particles from '@/components/ui/Particles';
 
 /**
  * Trade routes spreading out from India, between the scroll story and "What we source".
@@ -63,8 +64,19 @@ export default function RoutesFilm() {
   const featherY = 'linear-gradient(to bottom, transparent 0%, #000 26%, #000 70%, transparent 100%)';
 
   return (
-    <div aria-label="Trade routes from New Delhi to the world" role="img" className="relative mx-auto -mb-6 w-full max-w-[1800px] sm:-mb-10">
-      <div ref={wrapRef} className="relative aspect-square w-full will-change-transform sm:aspect-[16/9] lg:aspect-[16/8]">
+    <div aria-label="Trade routes from New Delhi to the world" role="img" className="relative w-full isolate overflow-hidden bg-[linear-gradient(to_bottom,rgba(4,10,24,0)_0%,rgba(4,10,24,0.06)_4%,rgba(4,10,24,0.2)_8%,rgba(4,10,24,0.45)_12%,rgba(4,10,24,0.75)_16%,#040A18_22%,#040A18_72%,rgba(4,10,24,0.86)_78%,rgba(4,10,24,0.6)_84%,rgba(4,10,24,0.32)_90%,rgba(4,10,24,0.1)_96%,rgba(4,10,24,0)_100%)] pb-16 sm:pb-24">
+      {/* Living surroundings so the film sits in a moving scene, not a box */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
+        <div className="film-grid absolute -inset-[26px]" />
+        <div className="film-orb absolute left-[8%] top-[28%] h-[46%] w-[34%] bg-[radial-gradient(closest-side,rgba(35,64,142,0.55),transparent)]" />
+        <div className="film-orb absolute right-[6%] top-[38%] h-[50%] w-[38%] bg-[radial-gradient(closest-side,rgba(62,91,176,0.45),transparent)] [animation-delay:-7s]" />
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path className="film-arc" d="M-5 70 Q 20 30 50 52" fill="none" stroke="rgba(127,155,234,0.35)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />
+          <path className="film-arc" d="M105 66 Q 82 28 52 50" fill="none" stroke="rgba(127,155,234,0.35)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" style={{ animationDelay: '-3s' }} />
+        </svg>
+        <Particles count={16} />
+      </div>
+      <div ref={wrapRef} className="relative mx-auto aspect-square w-full max-w-[1800px] will-change-transform sm:aspect-[16/9] lg:aspect-[16/8]">
         <video
           ref={videoRef}
           aria-hidden="true"

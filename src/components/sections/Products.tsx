@@ -12,7 +12,7 @@ export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="catalogue" className="relative isolate z-10 -mt-[28vh] scroll-mt-24 overflow-hidden bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0,rgba(255,255,255,0)_28vh,#FFFFFF_44vh)] pb-20 sm:pb-28 lg:pb-36">
+    <section id="catalogue" className="relative isolate z-10 -mt-[28vh] scroll-mt-24 overflow-hidden pb-20 sm:pb-28 lg:pb-36">
       <RoutesFilm />
       <div className="container-x">
         <SectionHeading
