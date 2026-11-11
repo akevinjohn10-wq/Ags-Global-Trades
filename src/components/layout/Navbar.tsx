@@ -125,7 +125,7 @@ export default function Navbar() {
                   <span className="font-mono text-[13px] lg:text-[14px] text-white/40 transition-colors group-hover:text-accent2">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="font-display text-[34px] font-medium leading-none transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[34px] xl:text-[38px]">
+                  <span className="font-display text-[34px] font-normal leading-none lg:font-light transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[34px] xl:text-[38px]">
                     {link.label}
                   </span>
                 </a>
