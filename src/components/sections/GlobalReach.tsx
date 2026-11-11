@@ -52,8 +52,8 @@ export default function GlobalReach() {
         </Reveal>
 
         <Reveal delay={120} className="mt-6">
-          <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#050B1E] shadow-[0_40px_90px_-50px_rgba(10,22,64,0.8)]">
-            <div className="relative aspect-[2/1] sm:aspect-[2.45/1]">
+          <div className="relative">
+            <div className="relative aspect-[2/1] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_50%,#000_62%,transparent_100%)] sm:aspect-[2.45/1]">
               <DotMap
                 theme="night"
                 hubs={allHubs}

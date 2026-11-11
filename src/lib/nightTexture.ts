@@ -1,6 +1,6 @@
 /**
  * Flat (equirectangular) version of the hero globe's night-Earth look, for the 2D network map:
- * navy sea with a faint grid, blue-grey land with relief, and amber city lights with a soft glow.
+ * blue land with relief and amber city lights with a soft glow, on a clear background (no sea fill).
  * Built once on a canvas and shared. Starts from the built-in land mask, then upgrades itself when the
  * NASA-derived maps (water mask, elevation, night lights) have loaded.
  */
@@ -106,7 +106,8 @@ function build(water: HTMLImageElement | null, topo: HTMLImageElement | null, ni
       r = r + (lr - r) * land; gg = gg + (lgc - gg) * land; b = b + (lb - b) * land;
       // grain
       const gr = (n - 0.5) * 5;
-      px[j] = r + gr; px[j + 1] = gg + gr; px[j + 2] = b + gr; px[j + 3] = 255;
+      // only the land is drawn; the sea stays clear so the map sits straight on the page
+      px[j] = r + gr; px[j + 1] = gg + gr; px[j + 2] = b + gr; px[j + 3] = land * 255;
       // city lights
       const L = lig ? lig[i] / 255 : 0;
       if (L > 0.06) {
@@ -117,20 +118,6 @@ function build(water: HTMLImageElement | null, topo: HTMLImageElement | null, ni
     }
   }
   g.putImageData(img, 0, 0);
-
-  // faint sea grid every 10 degrees
-  g.strokeStyle = 'rgba(120,150,230,0.07)';
-  g.lineWidth = 1;
-  g.beginPath();
-  for (let lon = Math.ceil(lonMin / 10) * 10; lon < lonMin + lonSpan; lon += 10) {
-    const x = (lon - lonMin) * PX_PER_DEG + 0.5;
-    g.moveTo(x, 0); g.lineTo(x, H);
-  }
-  for (let lat = Math.floor(latMax / 10) * 10; lat > latMax - latSpan; lat -= 10) {
-    const y = (latMax - lat) * PX_PER_DEG + 0.5;
-    g.moveTo(0, y); g.lineTo(W, y);
-  }
-  g.stroke();
 
   lg.putImageData(limg, 0, 0);
   g.drawImage(lights, 0, 0);
