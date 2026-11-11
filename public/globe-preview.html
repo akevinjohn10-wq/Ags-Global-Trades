@@ -177,7 +177,7 @@ precision highp float;
 out vec4 outColor;
 uniform vec2 uRes; uniform vec2 uCenter; uniform float uScale;
 uniform vec3 uCam; uniform vec3 uTarget; uniform mat3 uRot; uniform vec3 uSun;
-uniform float uTime; uniform float uReal; uniform float uHasWater; uniform float uHasTopo;
+uniform float uTime; uniform float uReal; uniform float uHasWater; uniform float uHasTopo; uniform float uHasNight;
 uniform sampler2D uLand; uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uWater; uniform sampler2D uTopo;
 const float PI = 3.14159265;
 
@@ -230,67 +230,73 @@ void main(){
   float sd = max(dot(rd, sun), 0.0);
 
   if (hd > 0.0) {
-    // ---- holographic Earth: blue-grey relief, a dot grid over the land, fine mesh over the sea ----
+    // ---- night Earth: near-black globe, continents traced in amber city lights ----
     float ndl = dot(n, sun);
     float m = texture(uLand, tuv).r;
     float coast = (fbm(l*11.0) - 0.5) * 0.22 + (noise(l*48.0) - 0.5) * 0.08;
     float landMask = smoothstep(0.475, 0.525, m + coast);
     float relief = fbm(l*22.0);
+    float cityFb = smoothstep(0.50, 0.78, fbm(l*6.0 + 4.0)) * smoothstep(0.85, 0.6, abs(l.y));
+    float city = cityFb, cityGlow = cityFb * 0.5;
     if (uReal > 0.001) {
       float water = uHasWater > 0.5 ? textureGrad(uWater, tuv, dx, dy).r : 1.0 - landMask;
       float elev = uHasTopo > 0.5 ? textureGrad(uTopo, tuv, dx, dy).r : relief;
       landMask = mix(landMask, 1.0 - water, uReal);
       relief = mix(relief, 0.25 + 0.75*smoothstep(0.0, 0.55, elev) + (relief-0.5)*0.25, uReal);
+      if (uHasNight > 0.5) {
+        float nl = dot(textureGrad(uNight, tuv, dx, dy).rgb, vec3(0.3,0.5,0.2));
+        float ng = dot(textureGrad(uNight, tuv, dx*10.0, dy*10.0).rgb, vec3(0.3,0.5,0.2));   // wide, soft version for the glow
+        city = mix(city, smoothstep(0.03, 0.55, nl), uReal);
+        cityGlow = mix(cityGlow, smoothstep(0.02, 0.35, ng), uReal);
+      }
     }
     float land = landMask;
 
-    // soft studio lighting: key light from the sun side, a cool fill, and a glow lifting the lower limb
-    float key = 0.42 + 0.58 * smoothstep(-0.6, 0.9, ndl);
-    vec3 L2 = normalize(vec3(0.0, -0.85, 0.55));
-    float under = pow(max(dot(reflect(rd, n), L2), 0.0), 18.0);
+    float key = smoothstep(-0.25, 0.9, ndl);            // lit only toward the sun; the rest stays night
+    vec3 sea = vec3(0.006,0.008,0.018);
+    vec3 ground = mix(vec3(0.024,0.026,0.040), vec3(0.080,0.084,0.110), relief);
+    vec3 base = mix(sea, ground, land) * (0.55 + 1.6*key);
 
-    vec3 sea = vec3(0.030,0.036,0.095);
-    vec3 ground = mix(vec3(0.045,0.052,0.110), vec3(0.135,0.150,0.260), relief);
-    vec3 base = mix(sea, ground, land) * key;
-
-    // sea mesh: faint lines every 3 degrees
+    // faint sea mesh keeps a little of the technical feel
     vec2 ll2 = vec2(lon, lat) * (180.0/PI) / 3.0;
     vec2 gw = fwidth(ll2) + 1e-4;
     vec2 gl2 = abs(fract(ll2 - 0.5) - 0.5) / gw;
-    float mesh = (1.0 - min(min(gl2.x, gl2.y), 1.0)) * (1.0 - land);
-    base += vec3(0.30,0.36,0.75) * mesh * 0.10;
+    base += vec3(0.25,0.30,0.55) * (1.0 - min(min(gl2.x, gl2.y), 1.0)) * (1.0 - land) * 0.035;
 
-    // land dots: an even grid (wider in longitude toward the poles)
-    float cs = 0.78 * PI / 180.0;
+    // amber light points on an even grid: dim over all land, bright where the cities are
+    float cs = 0.62 * PI / 180.0;
     float cl = max(cos(lat), 0.05);
     vec2 g = vec2(lon * cl, lat) / cs;
     vec2 id = floor(g); vec2 fr = fract(g) - 0.5;
     float rnd = h31(vec3(id, 3.0));
     float aa = max(fwidth(g.x), fwidth(g.y)) + 1e-4;
-    float dotA = smoothstep(0.21 + aa, 0.21 - aa, length(fr)) * smoothstep(0.35, 0.65, land);
-    dotA *= smoothstep(1.4, 0.5, aa);                     // fade the grid out where it would alias
-    vec3 dotCol = mix(vec3(0.78,0.82,1.0), vec3(0.35,0.95,0.95), step(0.93, rnd));
-    float dotB = (0.30 + 0.70*rnd*rnd) * (0.55 + 0.45*key);
-    float tw = 0.75 + 0.25*sin(uTime*2.0 + rnd*40.0);
-    col = base + dotCol * dotA * dotB * tw * 0.95;
-    col += vec3(0.75,0.80,1.0) * smoothstep(0.35, 0.65, land) * (1.0 - dotA) * 0.02 * key;   // dust between dots
+    float rad = 0.12 + 0.16 * city;
+    float dotA = smoothstep(rad + aa, rad - aa, length(fr)) * smoothstep(0.4, 0.6, land) * smoothstep(1.4, 0.5, aa);
+    float bright = 0.17 + 1.9 * city * (0.5 + 0.5*rnd);
+    float tw = 0.8 + 0.2*sin(uTime*2.2 + rnd*40.0);
+    vec3 amber = mix(vec3(1.0,0.48,0.10), vec3(1.0,0.84,0.55), smoothstep(0.5, 1.0, city*rnd));
+    col = base + amber * dotA * bright * tw;
+    col += vec3(1.0,0.50,0.14) * cityGlow * land * 0.22;                 // warm haze over lit regions
+    col += vec3(1.0,0.45,0.10) * city * land * (1.0 - dotA) * 0.05;
 
-    col += vec3(0.62,0.66,1.0) * under * 0.22;
-    col = toLin(col) * 1.25;   // authored as screen colours; back to linear light for the tone map
+    // drifting grey cloud on the sunlit side
+    vec3 cp = l*3.4 + vec3(uTime*0.010, 0.0, uTime*0.005);
+    float clouds = smoothstep(0.55, 0.85, fbm(cp + fbm(cp*2.1)*0.7));
+    col = mix(col, vec3(0.55,0.58,0.64) * key, clouds * 0.35 * key);
+    col = toLin(col) * 1.3;
 
-    // rim light and atmosphere
+    // thin cool rim, bright where the sun grazes the edge
     float mu = max(dot(n, -rd), 0.0);
-    float fres = pow(1.0 - mu, 2.6);
-    col = col * (1.0 - fres*0.3) + vec3(0.30,0.36,0.95) * fres * (0.30 + 0.45*smoothstep(-0.4,0.6,ndl));
-    col += vec3(0.80,0.85,1.0) * pow(1.0-mu, 7.0) * pow(sd, 4.0) * 2.2;
-    col += vec3(0.10,0.12,0.35) * pow(1.0-mu, 1.3) * 0.12;
+    float fres = pow(1.0 - mu, 4.0);
+    col = col * (1.0 - fres*0.3) + mix(vec3(0.20,0.30,0.70), vec3(0.75,0.85,1.0), smoothstep(0.0, 0.7, ndl)) * fres * (0.04 + 1.1*smoothstep(-0.2,0.7,ndl));
+    col += vec3(0.90,0.95,1.0) * pow(1.0-mu, 8.0) * pow(sd, 3.0) * 2.5;
   } else {
     float hgt = dmin - 1.0;
     vec3 pc = normalize(ro + rd*(-b));
     float sunSide = smoothstep(-0.45, 0.6, dot(pc, sun));
     float front = step(0.0, -b);
     float halo = exp(-hgt*42.0) * (0.15 + 2.3*sunSide) + exp(-hgt*10.0) * 0.10 * (0.25 + sunSide);
-    col += mix(vec3(0.30,0.36,0.95), vec3(0.55,0.62,1.0), sunSide) * (halo * 0.32) * front;
+    col += mix(vec3(0.12,0.18,0.45), vec3(0.70,0.80,1.0), sunSide) * (halo * 0.22) * front;
     col += vec3(0.88,0.94,1.0) * exp(-hgt*70.0) * pow(sd, 3.0) * 2.0 * front;
     col += vec3(1.0, 0.97, 0.92) * pow(sd, 2600.0) * 40.0 + vec3(0.55,0.7,1.0) * pow(sd, 70.0) * 0.5 + vec3(0.3,0.45,0.9) * pow(sd, 8.0) * 0.10;
   }
@@ -321,7 +327,7 @@ gl.useProgram(prog);
 const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
 gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
 const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-const U = {}; ['uRes','uCenter','uScale','uCam','uTarget','uRot','uSun','uTime','uLand','uDay','uNight','uWater','uTopo','uReal','uHasWater','uHasTopo'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+const U = {}; ['uRes','uCenter','uScale','uCam','uTarget','uRot','uSun','uTime','uLand','uDay','uNight','uWater','uTopo','uReal','uHasWater','uHasTopo','uHasNight'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
 const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
 
 function makeTex(unit, source, opts = {}) {
@@ -356,10 +362,11 @@ function loadImg(name) {
     tryNext();
   });
 }
-const R_STATE = { real: 0, target: 0, water: 0, topo: 0 };
+const R_STATE = { real: 0, target: 0, water: 0, topo: 0, night: 0 };
 loadImg('earth-water.png').then(w => {
   makeTex(3, w); R_STATE.water = 1; R_STATE.target = 1;
   loadImg('earth-topology.png').then(t => { makeTex(4, t); R_STATE.topo = 1; }).catch(() => {});
+  loadImg('earth-night.jpg').then(t => { makeTex(2, t); R_STATE.night = 1; }).catch(() => {});
 }).catch(() => { /* stays on the shaded land-mask fallback */ });
 
 /* ---------- maths ---------- */
@@ -398,7 +405,7 @@ const S = {
   hover: null, selected: null,
 };
 const SUN0 = norm([-0.18, 0.60, -0.78]);
-const SUN1 = norm([-0.80, 0.36, 0.48]);
+const SUN1 = norm([-0.45, 0.80, -0.10]);
 
 let quality = 1, slow = 0, fast = 0;
 let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
@@ -496,7 +503,7 @@ function drawDeco(C, B, M, alpha) {
     const edge = 1 - Math.abs(dot(P, camDir(P)));            // brighter toward the limb
     const al = s.a * alpha * (0.35 + 0.65 * edge);
     const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-    g.addColorStop(0, `rgba(190,200,255,${al.toFixed(3)})`); g.addColorStop(1, 'rgba(190,200,255,0)');
+    g.addColorStop(0, `rgba(255,190,120,${(al*0.55).toFixed(3)})`); g.addColorStop(1, 'rgba(255,170,90,0)');
     ctx.strokeStyle = g; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
   }
@@ -510,7 +517,7 @@ function drawDeco(C, B, M, alpha) {
       const p = project(P, C, B);
       if (prev && p && !p.hidden && !prev.hidden) {
         const k = Math.sin(Math.PI * t);
-        ctx.strokeStyle = `rgba(200,208,255,${(k * 0.55 * alpha).toFixed(3)})`; ctx.lineWidth = R.w;
+        ctx.strokeStyle = `rgba(210,215,235,${(k * 0.30 * alpha).toFixed(3)})`; ctx.lineWidth = R.w;
         ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(p.x, p.y); ctx.stroke();
       }
       prev = p;
@@ -522,9 +529,9 @@ function drawDeco(C, B, M, alpha) {
     const tw = Math.max(0, Math.sin(S.time * s.sp + s.ph)); const a = tw * tw * alpha;
     if (a < 0.05) continue;
     const r = 2 + tw * 5;
-    ctx.strokeStyle = `rgba(235,240,255,${(a * 0.8).toFixed(3)})`; ctx.lineWidth = 1;
+    ctx.strokeStyle = `rgba(255,200,140,${(a * 0.8).toFixed(3)})`; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(p.x - r, p.y); ctx.lineTo(p.x + r, p.y); ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x, p.y + r); ctx.stroke();
-    ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = `rgba(255,235,200,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2); ctx.fill();
   }
 }
 
@@ -634,7 +641,7 @@ function frame(now) {
   // column-major upload of M so that  n * uRot  ==  M^T n  (world -> local)
   gl.uniformMatrix3fv(U.uRot, false, new Float32Array([M[0][0], M[1][0], M[2][0], M[0][1], M[1][1], M[2][1], M[0][2], M[1][2], M[2][2]]));
   gl.uniform1f(U.uTime, S.time);
-  gl.uniform1f(U.uReal, R_STATE.real); gl.uniform1f(U.uHasWater, R_STATE.water); gl.uniform1f(U.uHasTopo, R_STATE.topo);
+  gl.uniform1f(U.uReal, R_STATE.real); gl.uniform1f(U.uHasWater, R_STATE.water); gl.uniform1f(U.uHasTopo, R_STATE.topo); gl.uniform1f(U.uHasNight, R_STATE.night);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
   drawOverlay(C, B, M);
@@ -661,7 +668,7 @@ function drawOverlay(C, B, M) {
     for (let j = 1; j < proj.length; j++) {
       const a = proj[j-1], b = proj[j]; if (!a || !b || a.hidden || b.hidden) continue;
       const fade = Math.sin(Math.PI * j / (R.pts.length - 1));
-      ctx.strokeStyle = `rgba(210,216,255,${((lit ? 0.85 : 0.40) + fade * 0.2).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(255,214,170,${((lit ? 0.85 : 0.35) + fade * 0.2).toFixed(3)})`;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     // travelling light along the route
@@ -674,7 +681,7 @@ function drawOverlay(C, B, M) {
           const a = project(apply(M, R.pts[j-1]), C, B), b = project(apply(M, R.pts[j]), C, B);
           if (!a || !b || a.hidden || b.hidden) continue;
           const k = 1 - (hi - j) / len;
-          ctx.strokeStyle = `rgba(220,232,255,${(k * 0.95).toFixed(3)})`; ctx.lineWidth = 1.2 + k * 1.6;
+          ctx.strokeStyle = `rgba(255,190,110,${(k * 0.95).toFixed(3)})`; ctx.lineWidth = 1.2 + k * 1.6;
           ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         }
       }
@@ -707,14 +714,14 @@ function drawOverlay(C, B, M) {
       ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillText(label, s.x + 22, s.y + 4);
     } else {
       const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, active ? 16 : 11);
-      g.addColorStop(0, `rgba(143,176,255,${0.55 * a})`); g.addColorStop(1, 'rgba(143,176,255,0)');
+      g.addColorStop(0, `rgba(255,170,90,${0.6 * a})`); g.addColorStop(1, 'rgba(255,150,70,0)');
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, active ? 16 : 11, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = `rgba(220,232,255,${a})`; ctx.beginPath(); ctx.arc(s.x, s.y, active ? 4 : 3, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = `rgba(255,230,195,${a})`; ctx.beginPath(); ctx.arc(s.x, s.y, active ? 4 : 3, 0, Math.PI*2); ctx.fill();
       if (active) { ctx.strokeStyle = `rgba(255,255,255,${0.8*a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, Math.PI*2); ctx.stroke(); }
       // always-on region label
       for (let k = 0; k < 1; k++) {
         const ph = (S.time * 0.5 + p.hub.lat * 0.01) % 1;
-        ctx.strokeStyle = `rgba(200,210,255,${((1 - ph) * 0.45 * a).toFixed(3)})`; ctx.lineWidth = 1;
+        ctx.strokeStyle = `rgba(255,190,120,${((1 - ph) * 0.5 * a).toFixed(3)})`; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(s.x, s.y, 4 + ph * 16, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.font = '500 11px "Geist Mono", ui-monospace, monospace';
