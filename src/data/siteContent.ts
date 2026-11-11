@@ -185,6 +185,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Metals & Minerals',
+    video: '/videos/metals-and-minerals.mp4',
     description: 'Ferrous, non-ferrous, and mineral products supplied to specification.',
     icon: Layers,
     image: '/images/photos/metals-minerals.jpg',
