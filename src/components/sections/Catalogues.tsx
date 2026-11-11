@@ -5,7 +5,7 @@ import SectionHeading from '@/components/ui/SectionHeading';
 import { catalogues, contactDetails, type Catalogue } from '@/data/siteContent';
 import { requestEnquiry } from '@/lib/enquiry';
 
-const SAMPLES = 5; // public sample pages per catalogue (0 = cover)
+const SAMPLES = 3; // public sample pages per catalogue (0 = cover)
 const LOCKED = SAMPLES; // index of the locked "full catalogue" slide
 
 const src = (slug: string, i: number) => `/catalogues/${slug}-${i === LOCKED ? 'locked' : i}.webp`;
