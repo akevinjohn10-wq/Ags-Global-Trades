@@ -34,6 +34,8 @@ interface DotMapProps {
   /** Name of the pinned (selected) hub */
   selectedHub?: string | null;
   controlsRef?: MutableRefObject<DotMapControls | null>;
+  /** A soft wave of highlighted dots ripples out from New Delhi every few seconds */
+  ripple?: boolean;
 }
 
 export interface DotMapControls {
@@ -153,6 +155,7 @@ export default function DotMap({
   pins = false,
   selectedHub = null,
   controlsRef,
+  ripple = false,
 }: DotMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Live props for the render loop, so changing tabs never restarts it
@@ -520,6 +523,24 @@ export default function DotMap({
           ctx!.drawImage(dotLayer, 0, 0);
           ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
         }
+        // ripple: a ring of lit dots spreading out from New Delhi
+        if (ripple && doAnimate) {
+          const [hx, hy] = project(layout, homeHub.lon, homeHub.lat);
+          const period = 5.5, maxR = Math.hypot(layout.w, layout.h) * 0.75;
+          const ph = ((now / 1000) % period) / period;
+          const R = ph * maxR, band = Math.max(18, layout.w * 0.03);
+          const fade = 1 - ph;
+          const rgb = PALETTES[live.current.theme].tint;
+          for (let i = 0; i < dots.length; i += 3) {
+            const d = Math.abs(Math.hypot(dots[i] - hx, dots[i + 1] - hy) - R);
+            if (d > band) continue;
+            const k = (1 - d / band) * fade;
+            ctx!.fillStyle = `rgba(${rgb},${(k * 0.85).toFixed(3)})`;
+            ctx!.beginPath();
+            ctx!.arc(dots[i], dots[i + 1], dotR * (1 + k * 0.5), 0, Math.PI * 2);
+            ctx!.fill();
+          }
+        }
       }
 
       const home = project(layout, homeHub.lon, homeHub.lat);
@@ -793,7 +814,7 @@ export default function DotMap({
       canvas.removeEventListener('wheel', onWheel);
       if (controlsRef) controlsRef.current = null;
     };
-  }, [animated, intro, interactive, density, fit, focusX, pannable, pins, controlsRef]);
+  }, [animated, intro, interactive, density, fit, focusX, pannable, pins, controlsRef, ripple]);
 
   return <canvas ref={canvasRef} role="img" aria-label={label} className={`block h-full w-full ${className}`} />;
 }

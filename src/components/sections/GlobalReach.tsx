@@ -66,10 +66,10 @@ export default function GlobalReach() {
         </Reveal>
 
         <Reveal delay={120} className="mt-6">
-          <div className="relative">
-            <div className="relative aspect-[2/1] [mask-image:radial-gradient(ellipse_75%_70%_at_50%_50%,#000_62%,transparent_100%)] sm:aspect-[2.45/1]">
+          <div className="relative overflow-hidden rounded-lg border border-line bg-paper">
+            <div className="relative aspect-[2/1] sm:aspect-[2.45/1]">
               <DotMap
-                theme="night"
+                ripple
                 hubs={allHubs}
                 controlsRef={controls}
                 activeHubs={activeHubs}
