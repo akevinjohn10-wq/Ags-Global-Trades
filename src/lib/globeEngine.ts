@@ -151,8 +151,9 @@ void main(){
 
     // amber light points on an even grid: dim over all land, bright where the cities are
     float cs = 0.62 * PI / 180.0;
-    float cl = max(cos(lat), 0.05);
-    vec2 g = vec2(lon * cl, lat) / cs;
+    float row = floor(lat / cs);
+    float cl = max(cos((row + 0.5) * cs), 0.05);
+    vec2 g = vec2(lon * cl / cs, lat / cs);
     vec2 id = floor(g); vec2 fr = fract(g) - 0.5;
     float rnd = h31(vec3(id, 3.0));
     float aa = max(fwidth(g.x), fwidth(g.y)) + 1e-4;
@@ -317,7 +318,7 @@ function camera() {
   const R = mobile ? 0.62 * W / H : 0.41;
   const dz = ease(dive);
   // scroll dive: camera flies in toward New Delhi and the globe slides to the centre
-  const dist = lerp(lerp(1.16, Math.sqrt(Math.pow(1.9 / R, 2) + 1), k), 2.0, dz);
+  const dist = lerp(lerp(1.16, Math.sqrt(Math.pow(1.9 / R, 2) + 1), k), 2.35, dz);
   const ty = lerp(1.02, 0, k);
   const cam = [0, lerp(0.15, 0, k), dist];
   const target = [0, ty, 0];
@@ -500,8 +501,8 @@ function frame(now) {
     S.yaw += S.vy; S.pitch = clamp(S.pitch + S.vp, -1.1, 1.1);
     S.vy *= Math.pow(0.04, dt); S.vp *= Math.pow(0.04, dt);
     S.idle += dt;
-    if (!S.selected && S.idle > 3.5 && !reduce) {
-      const w = Math.min(1, (S.idle - 3.5) / 4) * dt * 0.22;
+    if (!S.selected && S.idle > 1.0 && !reduce && dive === 0) {
+      const w = Math.min(1, (S.idle - 1.0) / 2) * dt * 0.22;
       S.yaw += w * 0.5;   // slow eastward spin so every region comes into view
       S.pitch += (homePitch() - S.pitch) * w;
     }
@@ -514,7 +515,7 @@ function frame(now) {
   if (C.dz > 0) {
     const ty = -HOME.lon * D2R, tp = HOME.lat * D2R;
     let d = ty - S.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
-    const w = Math.min(1, C.dz * 1.6);
+    const w = Math.min(1, C.dz * 1.35);
     ry = S.yaw + d * w; rp = lerp(S.pitch, tp, w);
   }
   const M = rotMat(ry, rp);
@@ -541,7 +542,8 @@ function drawOverlay(C, B, M) {
   if (reveal <= 0) return;
   const t = S.time;
 
-  // routes
+  // routes (fade away as the camera dives to Delhi)
+  ctx.globalAlpha = 1 - C.dz;
   ctx.lineCap = 'round';
   for (const R of routes) {
     const grow = clamp((reveal - R.delay * 0.5) / 0.5, 0, 1);
@@ -573,6 +575,7 @@ function drawOverlay(C, B, M) {
     }
   }
 
+  ctx.globalAlpha = 1;
   // pins
   const all = [{ hub: HOME, L: homeL, home: true }, ...routes.map(r => ({ hub: r.hub, L: r.L }))];
   for (const p of all) {
@@ -585,7 +588,24 @@ function drawOverlay(C, B, M) {
     if (a <= 0.02) continue;
     screenPins.push({ x: s.x, y: s.y, hub: p.hub });
     const active = S.selected === p.hub || S.hover === p.hub;
+    ctx.globalAlpha = p.home ? 1 : 1 - C.dz;
     if (p.home) {
+      // beacon: once the zoom has settled, Delhi lights up and the glow opens into the next section
+      const bk = clamp((C.dz - 0.55) / 0.45, 0, 1);
+      if (bk > 0) {
+        const R = 24 + bk * bk * 320;
+        const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, R);
+        g.addColorStop(0, `rgba(255,248,235,${(0.95 * bk).toFixed(3)})`);
+        g.addColorStop(0.25, `rgba(255,214,160,${(0.55 * bk).toFixed(3)})`);
+        g.addColorStop(0.6, `rgba(143,176,255,${(0.22 * bk).toFixed(3)})`);
+        g.addColorStop(1, 'rgba(143,176,255,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, Math.PI * 2); ctx.fill();
+        for (let k = 0; k < 3; k++) {
+          const ph = (t * 0.8 + k / 3) % 1;
+          ctx.strokeStyle = `rgba(255,235,205,${((1 - ph) * 0.7 * bk).toFixed(3)})`; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(s.x, s.y, 10 + ph * (60 + 140 * bk), 0, Math.PI * 2); ctx.stroke();
+        }
+      }
       for (let k = 0; k < 2; k++) {
         const ph = (t * 0.6 + k * 0.5) % 1;
         ctx.strokeStyle = `rgba(255,255,255,${((1 - ph) * 0.6 * a).toFixed(3)})`; ctx.lineWidth = 1.2;

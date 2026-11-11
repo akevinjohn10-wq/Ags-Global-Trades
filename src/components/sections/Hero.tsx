@@ -49,17 +49,20 @@ export default function Hero() {
       // first 60%: step through the route stages; last 40%: dive into the page
       setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
       const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
-      const e = d * d * (3 - 2 * d);
-      // the globe itself flies in to New Delhi (handled inside the WebGL scene, so it stays sharp)
-      controls.current?.setDive(e);
+      // 1) the globe turns and flies in to New Delhi (inside the WebGL scene, so it stays sharp)
+      const z = Math.min(1, d / 0.7);
+      controls.current?.setDive(z * z * (3 - 2 * z));
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
         copyRef.current.style.opacity = String(1 - c);
         copyRef.current.style.transform = `translate3d(0, ${(-c * 60).toFixed(1)}px, 0)`;
       }
+      // 2) after the zoom settles, a glow opens out from Delhi into the white page below
       if (skyRef.current) {
-        const s = Math.min(1, Math.max(0, (d - 0.25) / 0.75));
-        skyRef.current.style.transform = `translate3d(0, ${((1 - s) * 100).toFixed(2)}%, 0)`;
+        const g = Math.min(1, Math.max(0, (d - 0.66) / 0.34));
+        const k = g * g * (3 - 2 * g);
+        skyRef.current.style.opacity = String(Math.min(1, k * 1.6));
+        skyRef.current.style.transform = `translate(-50%, -50%) scale(${(0.02 + k * 1.2).toFixed(4)})`;
       }
     };
     const onScroll = () => {
@@ -215,12 +218,12 @@ export default function Hero() {
           </div>
         )}
 
-        {/* Atmosphere that rises as you dive in */}
+        {/* Glow that opens out from New Delhi into the page below */}
         <div
           ref={skyRef}
           aria-hidden="true"
-          style={{ transform: 'translate3d(0, 100%, 0)' }}
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-full bg-[linear-gradient(to_top,#FFFFFF_0%,#FFFFFF_28%,#D3DAEE_42%,#5D78C2_62%,rgba(35,64,142,0.65)_80%,rgba(35,64,142,0)_100%)]"
+          style={{ opacity: 0, transform: 'translate(-50%, -50%) scale(0.02)' }}
+          className="pointer-events-none absolute left-1/2 top-1/2 z-20 h-[260vmax] w-[260vmax] rounded-full will-change-transform bg-[radial-gradient(circle,#FFFFFF_0%,#FFFFFF_34%,#FFF3E4_40%,#D3DAEE_46%,rgba(93,120,194,0.55)_56%,rgba(35,64,142,0)_68%)]"
         />
       </div>
     </section>
