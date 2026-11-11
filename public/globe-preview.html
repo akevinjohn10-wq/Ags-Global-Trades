@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+<title>AGS Globe Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed space scene, copy on the left, globe set right of centre (centred and lower on phones) */
+:root {
+  --space: #02050D;
+  --navy: #0A1640;
+  --blue: #23408E;
+  --sky: #8FB0FF;
+  --text: #F3F5FA;
+  --muted: rgba(243, 245, 250, 0.68);
+  --line: rgba(184, 196, 230, 0.18);
+  --font-sans: Geist, Inter, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--space); color: var(--text); font-family: var(--font-sans); overflow: hidden; }
+.stage { position: relative; height: 100%; min-height: 560px; overflow: hidden; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#gl { cursor: grab; touch-action: none; }
+#gl.dragging { cursor: grabbing; }
+#fx { pointer-events: none; }
+.shade { position: absolute; inset: 0 auto 0 0; width: 52%; pointer-events: none; background: linear-gradient(90deg, rgba(2,5,13,0.92), rgba(2,5,13,0.55) 60%, transparent); }
+
+.nav { position: absolute; inset: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 22px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); pointer-events: none; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand .div { width: 1px; height: 30px; background: rgba(255,255,255,0.25); }
+.brand .words { font-size: 11px; font-weight: 500; letter-spacing: 0.32em; line-height: 1.45; }
+.tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; border: 1px solid var(--line); padding: 7px 10px; border-radius: 4px; }
+
+.copy { position: absolute; left: 0; top: 50%; transform: translateY(-50%); max-width: 600px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); pointer-events: none; }
+.eyebrow { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: #B8C4E6; }
+.eyebrow::before { content: ""; width: 8px; height: 8px; background: var(--sky); }
+h1 { margin: 20px 0 0; font-size: clamp(48px, 7vw, 112px); font-weight: 500; line-height: 0.92; letter-spacing: -0.045em; text-wrap: balance; }
+h1 span { display: block; }
+h1 span:last-child { color: var(--sky); }
+.lede { margin: 26px 0 0; max-width: 30em; font-size: 17px; line-height: 1.65; color: var(--muted); }
+.btns { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 12px; pointer-events: auto; }
+.btn { font: 500 14px/1 var(--font-sans); padding: 15px 22px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.3); background: transparent; color: var(--text); cursor: pointer; white-space: nowrap; }
+.btn.light { background: var(--text); color: var(--navy); border-color: var(--text); }
+.btn:focus-visible, .ctl:focus-visible, .close:focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; }
+
+.bar { position: absolute; inset: auto 0 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); pointer-events: none; }
+.ctls { display: flex; gap: 8px; pointer-events: auto; }
+.ctl { font: 500 12px/1 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); background: rgba(10,22,64,0.55); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; cursor: pointer; backdrop-filter: blur(6px); }
+
+.tip { position: absolute; transform: translate(14px, -50%); pointer-events: none; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #fff; background: rgba(10,22,64,0.8); border: 1px solid rgba(143,176,255,0.35); padding: 6px 9px; white-space: nowrap; border-radius: 3px; }
+.card { position: absolute; right: max(28px, env(safe-area-inset-right, 0px)); bottom: 76px; width: min(340px, calc(100% - 32px)); background: rgba(6,12,32,0.86); border: 1px solid rgba(143,176,255,0.28); border-radius: 12px; padding: 20px 20px 22px; backdrop-filter: blur(10px); box-shadow: 0 30px 80px -30px rgba(0,0,0,0.8); }
+.card .k { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sky); }
+.card h2 { margin: 10px 0 0; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+.card .c { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.card p { margin: 12px 0 0; font-size: 15px; line-height: 1.6; color: rgba(243,245,250,0.8); }
+.card .row { margin-top: 14px; display: flex; gap: 18px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; color: #B8C4E6; font-variant-numeric: tabular-nums; }
+.close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--text); cursor: pointer; font-size: 16px; line-height: 1; }
+
+@media (max-width: 900px) {
+  .shade { width: 100%; height: 55%; background: linear-gradient(180deg, rgba(2,5,13,0.95), rgba(2,5,13,0.6) 70%, transparent); }
+  .copy { top: 96px; transform: none; padding-left: max(20px, env(safe-area-inset-left, 0px)); }
+  h1 { font-size: clamp(42px, 12vw, 72px); }
+  .lede { font-size: 15px; margin-top: 16px; }
+  .btns { margin-top: 20px; }
+  .hint, .tag { display: none; }
+  .card { bottom: 70px; }
+  .nav { padding-left: max(20px, env(safe-area-inset-left, 0px)); }
+  .bar { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+}
+</style>
+</head>
+<body style="margin:0">
+
+<div class="stage" id="stage">
+  <canvas id="gl" aria-label="Interactive globe with routes from New Delhi to AGS sourcing and delivery cities. Drag to turn it, click a pin for details."></canvas>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <div class="shade" aria-hidden="true"></div>
+
+  <header class="nav">
+    <div class="brand" role="img" aria-label="AGS Global Trade">
+      <svg viewBox="-10 0 540 186" height="30" width="87" aria-hidden="true">
+        <defs>
+          <mask id="cut" maskUnits="userSpaceOnUse" x="-10" y="0" width="540" height="186">
+            <rect x="-10" y="0" width="540" height="186" fill="#fff"></rect>
+            <path d="M-8 174 C110 100 320 62 534 66 C330 82 150 124 -8 174 Z" fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="round"></path>
+          </mask>
+          <linearGradient id="rt" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#23408E"></stop><stop offset="0.55" stop-color="#3E5BB0"></stop><stop offset="1" stop-color="#7F9BEA"></stop></linearGradient>
+        </defs>
+        <g mask="url(#cut)">
+          <polygon points="10,160 72,20 102,20 164,160 131,160 87,58 43,160" fill="#F3F5FA"></polygon>
+          <path d="M309.5 50.1 A62 62 0 1 0 324 90 L268 90" fill="none" stroke="#F3F5FA" stroke-width="30"></path>
+          <path d="M465.8 50.9 A45 27.5 0 1 0 425 90 A45 27.5 0 1 1 384.2 129.1" fill="none" stroke="#F3F5FA" stroke-width="30"></path>
+        </g>
+        <path d="M-8 174 C110 100 320 62 534 66 C330 82 150 124 -8 174 Z" fill="url(#rt)"></path>
+      </svg>
+      <span class="div"></span>
+      <span class="words">GLOBAL<br>TRADE</span>
+    </div>
+    <span class="tag">Hero preview · globe</span>
+  </header>
+
+  <div class="copy">
+    <p class="eyebrow">Sourcing &amp; supply</p>
+    <h1><span>Sourced.</span><span>Checked.</span><span>Delivered.</span></h1>
+    <p class="lede">Tell us the product and the quantity. We find verified suppliers, check the goods and ship them to your door.</p>
+    <div class="btns">
+      <button class="btn light" type="button">Request a quote</button>
+      <button class="btn" type="button">What we source</button>
+    </div>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <div class="card" id="card" hidden>
+    <button class="close" id="close" type="button" aria-label="Close">×</button>
+    <div class="k" id="cardK"></div>
+    <h2 id="cardH"></h2>
+    <div class="c" id="cardC"></div>
+    <p id="cardP"></p>
+    <div class="row" id="cardR"></div>
+  </div>
+
+  <div class="bar">
+    <span class="hint">Drag the globe · click a pin</span>
+    <div class="ctls">
+      <button class="ctl" id="replay" type="button">Replay intro</button>
+      <button class="ctl" id="reset" type="button">Centre on Delhi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const PACKED = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//gAAP///+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////z//////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///+///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH///3///////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD///////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wP////////AAAAAAAAAAAAAAAAAAAH4AAAAAAAAAAAAAAAAAAAAAAAAAAD/+AB////////AAAAAAAAAAAAAAAAAAA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//////+AAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAAAAAAAAAAAf4AAAAAAAAAP/////+AAAAAAAAAAAAAAAAAf///+AAAAAAAAAAAAAAAAAAAAP4AAAAAAAAAH/////+AAAAAAAAAAAAAAAAf/////wAgAAAAAAAAAAAAAAAAAP//gAA//gAAD/////8AAAAAAAAAAAAAAHh////////wAAAAAAAAAAAAAAAAAAP/8AA///AAB/////4AAAAAAAAAAAAAAPv////////4P//AAAAAAAAH/gAAAAf/+AA///wAA/////wAAAAAAH/AAAAAAf/////////////+AAAAAAB//////wD/8AAAAP8AA/////AAAAAAA//4AAAAAP/////////////////AgAP///////+AAAA/wD/AA////+AAAAAAH///AP//////////////////////+Af/////////////4A/wA////wAAAAAAf///4P///////////////////////4f/////////////4D/8Af//+AAAAAAA////+P///////////////////////8//////////////YP/4AP/+AA/4AAAB/+f/8///////////////////////BwB////////////4MD/4AH/wAAf4AAAD/5//z//////////////////////+AAH////////////AAAfwAD/gAABAAAAP/j/////////////////////////8AAP///////////+AAAAAAB/AAAAAAAA//H/////////////////////////4AAH///////////8AA/AAAA/AAAAAAAB/+D/////////////////////////AAAB///////////4AAfgAAAGAAAAAAAB//D////////////////////////4AAAAf+AB///////wAAf/wAAAAAAAAAAB//AP/////////////////////PwAAAAAP4AAP//////4AA//4AAAAAAAAAYAf+A///////////////////8AAfgAAAAAfwAAD//////+AA//8AAAAAAAAA8AD+A///////////////////4AA/AAAAAA8AAAA///////gB//+AAAAAAAAA8AP8H///////////////////wAA/AAAAABgAAAAf//////8B///AAAAAAAAA8APwH///////////////////AAA/gAAAAAAAAAAP///////z///gAAAAAAAHmAOAP//////////////////+AAA/gAAAAAAAAAAP///////5///wAAAAAAAPHAf/////////////////////wAA+AAAAAAAAAAAH///////x///4AAAAAAAPPx//////////////////////4AA4AAAAAAAAAAAD///////5///4AAAAAAAAPj//////////////////////4AAQAAAAAAAAAAAB///////////uAAAAAAAAQf//////////////////////4AAAAAAAAAAAAAAA//////////wPAAAAAAAAB///////////////////////wAAAAAAAAAAAAAAAf////////+AfgAAAAAAAH///////////////////////gAAAAAAAAAAAAAAAH/////////gDgAAAAAAAH///////////////////////AAAAAAAAAAAAAAAAP/////////wAAAAAAAAAB////////h//////////////AAAAAAAAAAAAAAAAP/////////+AAAAAAAAAB/////H//B/////////////+AAAAAAAAAAAAAAAAP////////8wAAAAAAAAAD//n/+AP+D/////////////8CAAAAAAAAAAAAAAAP////////wAAAAAAAAADj/Dx/8AD+H/////////////wDgAAAAAAAAAAAAAAP////////gAAAAAAAAAH/4Bwf8AA/H////////////+AEAAAAAAAAAAAAAAAP////////gAAAAAAAAAH/wAcf8PA/z////////////8AAAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/gMPOP///x////////////4AIAAAAAAAAAAAAAAAP///////8AAAAAAAAAAH/AMDOP///h///////////xwAIAAAAAAAAAAAAAAAH///////4AAAAAAAAAAH+AACHH///h//////////8B4AYAAAAAAAAAAAAAAAD///////wAAAAAAAAAAH+AAYHH///w//////////+AYAYAAAAAAAAAAAAAAAD///////wAAAAAAAAAABgf+AAAc//////////////gYD4AAAAAAAAAAAAAAAB///////wAAAAAAAAAAAx/+AAAA//////////////A4fwAAAAAAAAAAAAAAAA///////gAAAAAAAAAAB//8AAAA//////////////ABzAAAAAAAAAAAAAAAAAP//////AAAAAAAAAAAD//+AAAB//////////////AAAAAAAAAAAAAAAAAAAAH/////8AAAAAAAAAAAH///wGAB//////////////gDAAAAAAAAAAAAAAAAAAG/////4AAAAAAAAAAAP///+PwR//////////////gCAAAAAAAAAAAAAAAAAADf////4AAAAAAAAAAAP/////////////////////wAAAAAAAAAAAAAAAAAAABP//zAYAAAAAAAAAAAP/////////H///////////wAAAAAAAAAAAAAAAAAAABv//AAYAAAAAAAAAAA///////5//n///////////gAAAAAAAAAAAAAAAAAAAAn/+AAcAAAAAAAAAAB///////5//z///////////gAAAAAAAAAAAAAAAAAAAAT/+AAMAAAAAAAAAAD///////8//wH//////////AAAAAAAAAAAAAAAAAAAAAZ/8AAMAAAAAAAAAAD///////+f/4B/////////+AAAAAAAAAAAAAAAAAAAAAI/8AAAAAAAAAAAAAH///////+f/84AP///////8QAAAAAAAAAAAAAAAAAAAAAf8AAAAAAAAAAAAAH////////P//+AH///////4wAAAAAAAAAAAAAAAAAAAAAH8AAuAAAAAAAAAAH////////P///AH///////gAAAAAAAAAAAAAAAAAAAAAAH8AABwAAAAAAAAAP////////n//+AD//8P//IAAAAAAAAAAAAAAAAAAAAAAAH+A4A4AAAAAAAAAP////////j//8AAf/4H/+AAAAAAAAAAAAAAAAAAAAAAAAH+BwADgAAAAAAAAP////////x//8AAf/wD/8YAAAAAAAAAAAAAAAAAAAAAAAB/jwAD4AAAAAAAAP////////x//4AAf/AD/8YAwAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAAAAAAAf////////4//wAAf+AD/8AAwAAAAAAAAAAAAAAAAAAAAAAH/wAAAAAAAAAAAf////////4f+AAAP8AD/+AAwAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAf////////8f4AAAPwAAP/AAwAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAf////////+fgAAAPwAAP/gAYAAAAAAAAAAAAAAAAAAAAAAAAfAAAAAAAAAAAf////////+eAAAAHwAAH/gAAAAAAAAAAAAAAAAAAAAAAAAAAHAAAAAAAAAAAf/////////gAAAAHwAAF/gAAAAAAAAAAAAAAAAAAAAAAAAAADABgAAAAAAAAP/////////gYAAAHwAAM/AAAAAAAAAAAAAAAAAAAAAAAAAAADgD/+AAAAAAAH//////////4AAADwAAMeAAAAAAAAAAAAAAAAAAAAAAAAAAAByP/+AAAAAAAD//////////wAAADgAAIEAAAAAAAAAAAAAAAAAAAAAAAAAAAA/f/+AAAAAAAB//////////wAAABAAAIAAADAAAAAAAAAAAAAAAAAAAAAAAAAGf//gAAAAAAA//////////gAAAAMAAEAAAPAAAAAAAAAAAAAAAAAAAAAAAAAAf//wAAAAAAAf/////////gAAAAIAAAAAMGAAAAAAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAP/B///////AAAAAAABCAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAf///wAAAAAACAA3//////AAAAAAAAxAA+AAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAD/////+AAAAAAAA5gB8AAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAD/////8AAAAAAAAcgD8AAAAAAAAAAAAAAAAAAAAAAAAAAB////8AAAAAAAAAH/////4AAAAAAAAOQf4EAAAAAAAAAAAAAAAAAAAAAAAAAD////8AAAAAAAAAH/////wAAAAAAAAHgf84AAAAAAAAAAAAAAAAAAAAAAAAAH////+AAAAAAAAAH/////gAAAAAAAAHwf8wAAAAAAAAAAAAAAAAAAAAAAAAAH/////gAAAAAAAAD/////AAAAAAAAAD4P44B+AAAAAAAAAAAAAAAAAAAAAAAD/////4AAAAAAAAB////+AAAAAAAAAB8P44A/4AAAAAAAAAAAAAAAAAAAAAAH//////4AAAAAAAB////8AAAAAAAAAA8B44Af+AAAAAAAAAAAAAAAAAAAAAAH//////8AAAAAAAA////8AAAAAAAAAAMAAgAH/gAAAAAAAAAAAAAAAAAAAAAH//////+AAAAAAAA////4AAAAAAAAAAEAAAAD/4AAAAAAAAAAAAAAAAAAAAAD///////AAAAAAAAf///4AAAAAAAAAAAgAAAB/8AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///4AAAAAAAAAAD/AAAB/8AAAAAAAAAAAAAAAAAAAAAB///////gAAAAAAAf///4AAAAAAAAAAADAAAAccAAAAAAAAAAAAAAAAAAAAAA///////gAAAAAAAf///8AAAAAAAAAAAAAAAAAOAAAAAAAAAAAAAAAAAAAAAA///////AAAAAAAAf///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////+AAAAAAAAf///8AAAAAAAAAAAAAAAgCAAAAAAAAAAAAAAAAAAAAAAAf/////8AAAAAAAAf///8AAAAAAAAAAAAAAB+CAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAf///8AQAAAAAAAAAAAAH+GAAAAAAAAAAAAAAAAAAAAAAAP/////8AAAAAAAAf///8AwAAAAAAAAAAABv+HgAAAAAAAAAAAAAAAAAAAAAAH/////4AAAAAAAA////8BwAAAAAAAAAAAD/+HwAAAAAAAAAAAAAAAAAAAAAAB/////4AAAAAAAA////wHwAAAAAAAAAAAH//HwAAAAAAAAAAAAAAAAAAAAAAA/////4AAAAAAAA////gPwAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAP////wAAAAAAAA////APgAAAAAAAAAAAP///4AAAAAAAAAAAAAAAAAAAAAAAP////wAAAAAAAAf//+AHgAAAAAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAAAAP////gAAAAAAAAf//+APgAAAAAAAAAAD////8AAAAAAAAAAAAAAAAAAAAAAAP////AAAAAAAAAP//+APAAAAAAAAAAAf////+AAAAAAAAAAAAAAAAAAAAAAAP///+AAAAAAAAAH//+APAAAAAAAAAAA//////AAAAAAAAAAAAAAAAAAAAAAAP///8AAAAAAAAAH//+APAAAAAAAAAAA//////gAAAAAAAAAAAAAAAAAAAAAAP///wAAAAAAAAAH//8AGAAAAAAAAAAA//////wAAAAAAAAAAAAAAAAAAAAAAP///AAAAAAAAAAH//8AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf///AAAAAAAAAAH//4AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAD//4AAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAf//+AAAAAAAAAAB//wAAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAA///8AAAAAAAAAAB//gAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///4AAAAAAAAAAA//AAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/+AAAAAAAAAAAAAAf/////4AAAAAAAAAAAAAAAAAAAAAA///wAAAAAAAAAAA/8AAAAAAAAAAAAAAf/AP//wAAAAAAAAAAAAAAAAAAAAAB///gAAAAAAAAAAA/4AAAAAAAAAAAAAAf4AH//wAAAAAAAAAAAAAAAAAAAAAB///AAAAAAAAAAAAYAAAAAAAAAAAAAAAPAADf/gAAAAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/AAABAAAAAAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/AAAAgAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAA8AAAAAAAAAAAAAAAAAD//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAD/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcAAADAAAAAAAAAAAAAAAAAAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAGAAAAAAAAAAAAAAAAAAD/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAMAAAAAAAAAAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB//8AAAAAAAAAAAAAAAAA////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB///4AAAAAAAAAAAAAP////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAD////4AAAAAAAAAD//////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAf/////wAAAAAD///////////////////////AAAAAAAAAAAAAAAAAAAAAAAf///////gAP////////////////////////////AAAAAAAAAAAAAAAAAAAAf/////////////////////////////////////////AAAAAAAAAAAAAAAf/////////////////////////////////////////////AAAAAAAAAAH/////////////////////////////////////////////////AAAAAAAAP///////////////////////////////////////////////////AAAAAAf/////////////////////////////////////////////////////AAH/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////';
+const HOME = {"name": "New Delhi", "country": "India", "note": "Our base. Every order is managed from here, from the first enquiry to delivery at your door.", "lat": 28.61, "lon": 77.21};
+const HUBS = [{"name": "Shenzhen", "country": "China", "note": "Electronics, components and custom OEM products from established factories.", "lat": 22.54, "lon": 114.06, "region": "China & Japan"}, {"name": "Yiwu", "country": "China", "note": "Consumer goods and small commodities, bought wholesale and consolidated.", "lat": 29.31, "lon": 120.08, "region": "China & Japan"}, {"name": "Tokyo", "country": "Japan", "note": "Precision machinery, tools and specialist parts.", "lat": 35.68, "lon": 139.69, "region": "China & Japan"}, {"name": "Jakarta", "country": "Indonesia", "note": "Agricultural commodities, rubber and textiles from Southeast Asia.", "lat": -6.21, "lon": 106.85, "region": "Indonesia & Australia"}, {"name": "Sydney", "country": "Australia", "note": "Metals and minerals, and deliveries across Oceania.", "lat": -33.87, "lon": 151.21, "region": "Indonesia & Australia"}, {"name": "Milan", "country": "Italy", "note": "Industrial machinery and specialist European manufacturers.", "lat": 45.46, "lon": 9.19, "region": "Europe"}, {"name": "Bratislava", "country": "Slovakia", "note": "Automotive parts and engineering components from Central Europe.", "lat": 48.15, "lon": 17.11, "region": "Europe"}, {"name": "Mombasa", "country": "Kenya", "note": "Tea, coffee and fresh produce, and deliveries across East Africa.", "lat": -4.04, "lon": 39.67, "region": "Africa"}, {"name": "Durban", "country": "South Africa", "note": "A gateway for deliveries across Southern Africa.", "lat": -29.86, "lon": 31.02, "region": "Africa"}, {"name": "Cape Town", "country": "South Africa", "note": "Fruit, produce and minerals, and deliveries to the Cape.", "lat": -33.92, "lon": 18.42, "region": "Africa"}];
+
+const gl = document.getElementById('gl').getContext('webgl2', { antialias: false, alpha: false, premultipliedAlpha: false, powerPreference: 'high-performance' });
+const glCanvas = document.getElementById('gl');
+const fx = document.getElementById('fx');
+const ctx = fx.getContext('2d');
+const stage = document.getElementById('stage');
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- land texture from the 1° mask ---------- */
+function landTexture() {
+  const bin = atob(PACKED);
+  const W = 360, H = 180;
+  const small = document.createElement('canvas'); small.width = W; small.height = H;
+  const sc = small.getContext('2d');
+  const img = sc.createImageData(W, H);
+  for (let i = 0; i < W * H; i++) {
+    const v = (bin.charCodeAt(i >> 3) >> (7 - (i & 7))) & 1;
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v ? 255 : 0; img.data[i * 4 + 3] = 255;
+  }
+  sc.putImageData(img, 0, 0);
+  const big = document.createElement('canvas'); big.width = 2048; big.height = 1024;
+  const bc = big.getContext('2d');
+  bc.imageSmoothingEnabled = true; bc.imageSmoothingQuality = 'high';
+  bc.filter = 'blur(3px)';
+  // draw with wrap so the blur is seamless at the date line
+  bc.drawImage(small, -2048, 0, 2048, 1024); bc.drawImage(small, 0, 0, 2048, 1024); bc.drawImage(small, 2048, 0, 2048, 1024);
+  return big;
+}
+
+/* ---------- renderer: WebGL2, NASA imagery when it loads, procedural fallback until then ---------- */
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform vec2 uRes; uniform vec2 uCenter; uniform float uScale;
+uniform vec3 uCam; uniform vec3 uTarget; uniform mat3 uRot; uniform vec3 uSun;
+uniform float uTime; uniform float uReal; uniform float uHasWater; uniform float uHasTopo;
+uniform sampler2D uLand; uniform sampler2D uDay; uniform sampler2D uNight; uniform sampler2D uWater; uniform sampler2D uTopo;
+const float PI = 3.14159265;
+
+float h31(vec3 p){ p = fract(p*0.3183099+.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+float noise(vec3 x){
+  vec3 i = floor(x); vec3 f = fract(x); f = f*f*(3.0-2.0*f);
+  return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x), mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
+             mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x), mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z);
+}
+float fbm(vec3 p){ float a=0.5, s=0.0; for(int i=0;i<4;i++){ s+=a*noise(p); p=p*2.03+vec3(1.7,9.2,3.1); a*=0.5; } return s; }
+vec3 toLin(vec3 c){ return pow(c, vec3(2.2)); }
+vec3 aces(vec3 x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14), 0.0, 1.0); }
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - uCenter) / (uRes.y * uScale);
+  vec3 f = normalize(uTarget - uCam);
+  vec3 r = normalize(cross(f, vec3(0,1,0)));
+  vec3 u = cross(r, f);
+  vec3 rd = normalize(f*1.9 + uv.x*r + uv.y*u);
+  vec3 ro = uCam;
+  vec3 sun = normalize(uSun);
+
+  float b = dot(ro, rd);
+  float c = dot(ro, ro) - 1.0;
+  float hd = b*b - c;
+  float dmin = sqrt(max(dot(ro,ro) - b*b, 0.0));
+
+  // surface point (or the closest point on the limb, so screen derivatives stay smooth)
+  float t = -b - sqrt(max(hd, 0.0));
+  vec3 n = normalize(ro + rd*t);
+  vec3 l = n * uRot;                       // world -> globe space
+  float lat = asin(clamp(l.y,-1.,1.)), lon = atan(l.x, l.z);
+  vec2 tuv = vec2((lon+PI)/(2.*PI), (PI*.5-lat)/PI);
+  // seam-safe gradients for mip selection
+  float uB = fract(tuv.x + 0.5);
+  vec2 dx = vec2(abs(dFdx(tuv.x)) < abs(dFdx(uB)) ? dFdx(tuv.x) : dFdx(uB), dFdx(tuv.y));
+  vec2 dy = vec2(abs(dFdy(tuv.x)) < abs(dFdy(uB)) ? dFdy(tuv.x) : dFdy(uB), dFdy(tuv.y));
+
+  // --- space ---
+  vec3 col = mix(vec3(0.0015,0.004,0.012), vec3(0.006,0.013,0.035), smoothstep(-0.6, 0.9, rd.y*0.5 + dot(rd, sun)*0.5));
+  vec3 sc = rd * 300.0; vec3 cell = floor(sc); float sh = h31(cell);
+  if (sh > 0.9968) {
+    vec3 sp = cell + 0.5 + (vec3(h31(cell+3.1), h31(cell+7.7), h31(cell+1.3))-0.5)*0.6;
+    float tw = 0.7 + 0.3*sin(uTime*1.4 + sh*90.0);
+    vec3 tint = mix(vec3(1.0,0.85,0.7), vec3(0.7,0.8,1.0), h31(cell+5.0));
+    col += tint * smoothstep(0.5, 0.0, length(sc - sp)) * (sh-0.9968)/0.0032 * 1.6 * tw;
+  }
+  vec3 sc2 = rd * 760.0; vec3 c2 = floor(sc2); float s2 = h31(c2+11.0);
+  if (s2 > 0.9982) col += vec3(0.6,0.68,0.9) * smoothstep(0.5, 0.0, length(sc2 - c2 - 0.5)) * 0.45;
+  float sd = max(dot(rd, sun), 0.0);
+
+  if (hd > 0.0) {
+    float ndl = dot(n, sun);
+    float day = smoothstep(-0.10, 0.22, ndl);
+    vec3 surfLit, nightCol;
+
+      // ---- fallback: shaded land mask ----
+      float m = texture(uLand, tuv).r;
+      float coast = (fbm(l*11.0) - 0.5) * 0.30 + (noise(l*48.0) - 0.5) * 0.10;
+      float land = smoothstep(0.475, 0.525, m + coast);
+      float terr = fbm(l*22.0);
+      vec3 ocean = vec3(0.010,0.026,0.070);
+      vec3 ground = mix(vec3(0.080,0.100,0.130), vec3(0.135,0.150,0.175), terr);
+      vec3 albedo = mix(ocean, ground, land);
+      surfLit = albedo * (0.10 + 1.25*max(ndl,0.0));
+      float cityZone = smoothstep(0.55, 0.75, fbm(l*7.0 + 4.0)) * land;
+      nightCol = albedo*0.3 + vec3(1.0,0.78,0.48) * smoothstep(0.80, 0.97, noise(l*160.0)) * cityZone;
+        if (uReal > 0.001) {
+      vec3 fbLit = surfLit, fbNight = nightCol;
+      // ---- real imagery: NASA Blue Marble, Black Marble, water mask, elevation ----
+      vec3 albedo = toLin(textureGrad(uDay, tuv, dx, dy).rgb);
+      float grey = dot(albedo, vec3(0.299,0.587,0.114));
+      albedo = mix(vec3(grey), albedo, 0.82) * vec3(0.90,0.96,1.08);   // a touch cooler, slightly less saturated
+      float water = uHasWater > 0.5 ? textureGrad(uWater, tuv, dx, dy).r : smoothstep(0.08, 0.02, albedo.g - albedo.b + 0.05);
+      vec3 nb = n;
+      if (uHasTopo > 0.5) {
+        vec2 ts = 1.0 / vec2(textureSize(uTopo, 0));
+        float hE = textureGrad(uTopo, tuv + vec2(ts.x,0.), dx, dy).r - textureGrad(uTopo, tuv - vec2(ts.x,0.), dx, dy).r;
+        float hN = textureGrad(uTopo, tuv - vec2(0.,ts.y), dx, dy).r - textureGrad(uTopo, tuv + vec2(0.,ts.y), dx, dy).r;
+        vec3 east = normalize(cross(vec3(0,1,0), l) + vec3(1e-5,0,0));
+        vec3 north = cross(l, east);
+        vec3 nl = normalize(l - (east*hE + north*hN) * 1.3 * (1.0 - water));
+        nb = normalize(uRot * nl);
+      }
+      float diff = max(dot(nb, sun), 0.0);
+      surfLit = albedo * (0.015 + 1.55*diff);
+      // ocean: sun glint plus a cool sky reflection at grazing angles
+      vec3 hv = normalize(sun - rd);
+      float mu0 = max(dot(n, -rd), 0.0);
+      surfLit += water * (vec3(1.0,0.93,0.82) * pow(max(dot(n,hv),0.0), 140.0) * 1.6 + vec3(1.0,0.95,0.9) * pow(max(dot(n,hv),0.0), 14.0) * 0.05);
+      surfLit += water * vec3(0.10,0.20,0.45) * pow(1.0-mu0, 4.0) * 0.5 * day;
+      // city lights
+      vec3 lights = toLin(textureGrad(uNight, tuv, dx, dy).rgb);
+      float lum = dot(lights, vec3(0.3,0.5,0.2));
+      nightCol = vec3(1.0,0.74,0.42) * smoothstep(0.02, 0.5, lum) * 2.2 + albedo * 0.012;
+      // thin, slow clouds so the Earth looks alive (kept faint over real imagery)
+      vec3 cp = l*3.4 + vec3(uTime*0.010, 0.0, uTime*0.005);
+      float cl = smoothstep(0.56, 0.82, fbm(cp + fbm(cp*2.1)*0.7)) * 0.32;
+      surfLit = mix(surfLit, vec3(0.85,0.88,0.95) * (0.02 + 1.3*max(dot(n,sun),0.0)), cl);
+      nightCol *= 1.0 - cl*0.7;
+      surfLit = mix(fbLit, surfLit, uReal); nightCol = mix(fbNight, nightCol, uReal);
+    }
+    col = mix(nightCol, surfLit, day);
+    // twilight: a warm band along the terminator
+    col += vec3(1.0,0.42,0.16) * exp(-pow((ndl-0.0)/0.045, 2.0)) * 0.012;
+
+    // atmosphere seen against the surface
+    float mu = max(dot(n, -rd), 0.0);
+    float fres = pow(1.0 - mu, 3.2);
+    float sunSide = smoothstep(-0.30, 0.50, ndl);
+    vec3 atm = mix(vec3(0.18,0.42,1.0), vec3(0.55,0.75,1.0), sunSide) * fres * (0.15 + 1.5*sunSide);
+    atm += vec3(0.80,0.90,1.0) * pow(1.0-mu, 7.0) * pow(sd, 4.0) * 2.4;
+    col = col * (1.0 - fres*0.45) + atm;
+    col += vec3(0.05,0.11,0.26) * pow(1.0-mu, 1.4) * 0.30 * day;   // aerial haze
+  } else {
+    float hgt = dmin - 1.0;
+    vec3 pc = normalize(ro + rd*(-b));
+    float sunSide = smoothstep(-0.45, 0.6, dot(pc, sun));
+    float front = step(0.0, -b);
+    float halo = exp(-hgt*42.0) * (0.15 + 2.3*sunSide) + exp(-hgt*10.0) * 0.10 * (0.25 + sunSide);
+    col += mix(vec3(0.20,0.45,1.0), vec3(0.45,0.68,1.0), sunSide) * halo * front;
+    col += vec3(0.88,0.94,1.0) * exp(-hgt*70.0) * pow(sd, 3.0) * 3.2 * front;
+    col += vec3(1.0, 0.97, 0.92) * pow(sd, 2600.0) * 40.0 + vec3(0.55,0.7,1.0) * pow(sd, 70.0) * 0.5 + vec3(0.3,0.45,0.9) * pow(sd, 8.0) * 0.10;
+  }
+
+  // lens: streak + bloom from the sun when it is not behind the planet
+  float sz = dot(sun, f);
+  if (sz > 0.0) {
+    vec2 sunScreen = vec2(dot(sun, r), dot(sun, u)) / sz * 1.9;
+    vec2 dv = uv - sunScreen;
+    float bb = dot(ro, sun); float occ = step(0.0, bb*bb - c) * step(bb, 0.0);
+    float streak = exp(-abs(dv.y)*110.0) * exp(-abs(dv.x)*2.0) * 0.4;
+    float bloom = exp(-length(dv)*7.0) * 0.25;
+    col += vec3(0.55,0.7,1.0) * (streak + bloom) * (1.0 - occ) * smoothstep(0.0, 0.2, sz);
+  }
+
+  col = aces(col * 1.15);
+  col = pow(col, vec3(1.0/2.2));
+  vec2 q = gl_FragCoord.xy / uRes; col *= 0.84 + 0.16*smoothstep(1.2, 0.3, length(q-0.5));
+  col += (h31(vec3(gl_FragCoord.xy, uTime)) - 0.5) / 255.0;
+  outColor = vec4(col, 1.0);
+}`;
+
+function sh(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = {}; ['uRes','uCenter','uScale','uCam','uTarget','uRot','uSun','uTime','uLand','uDay','uNight','uWater','uTopo','uReal','uHasWater','uHasTopo'].forEach(k => U[k] = gl.getUniformLocation(prog, k));
+const aniso = gl.getExtension('EXT_texture_filter_anisotropic');
+
+function makeTex(unit, source, opts = {}) {
+  const tx = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tx);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texImage2D(gl.TEXTURE_2D, 0, opts.fmt || gl.RGBA, opts.fmt || gl.RGBA, gl.UNSIGNED_BYTE, source);
+  gl.generateMipmap(gl.TEXTURE_2D);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  if (aniso) gl.texParameterf(gl.TEXTURE_2D, aniso.TEXTURE_MAX_ANISOTROPY_EXT, Math.min(16, gl.getParameter(aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+  return tx;
+}
+// 1x1 placeholders so every sampler is valid before the imagery arrives
+const px = (unit) => { const tx = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tx); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,0,0,255])); };
+makeTex(0, landTexture()); px(1); px(2); px(3); px(4);
+gl.uniform1i(U.uLand, 0); gl.uniform1i(U.uDay, 1); gl.uniform1i(U.uNight, 2); gl.uniform1i(U.uWater, 3); gl.uniform1i(U.uTopo, 4);
+
+// NASA Blue Marble / Black Marble imagery, as packaged with the open-source three-globe library
+const IMG_BASES = ['https://cdn.jsdelivr.net/npm/three-globe@2.43.0/example/img/', 'https://unpkg.com/three-globe@2.43.0/example/img/'];
+function loadImg(name) {
+  return new Promise((res, rej) => {
+    let i = 0;
+    const tryNext = () => {
+      if (i >= IMG_BASES.length) return rej(new Error(name));
+      const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
+      im.onload = () => res(im); im.onerror = () => { i++; tryNext(); };
+      im.src = IMG_BASES[i] + name;
+    };
+    tryNext();
+  });
+}
+const R_STATE = { real: 0, target: 0, water: 0, topo: 0 };
+Promise.all([loadImg('earth-blue-marble.jpg'), loadImg('earth-night.jpg')]).then(([d, n]) => {
+  makeTex(1, d); makeTex(2, n); R_STATE.target = 1;
+  loadImg('earth-water.png').then(w => { makeTex(3, w); R_STATE.water = 1; }).catch(() => {});
+  loadImg('earth-topology.png').then(t => { makeTex(4, t); R_STATE.topo = 1; }).catch(() => {});
+}).catch(() => { /* stays on the shaded land-mask fallback */ });
+
+/* ---------- maths ---------- */
+const D2R = Math.PI / 180;
+const norm = v => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0]/l, v[1]/l, v[2]/l]; };
+const dot = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const sub = (a, b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+const lerp = (a, b, t) => a + (b - a) * t;
+const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const ll = (lat, lon) => [Math.sin(lon*D2R)*Math.cos(lat*D2R), Math.sin(lat*D2R), Math.cos(lon*D2R)*Math.cos(lat*D2R)];
+function slerp(a, b, t) {
+  const d = clamp(dot(a, b), -1, 1), w = Math.acos(d);
+  if (w < 1e-4) return a;
+  const s = Math.sin(w), k1 = Math.sin((1-t)*w)/s, k2 = Math.sin(t*w)/s;
+  return [a[0]*k1+b[0]*k2, a[1]*k1+b[1]*k2, a[2]*k1+b[2]*k2];
+}
+// globe rotation: world = Rx(pitch) * Ry(yaw) * local
+function rotMat(yaw, pitch) {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  // rows of M
+  const r0 = [cy, 0, sy];
+  const r1 = [sp*sy, cp, -sp*cy];
+  const r2 = [-cp*sy, sp, cp*cy];
+  return [r0, r1, r2];
+}
+const apply = (M, v) => [dot(M[0], v), dot(M[1], v), dot(M[2], v)];
+
+/* ---------- state ---------- */
+const HOME_YAW = -72 * D2R, HOME_PITCH = 16 * D2R;
+const S = {
+  yaw: -18 * D2R, pitch: 34 * D2R, vy: 0, vp: 0,
+  dragging: false, lastX: 0, lastY: 0, idle: 0, flying: null,
+  intro: reduce ? 1 : 0, t0: performance.now(), time: 0,
+  hover: null, selected: null,
+};
+const SUN0 = norm([-0.18, 0.60, -0.78]);
+const SUN1 = norm([-0.80, 0.36, 0.48]);
+
+let quality = 1, slow = 0, fast = 0;
+let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
+function resize() {
+  const r = stage.getBoundingClientRect();
+  W = r.width; H = r.height; mobile = W < 900;
+  DPR = Math.min(window.devicePixelRatio || 1, 2) * quality;
+  const maxPx = 8.3e6; if (W*H*DPR*DPR > maxPx) DPR = Math.sqrt(maxPx/(W*H));   // up to a full 4K frame
+  glCanvas.width = Math.round(W*DPR); glCanvas.height = Math.round(H*DPR);
+  const fd = Math.min(window.devicePixelRatio || 1, 2);
+  fx.width = Math.round(W*fd); fx.height = Math.round(H*fd); ctx.setTransform(fd, 0, 0, fd, 0, 0);
+  gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+}
+addEventListener('resize', resize); resize();
+
+function camera() {
+  const k = ease(clamp(S.intro, 0, 1));
+  // globe radius as a share of the screen height, then the camera distance that gives it
+  const R = mobile ? Math.min(0.36, 0.47 * W / H) : 0.41;
+  const dist = lerp(1.16, Math.sqrt(Math.pow(1.9 / R, 2) + 1), k);
+  const ty = lerp(1.02, 0, k);
+  const cam = [0, lerp(0.15, 0, k), dist];
+  const target = [0, ty, 0];
+  const sun = norm(slerp(SUN0, SUN1, k));
+  // screen placement of the globe: right of centre on desktop, low centre on phones
+  const cx = mobile ? 0.5 : lerp(0.5, 0.66, k);
+  const cyy = mobile ? lerp(0.5, 0.31, k) : 0.5;
+  return { cam, target, sun, cx, cy: cyy, k };
+}
+
+function basis(cam, target) {
+  const f = norm(sub(target, cam));
+  const r = norm(cross(f, [0, 1, 0]));
+  const u = cross(r, f);
+  return { f, r, u };
+}
+
+// project a world point; returns screen px and whether the planet hides it
+function project(P, C, B) {
+  const v = sub(P, C.cam);
+  const z = dot(v, B.f); if (z <= 0.01) return null;
+  const x = dot(v, B.r) / z * 1.9, y = dot(v, B.u) / z * 1.9;
+  const sx = C.cx * W + x * H * scale, sy = H - (C.cy * H + y * H * scale);
+  // occlusion: does the segment camera->P hit the unit sphere first?
+  const len = Math.hypot(v[0], v[1], v[2]); const d = [v[0]/len, v[1]/len, v[2]/len];
+  const b = dot(C.cam, d), c = dot(C.cam, C.cam) - 1, h = b*b - c;
+  let hidden = false;
+  if (h > 0) { const t = -b - Math.sqrt(h); hidden = t > 0 && t < len - 1e-3; }
+  return { x: sx, y: sy, hidden, z };
+}
+
+/* ---------- routes ---------- */
+const homeL = ll(HOME.lat, HOME.lon);
+const routes = HUBS.map((hub, i) => {
+  const L = ll(hub.lat, hub.lon);
+  const ang = Math.acos(clamp(dot(homeL, L), -1, 1));
+  const N = 64, pts = [];
+  for (let j = 0; j <= N; j++) {
+    const t = j / N, p = slerp(homeL, L, t), alt = 1 + Math.sin(Math.PI*t) * (0.03 + ang*0.075);
+    pts.push([p[0]*alt, p[1]*alt, p[2]*alt]);
+  }
+  return { hub, L, pts, delay: 0.25 + i * 0.12, speed: 0.22 + (i % 3) * 0.05, phase: i * 0.37 };
+});
+
+/* ---------- interaction ---------- */
+function pointer(e) { const r = fx.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+let downAt = null;
+glCanvas.addEventListener('pointerdown', e => {
+  glCanvas.setPointerCapture(e.pointerId);
+  S.dragging = true; S.flying = null; glCanvas.classList.add('dragging');
+  [S.lastX, S.lastY] = pointer(e); downAt = [S.lastX, S.lastY, performance.now()];
+  S.vy = S.vp = 0;
+});
+glCanvas.addEventListener('pointermove', e => {
+  const [x, y] = pointer(e);
+  if (S.dragging) {
+    const k = 0.0042 * (mobile ? 1.3 : 1) / scale;
+    const dx = (x - S.lastX) * k, dy = (y - S.lastY) * k;
+    S.yaw += dx; S.pitch = clamp(S.pitch + dy, -1.1, 1.1);
+    S.vy = dx; S.vp = dy; S.idle = 0;
+    S.lastX = x; S.lastY = y;
+  } else {
+    S.hover = pick(x, y);
+    glCanvas.style.cursor = S.hover ? 'pointer' : '';
+  }
+});
+function endDrag(e) {
+  if (!S.dragging) return;
+  S.dragging = false; glCanvas.classList.remove('dragging');
+  const [x, y] = pointer(e);
+  if (downAt && Math.hypot(x - downAt[0], y - downAt[1]) < 5 && performance.now() - downAt[2] < 400) {
+    const hit = pick(x, y);
+    if (hit) select(hit); else if (S.selected) deselect();
+    S.vy = S.vp = 0;
+  }
+}
+glCanvas.addEventListener('pointerup', endDrag);
+glCanvas.addEventListener('pointercancel', endDrag);
+glCanvas.addEventListener('pointerleave', () => { if (!S.dragging) S.hover = null; });
+
+let screenPins = [];
+function pick(x, y) {
+  let best = null, bd = 18;
+  for (const p of screenPins) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p.hub; } }
+  return best;
+}
+
+const card = document.getElementById('card');
+function flyTo(hub) {
+  S.flying = { yaw: -hub.lon * D2R, pitch: clamp(hub.lat * D2R, -0.9, 0.9) };
+}
+function select(hub) {
+  S.selected = hub; flyTo(hub);
+  const isHome = hub === HOME;
+  document.getElementById('cardK').textContent = isHome ? 'Home base' : hub.region;
+  document.getElementById('cardH').textContent = hub.name;
+  document.getElementById('cardC').textContent = hub.country;
+  document.getElementById('cardP').textContent = hub.note;
+  const R = document.getElementById('cardR'); R.textContent = '';
+  const a = document.createElement('span'); a.textContent = `${Math.abs(hub.lat).toFixed(2)}°${hub.lat >= 0 ? 'N' : 'S'}  ${Math.abs(hub.lon).toFixed(2)}°${hub.lon >= 0 ? 'E' : 'W'}`;
+  R.appendChild(a);
+  if (!isHome) {
+    const km = Math.round(Math.acos(clamp(dot(homeL, ll(hub.lat, hub.lon)), -1, 1)) * 6371);
+    const b = document.createElement('span'); b.textContent = `${km.toLocaleString('en-IN')} km from Delhi`; R.appendChild(b);
+  }
+  card.hidden = false;
+}
+function deselect() { S.selected = null; card.hidden = true; }
+document.getElementById('close').addEventListener('click', () => { deselect(); S.flying = { yaw: HOME_YAW, pitch: HOME_PITCH }; });
+document.getElementById('reset').addEventListener('click', () => { deselect(); S.flying = { yaw: HOME_YAW, pitch: HOME_PITCH }; });
+document.getElementById('replay').addEventListener('click', () => { deselect(); S.intro = 0; S.t0 = performance.now(); S.yaw = -18*D2R; S.pitch = 34*D2R; S.vy = S.vp = 0; S.flying = null; S.idle = 0; });
+
+/* ---------- loop ---------- */
+const tip = document.getElementById('tip');
+let last = performance.now();
+const INTRO_MS = 4200;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  S.time += dt;
+  // keep it smooth: drop render resolution a step if frames run long, raise it again when there is headroom
+  if (dt > 0.024) slow++; else slow = Math.max(0, slow - 1);
+  if (dt < 0.012) fast++; else fast = 0;
+  if (slow > 40 && quality > 0.5) { quality -= 0.15; slow = 0; resize(); }
+  if (fast > 240 && quality < 1) { quality = Math.min(1, quality + 0.15); fast = 0; resize(); }
+  R_STATE.real += (R_STATE.target - R_STATE.real) * Math.min(1, dt * 2.2);
+  if (S.intro < 1) {
+    S.intro = clamp((now - S.t0) / INTRO_MS, 0, 1);
+    const k = ease(S.intro);
+    S.yaw = lerp(-18*D2R, HOME_YAW, k); S.pitch = lerp(34*D2R, HOME_PITCH, k);
+  } else if (S.flying) {
+    S.yaw += (S.flying.yaw - S.yaw) * Math.min(1, dt * 3.2);
+    S.pitch += (S.flying.pitch - S.pitch) * Math.min(1, dt * 3.2);
+    if (Math.abs(S.flying.yaw - S.yaw) < 1e-3 && Math.abs(S.flying.pitch - S.pitch) < 1e-3) S.flying = null;
+  } else if (!S.dragging) {
+    // inertia, then a slow drift back and forth around Delhi
+    S.yaw += S.vy; S.pitch = clamp(S.pitch + S.vp, -1.1, 1.1);
+    S.vy *= Math.pow(0.04, dt); S.vp *= Math.pow(0.04, dt);
+    S.idle += dt;
+    if (!S.selected && S.idle > 3.5 && !reduce) {
+      const w = Math.min(1, (S.idle - 3.5) / 4) * dt * 0.35;
+      const targetYaw = HOME_YAW + Math.sin(S.time * 0.09) * 0.55;
+      // unwrap so we take the short way round
+      let dy = targetYaw - S.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      S.yaw += dy * w; S.pitch += (HOME_PITCH - S.pitch) * w;
+    }
+  }
+
+  scale = 1;
+  const C = camera(); const B = basis(C.cam, C.target);
+  const M = rotMat(S.yaw, S.pitch);
+
+  gl.uniform2f(U.uRes, glCanvas.width, glCanvas.height);
+  gl.uniform2f(U.uCenter, C.cx * glCanvas.width, C.cy * glCanvas.height);
+  gl.uniform1f(U.uScale, scale);
+  gl.uniform3fv(U.uCam, C.cam); gl.uniform3fv(U.uTarget, C.target); gl.uniform3fv(U.uSun, C.sun);
+  // column-major upload of M so that  n * uRot  ==  M^T n  (world -> local)
+  gl.uniformMatrix3fv(U.uRot, false, new Float32Array([M[0][0], M[1][0], M[2][0], M[0][1], M[1][1], M[2][1], M[0][2], M[1][2], M[2][2]]));
+  gl.uniform1f(U.uTime, S.time);
+  gl.uniform1f(U.uReal, R_STATE.real); gl.uniform1f(U.uHasWater, R_STATE.water); gl.uniform1f(U.uHasTopo, R_STATE.topo);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  drawOverlay(C, B, M);
+  requestAnimationFrame(frame);
+}
+
+function drawOverlay(C, B, M) {
+  ctx.clearRect(0, 0, W, H);
+  const reveal = clamp((S.intro - 0.62) / 0.38, 0, 1); // pins and routes come in as the camera settles
+  screenPins = [];
+  if (reveal <= 0) { tip.hidden = true; return; }
+  const t = S.time;
+
+  // routes
+  ctx.lineCap = 'round';
+  for (const R of routes) {
+    const grow = clamp((reveal - R.delay * 0.5) / 0.5, 0, 1);
+    if (grow <= 0) continue;
+    const n = Math.floor(grow * (R.pts.length - 1));
+    const proj = R.pts.slice(0, n + 1).map(p => project(apply(M, p), C, B));
+    const lit = S.selected && (S.selected === R.hub || S.selected === HOME);
+    ctx.lineWidth = lit ? 1.8 : 1.2;
+    for (let j = 1; j < proj.length; j++) {
+      const a = proj[j-1], b = proj[j]; if (!a || !b || a.hidden || b.hidden) continue;
+      const fade = Math.sin(Math.PI * j / (R.pts.length - 1));
+      ctx.strokeStyle = `rgba(143,176,255,${((lit ? 0.75 : 0.32) + fade * 0.2).toFixed(3)})`;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+    // travelling light along the route
+    if (grow >= 1) {
+      const head = ((t * R.speed + R.phase) % 1.3);
+      if (head < 1) {
+        const len = 10;
+        const hi = Math.floor(head * (R.pts.length - 1));
+        for (let j = Math.max(1, hi - len); j <= hi; j++) {
+          const a = project(apply(M, R.pts[j-1]), C, B), b = project(apply(M, R.pts[j]), C, B);
+          if (!a || !b || a.hidden || b.hidden) continue;
+          const k = 1 - (hi - j) / len;
+          ctx.strokeStyle = `rgba(220,232,255,${(k * 0.95).toFixed(3)})`; ctx.lineWidth = 1.2 + k * 1.6;
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        }
+      }
+    }
+  }
+
+  // pins
+  const all = [{ hub: HOME, L: homeL, home: true }, ...routes.map(r => ({ hub: r.hub, L: r.L }))];
+  for (const p of all) {
+    const W3 = apply(M, p.L);
+    const s = project([W3[0]*1.003, W3[1]*1.003, W3[2]*1.003], C, B);
+    if (!s || s.hidden) continue;
+    // fade pins near the limb
+    const facing = dot(W3, norm(sub(C.cam, W3)));
+    const a = clamp(facing * 4, 0, 1) * reveal;
+    if (a <= 0.02) continue;
+    screenPins.push({ x: s.x, y: s.y, hub: p.hub });
+    const active = S.selected === p.hub || S.hover === p.hub;
+    if (p.home) {
+      for (let k = 0; k < 2; k++) {
+        const ph = (t * 0.6 + k * 0.5) % 1;
+        ctx.strokeStyle = `rgba(255,255,255,${((1 - ph) * 0.6 * a).toFixed(3)})`; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(s.x, s.y, 5 + ph * 22, 0, Math.PI * 2); ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, Math.PI*2); ctx.fill();
+      ctx.font = '500 11px "Geist Mono", ui-monospace, monospace';
+      const label = 'NEW DELHI · HQ';
+      const w = ctx.measureText(label).width + 16;
+      ctx.fillStyle = `rgba(35,64,142,${0.88 * a})`; ctx.fillRect(s.x + 14, s.y - 11, w, 22);
+      ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.fillText(label, s.x + 22, s.y + 4);
+    } else {
+      const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, active ? 16 : 11);
+      g.addColorStop(0, `rgba(143,176,255,${0.55 * a})`); g.addColorStop(1, 'rgba(143,176,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, active ? 16 : 11, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = `rgba(220,232,255,${a})`; ctx.beginPath(); ctx.arc(s.x, s.y, active ? 4 : 3, 0, Math.PI*2); ctx.fill();
+      if (active) { ctx.strokeStyle = `rgba(255,255,255,${0.8*a})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, Math.PI*2); ctx.stroke(); }
+    }
+  }
+
+  // hover label
+  const hv = S.hover && S.hover !== HOME && screenPins.find(p => p.hub === S.hover);
+  if (hv) { tip.hidden = false; tip.textContent = `${hv.hub.name} · ${hv.hub.country}`; tip.style.left = hv.x + 'px'; tip.style.top = hv.y + 'px'; }
+  else tip.hidden = true;
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
