@@ -3,9 +3,9 @@ import { Linkedin, Mail, Phone } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
-import { contactDetails, navLinks, tickerItems } from '@/data/siteContent';
+import { contactDetails, navLinks } from '@/data/siteContent';
 
-/** Header: mono utility ticker, logo bar, and a full-screen "Menu" overlay (unitedcarriers.com style). */
+/** Header: logo bar and a full-screen "Menu" overlay (unitedcarriers.com style). */
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -41,7 +41,6 @@ export default function Navbar() {
   }, [open]);
 
   const tel = `tel:${contactDetails.phone.replace(/\s/g, '')}`;
-  const ticker = [...tickerItems, ...tickerItems];
 
   return (
     <>
@@ -50,35 +49,6 @@ export default function Navbar() {
           hidden && !open ? '-translate-y-full' : 'translate-y-0'
         }`}
       >
-        {/* Utility ticker */}
-        <div
-          className={`overflow-hidden border-b border-white/10 bg-space text-white/70 transition-[max-height] duration-500 ease-expo ${
-            scrolled ? 'max-h-0' : 'max-h-10'
-          }`}
-        >
-          <div className="flex h-9 items-center">
-            <div className="marquee-pause relative flex-1 overflow-hidden">
-              <ul className="flex w-max animate-marquee-fast items-center whitespace-nowrap font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow">
-                {ticker.map((item, i) => (
-                  <li key={`${item}-${i}`} className="flex items-center gap-6 pr-6">
-                    <span className="h-1.5 w-1.5 bg-accent2" aria-hidden="true" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="hidden shrink-0 items-center gap-5 border-l border-white/10 bg-ink px-5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow md:flex lg:px-12">
-              <a href={`mailto:${contactDetails.email}`} className="transition-colors hover:text-white">
-                {contactDetails.email}
-              </a>
-              <span className="text-white/25">|</span>
-              <a href={tel} className="transition-colors hover:text-white">
-                {contactDetails.phone}
-              </a>
-            </div>
-          </div>
-        </div>
-
         {/* Main bar */}
         <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/[0.97]' : 'border-transparent bg-transparent'}`}>
           <nav aria-label="Primary" className="mx-auto flex h-[72px] max-w-content items-center justify-between gap-6 px-5 sm:px-8 lg:px-12">
