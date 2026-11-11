@@ -11,9 +11,8 @@ export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="catalogue" className="aurora-soft section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
-      <div aria-hidden="true" className="dots-drift pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]" />
-
+    <section id="catalogue" className="section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
+      
       <div className="container-x">
         <SectionHeading
           align="split"
@@ -28,7 +27,7 @@ export default function Products() {
             const Icon = item.icon;
             const panelId = `product-panel-${i}`;
             return (
-              <Reveal as="li" key={item.name} delay={Math.min(i, 5) * 50} className="relative">
+              <Reveal as="li" key={item.name} delay={Math.min(i, 5) * 50} className="relative [contain:layout_paint]">
                   {/* Row divider draws in as it scrolls into view */}
                   <span aria-hidden="true" className="draw-x absolute left-0 top-0 h-px w-full bg-ink/10" style={{ transitionDelay: `${Math.min(i, 5) * 80}ms` }} />
                   {/* Accent bar that grows across the row when open */}
@@ -55,14 +54,14 @@ export default function Products() {
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <span
-                        className={`flex-1 font-display text-[20px] font-medium leading-tight transition-all duration-500 ease-expo sm:text-[30px] lg:text-[40px] ${
+                        className={`flex-1 font-display text-[20px] font-medium leading-tight transition-[color,transform] duration-500 ease-expo sm:text-[30px] lg:text-[40px] ${
                           isOpen ? 'text-ink' : 'text-ink/70 group-hover:translate-x-2 group-hover:text-ink'
                         }`}
                       >
                         {item.name}
                       </span>
                       <span
-                        className={`hidden items-center gap-2 rounded border px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow transition-all duration-500 md:flex ${
+                        className={`hidden items-center gap-2 rounded border px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow transition-[opacity,color,border-color] duration-500 md:flex ${
                           isOpen ? 'border-accent text-accent opacity-100' : 'border-ink/15 text-muted opacity-0 group-hover:opacity-100'
                         }`}
                       >
@@ -71,7 +70,7 @@ export default function Products() {
                       </span>
                       <span
                         aria-hidden="true"
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-all duration-500 ease-expo sm:h-12 sm:w-12 ${
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border transition-[background-color,border-color,color] duration-500 ease-expo sm:h-12 sm:w-12 ${
                           isOpen ? 'border-accent bg-accent text-white' : 'border-ink/15 text-ink group-hover:border-ink group-hover:bg-ink group-hover:text-white'
                         }`}
                       >
@@ -84,7 +83,7 @@ export default function Products() {
                     <div>
                       <div className="grid gap-8 pb-10 pl-0 sm:pl-16 lg:grid-cols-12 lg:gap-10 lg:pb-14">
                         <div
-                          className={`flex flex-col justify-between gap-8 transition-all duration-700 ease-expo lg:col-span-4 ${isOpen ? 'translate-y-0 opacity-100 delay-150' : 'translate-y-4 opacity-0'}`}
+                          className={`flex flex-col justify-between gap-8 transition-[opacity,transform] duration-500 ease-out lg:col-span-4 ${isOpen ? 'translate-y-0 opacity-100 delay-150' : 'translate-y-4 opacity-0'}`}
                         >
                           <p className="text-[20px] font-medium leading-snug text-ink sm:text-[24px]">{item.description}</p>
                           <Button variant="dark" onClick={() => requestEnquiry(item.name)} label="Enquire about this" className="self-start">
@@ -93,7 +92,7 @@ export default function Products() {
                         </div>
 
                         <div
-                          className={`transition-all duration-700 ease-expo lg:col-span-3 ${isOpen ? 'translate-y-0 opacity-100 delay-200' : 'translate-y-4 opacity-0'}`}
+                          className={`transition-[opacity,transform] duration-500 ease-out lg:col-span-3 ${isOpen ? 'translate-y-0 opacity-100 delay-200' : 'translate-y-4 opacity-0'}`}
                         >
                           <div className="flex items-center gap-4">
                             <span className="mono-caps shrink-0 text-ink">Why choose us</span>
@@ -111,7 +110,7 @@ export default function Products() {
 
                         <div
                           data-tilt
-                          className={`relative overflow-hidden rounded-lg bg-mist transition-transform duration-300 ease-out lg:col-span-5 ${isOpen ? 'animate-imgin' : 'opacity-0'}`}
+                          className={`relative overflow-hidden transition-transform duration-300 ease-out lg:col-span-5 ${item.video ? '' : 'rounded-lg bg-mist'} ${isOpen ? 'animate-imgin' : 'opacity-0'}`}
                         >
                           {isOpen && (
                             item.video ? (
@@ -124,7 +123,7 @@ export default function Products() {
                                 loop
                                 playsInline
                                 preload="metadata"
-                                className="aspect-video w-full object-cover"
+                                className="aspect-video w-full object-cover mix-blend-multiply [mask-image:radial-gradient(75%_75%_at_50%_50%,#000_60%,transparent_100%)]"
                               />
                             ) : (
                               <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />
