@@ -81,7 +81,7 @@ export default function Hero() {
 
   return (
     <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[280vh]'}`}>
-      <div className={`${reduce ? 'relative' : 'sticky top-0'} aurora grain isolate h-[100svh] min-h-[640px] overflow-hidden`}>
+      <div className={`${reduce ? 'relative' : 'sticky top-0'} isolate h-[100svh] min-h-[640px] overflow-hidden`}>
         {/* Interactive globe */}
         <div
           className={`absolute inset-0 transition-opacity duration-[1400ms] ${entered ? 'opacity-100' : 'opacity-0'} ${wide ? '' : 'pointer-events-none'}`}

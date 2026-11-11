@@ -173,7 +173,7 @@ export default function DotMap({
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const doAnimate = animated && !reduce;
     const mask = getLandMask();
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     let base: Layout = { w: 0, h: 0, scale: 1, ox: 0, oy: 0 };
     let layout: Layout = base;

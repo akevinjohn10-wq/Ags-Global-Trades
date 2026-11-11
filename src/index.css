@@ -541,7 +541,7 @@ html.brand-cursor select {
 }
 .nav-cursor-arrow svg {
   display: block;
-  margin: -0.8px 0 0 -7px;
+  margin: -1.15px 0 0 -10px;
   opacity: 0.9;
   /* every few seconds the arrow breathes: a slow blue glow swells and fades */
   animation: nav-cursor-glow 4.8s ease-in-out infinite;

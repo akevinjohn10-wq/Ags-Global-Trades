@@ -388,18 +388,28 @@ function drawDeco(C, B, M, alpha) {
   if (alpha <= 0) return;
   const camDir = (P) => norm(sub(C.cam, P));
   // spikes: short light bars standing on the surface; edge-on near the limb they read as a corona
+  // batched by brightness: a handful of paths per frame instead of one gradient per spike
   ctx.lineCap = 'round';
+  ctx.lineWidth = 1;
+  const LV = 8;
+  const near: Path2D[] = Array.from({ length: LV }, () => new Path2D());
+  const far: Path2D[] = Array.from({ length: LV }, () => new Path2D());
   for (const s of spikes) {
     const P = apply(M, s.L);
     const a = project(P, C, B); if (!a || a.hidden) continue;
     const top = [P[0] * (1 + s.h), P[1] * (1 + s.h), P[2] * (1 + s.h)];
     const b = project(top, C, B); if (!b) continue;
     const edge = 1 - Math.abs(dot(P, camDir(P)));            // brighter toward the limb
-    const al = s.a * alpha * (0.35 + 0.65 * edge);
-    const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-    g.addColorStop(0, `rgba(255,190,120,${(al*0.55).toFixed(3)})`); g.addColorStop(1, 'rgba(255,170,90,0)');
-    ctx.strokeStyle = g; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    const al = s.a * (0.35 + 0.65 * edge);
+    const lv = Math.min(LV - 1, Math.floor(al * LV));
+    const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+    near[lv].moveTo(a.x, a.y); near[lv].lineTo(mx, my);   // brighter lower half
+    far[lv].moveTo(mx, my); far[lv].lineTo(b.x, b.y);     // fading upper half
+  }
+  for (let lv = 0; lv < LV; lv++) {
+    const al = ((lv + 0.5) / LV) * alpha * 0.55;
+    ctx.strokeStyle = `rgba(255,190,120,${al.toFixed(3)})`; ctx.stroke(near[lv]);
+    ctx.strokeStyle = `rgba(255,175,95,${(al * 0.35).toFixed(3)})`; ctx.stroke(far[lv]);
   }
   // orbit rings: partial loops sliding round the globe, hidden where they pass behind it
   for (const R of rings) {

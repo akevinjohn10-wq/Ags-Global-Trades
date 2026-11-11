@@ -71,7 +71,7 @@ export default function BrandCursor() {
   // arrowhead with its tip on the pointer; drawn pointing up, rotated in JS
   return (
     <div ref={arrowRef} aria-hidden="true" className="nav-cursor-arrow" style={{ opacity: 0 }}>
-      <svg viewBox="0 0 14 16" width="14" height="16">
+      <svg viewBox="0 0 14 16" width="20" height="23">
         <defs>
           <linearGradient id="nav-cursor-fill" x1="0.5" y1="0" x2="0.5" y2="1">
             <stop offset="0" stopColor="#FFFFFF" />
