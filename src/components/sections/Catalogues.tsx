@@ -10,6 +10,7 @@ const LOCKED = SAMPLES; // index of the locked "full catalogue" slide
 
 const src = (slug: string, i: number) => `/catalogues/${slug}-${i === LOCKED ? 'locked' : i}.webp`;
 const phoneDigits = contactDetails.phone.replace(/\D/g, '');
+const whatsappDigits = contactDetails.whatsapp.replace(/\D/g, '');
 
 function requestText(c: Catalogue) {
   return `Hello AGS Trade, please send me the full ${c.title} catalogue (${c.pages} pages).`;
@@ -24,7 +25,7 @@ function RequestOptions({ text, subject, onForm, tone = 'light' }: { text: strin
   const item = `flex items-center gap-3 rounded-md border px-4 py-3 text-[14px] transition-colors duration-300 ${base}`;
   return (
     <div className="grid gap-2 sm:grid-cols-2">
-      <a className={item} href={`https://wa.me/${phoneDigits}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
+      <a className={item} href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
         <MessageCircle size={17} strokeWidth={1.6} aria-hidden="true" /> WhatsApp
       </a>
       <a className={item} href={`mailto:${contactDetails.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`}>
