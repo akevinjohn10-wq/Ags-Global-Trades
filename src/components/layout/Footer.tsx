@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Globe, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
+import { Globe, Instagram, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
 import '@/lib/translateFix';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
@@ -95,15 +95,26 @@ export default function Footer() {
           <p className="mt-5 max-w-xs text-[15px] leading-[1.7] text-white/60">
             A sourcing and supply company: we find, check, buy and ship the products your business needs.
           </p>
+          <div className="mt-6 flex gap-2">
           <a
             href={contactDetails.linkedin}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="AGS Trade on LinkedIn"
-            className="mt-6 inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/15 text-white/70 transition-colors hover:border-white hover:bg-white hover:text-ink"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/15 text-white/70 transition-colors hover:border-white hover:bg-white hover:text-ink"
           >
             <Linkedin size={18} strokeWidth={1.5} aria-hidden="true" />
           </a>
+          <a
+            href={contactDetails.instagram}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="AGS Trade on Instagram"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-white/15 text-white/70 transition-colors hover:border-white hover:bg-white hover:text-ink"
+          >
+            <Instagram size={18} strokeWidth={1.5} aria-hidden="true" />
+          </a>
+          </div>
         </div>
 
         <nav aria-label="Footer" className="lg:col-span-2">

@@ -1,4 +1,4 @@
-import { Clock, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
+import { Clock, Instagram, Linkedin, Mail, MapPin, Phone } from 'lucide-react';
 import InquiryForm from '@/components/contact/InquiryForm';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
@@ -11,6 +11,7 @@ export default function Contact() {
     { label: 'Phone', icon: Phone, href: `tel:${contactDetails.phone.replace(/\s/g, '')}`, lines: [contactDetails.phone] },
     { label: 'Business Hours', icon: Clock, lines: [contactDetails.hours] },
     { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['Aditya Dey'], external: true },
+    { label: 'Instagram', icon: Instagram, href: contactDetails.instagram, lines: ['@agstrades.in'], external: true },
   ];
 
   return (
