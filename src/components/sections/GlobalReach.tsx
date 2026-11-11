@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapPin } from 'lucide-react';
-import DotMap from '@/components/ui/DotMap';
+import DotMap, { type DotMapControls } from '@/components/ui/DotMap';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { allHubs, corridors, homeHub, type Hub } from '@/data/globe';
@@ -10,6 +10,20 @@ export default function GlobalReach() {
   const [activeId, setActiveId] = useState(corridors[0].id);
   const corridor = corridors.find((c) => c.id === activeId) ?? corridors[0];
   const activeHubs = useMemo(() => corridor.hubs.map((h) => h.name), [corridor]);
+  const controls = useRef<DotMapControls | null>(null);
+  const firstRender = useRef(true);
+
+  // Choosing a region glides the map over to it (the first view shows the whole world)
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    const pts = [...corridor.hubs, homeHub];
+    const lat = pts.reduce((sum, h) => sum + h.lat, 0) / pts.length;
+    const lon = pts.reduce((sum, h) => sum + h.lon, 0) / pts.length;
+    controls.current?.flyTo({ name: corridor.name, lat, lon }, 1.7);
+  }, [corridor]);
 
   const selectHub = (hub: Hub) => {
     const match = corridors.find((c) => c.hubs.some((h) => h.name === hub.name));
@@ -57,6 +71,7 @@ export default function GlobalReach() {
               <DotMap
                 theme="night"
                 hubs={allHubs}
+                controlsRef={controls}
                 activeHubs={activeHubs}
                 interactive
                 onHubSelect={selectHub}

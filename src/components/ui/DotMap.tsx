@@ -85,7 +85,7 @@ const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: 
   },
   // night Earth, matching the hero globe: dark textured map, pale-blue land dots, amber routes
   night: {
-    dot: 'rgba(170,190,255,0.30)',
+    dot: 'rgba(170,190,255,0)', // the textured land replaces the dot grid
     tint: '255,200,130',
     arc: 'rgba(255,214,170,0.6)',
     arcDim: 'rgba(255,255,255,0.07)',
@@ -333,7 +333,7 @@ export default function DotMap({
         g.arc(dots[i], dots[i + 1], dotR, 0, Math.PI * 2);
       }
       g.fill();
-      for (let i = 0; i < dots.length; i += 3) {
+      for (let i = 0; live.current.theme !== 'night' && i < dots.length; i += 3) {
         const t = tintFor(dots[i], dots[i + 1], activePts);
         if (t <= 0) continue;
         g.fillStyle = `rgba(${pal.tint},${(0.25 + t * 0.65).toFixed(3)})`;
