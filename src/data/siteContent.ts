@@ -167,6 +167,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Industrial Machinery',
+    video: '/videos/industrial-machinery.mp4',
     description: 'Machinery, spare parts, and production systems for a range of industries.',
     icon: Cog,
     image: '/images/photos/industrial-machinery.jpg',
@@ -175,6 +176,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Agricultural Commodities',
+    video: '/videos/agricultural-commodities.mp4',
     description: 'Grains, pulses, and agricultural produce sourced directly from growers.',
     icon: Wheat,
     image: '/images/photos/agricultural-commodities.jpg',
@@ -191,6 +193,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Consumer Goods',
+    video: '/videos/consumer-goods.mp4',
     description: 'Retail-ready products sourced for distribution across markets.',
     icon: ShoppingBag,
     image: '/images/photos/consumer-goods.jpg',
@@ -199,6 +202,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Construction Materials',
+    video: '/videos/construction-materials.mp4',
     description: 'Building and infrastructure materials delivered to project timelines.',
     icon: Blocks,
     image: '/images/photos/construction-materials.jpg',
@@ -207,6 +211,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'OEM & ODM Procurement',
+    video: '/videos/oem-odm-procurement.mp4',
     description: 'Custom-manufactured and white-label products built to your specifications.',
     icon: Cpu,
     image: 'https://images.pexels.com/photos/3520692/pexels-photo-3520692.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
@@ -215,6 +220,7 @@ export const productCategories: ProductCategory[] = [
   },
   {
     name: 'Shipping Coordination',
+    video: '/videos/shipping-coordination.mp4',
     description: 'Your sourced goods booked with established shipping lines and courier partners, door to door.',
     icon: Network,
     image: 'https://images.pexels.com/photos/9694390/pexels-photo-9694390.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
