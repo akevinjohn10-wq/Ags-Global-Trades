@@ -496,3 +496,8 @@
     animation: none;
   }
 }
+
+/* Waves along the coast in the road scene */
+@keyframes shore {
+  to { transform: translate3d(-50%, 0, 0); }
+}
