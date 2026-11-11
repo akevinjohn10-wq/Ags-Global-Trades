@@ -230,76 +230,68 @@ void main(){
   float sd = max(dot(rd, sun), 0.0);
 
   if (hd > 0.0) {
+    // ---- holographic Earth: blue-grey relief, a dot grid over the land, fine mesh over the sea ----
     float ndl = dot(n, sun);
-    float day = smoothstep(-0.10, 0.22, ndl);
-    vec3 surfLit, nightCol;
-
-      // ---- fallback: shaded land mask ----
-      float m = texture(uLand, tuv).r;
-      float coast = (fbm(l*11.0) - 0.5) * 0.30 + (noise(l*48.0) - 0.5) * 0.10;
-      float land = smoothstep(0.475, 0.525, m + coast);
-      float terr = fbm(l*22.0);
-      vec3 ocean = vec3(0.010,0.026,0.070);
-      vec3 ground = mix(vec3(0.080,0.100,0.130), vec3(0.135,0.150,0.175), terr);
-      vec3 albedo = mix(ocean, ground, land);
-      surfLit = albedo * (0.10 + 1.25*max(ndl,0.0));
-      float cityZone = smoothstep(0.55, 0.75, fbm(l*7.0 + 4.0)) * land;
-      nightCol = albedo*0.3 + vec3(1.0,0.78,0.48) * smoothstep(0.80, 0.97, noise(l*160.0)) * cityZone;
-        if (uReal > 0.001) {
-      vec3 fbLit = surfLit, fbNight = nightCol;
-      // ---- real imagery: NASA Blue Marble, Black Marble, water mask, elevation ----
-      vec3 albedo = toLin(textureGrad(uDay, tuv, dx, dy).rgb);
-      float grey = dot(albedo, vec3(0.299,0.587,0.114));
-      albedo = mix(vec3(grey), albedo, 0.82) * vec3(0.90,0.96,1.08);   // a touch cooler, slightly less saturated
-      float water = uHasWater > 0.5 ? textureGrad(uWater, tuv, dx, dy).r : smoothstep(0.08, 0.02, albedo.g - albedo.b + 0.05);
-      vec3 nb = n;
-      if (uHasTopo > 0.5) {
-        vec2 ts = 1.0 / vec2(textureSize(uTopo, 0));
-        float hE = textureGrad(uTopo, tuv + vec2(ts.x,0.), dx, dy).r - textureGrad(uTopo, tuv - vec2(ts.x,0.), dx, dy).r;
-        float hN = textureGrad(uTopo, tuv - vec2(0.,ts.y), dx, dy).r - textureGrad(uTopo, tuv + vec2(0.,ts.y), dx, dy).r;
-        vec3 east = normalize(cross(vec3(0,1,0), l) + vec3(1e-5,0,0));
-        vec3 north = cross(l, east);
-        vec3 nl = normalize(l - (east*hE + north*hN) * 1.3 * (1.0 - water));
-        nb = normalize(uRot * nl);
-      }
-      float diff = max(dot(nb, sun), 0.0);
-      surfLit = albedo * (0.015 + 1.55*diff);
-      // ocean: sun glint plus a cool sky reflection at grazing angles
-      vec3 hv = normalize(sun - rd);
-      float mu0 = max(dot(n, -rd), 0.0);
-      surfLit += water * (vec3(1.0,0.93,0.82) * pow(max(dot(n,hv),0.0), 140.0) * 1.6 + vec3(1.0,0.95,0.9) * pow(max(dot(n,hv),0.0), 14.0) * 0.05);
-      surfLit += water * vec3(0.10,0.20,0.45) * pow(1.0-mu0, 4.0) * 0.5 * day;
-      // city lights
-      vec3 lights = toLin(textureGrad(uNight, tuv, dx, dy).rgb);
-      float lum = dot(lights, vec3(0.3,0.5,0.2));
-      nightCol = vec3(1.0,0.74,0.42) * smoothstep(0.02, 0.5, lum) * 2.2 + albedo * 0.012;
-      // thin, slow clouds so the Earth looks alive (kept faint over real imagery)
-      vec3 cp = l*3.4 + vec3(uTime*0.010, 0.0, uTime*0.005);
-      float cl = smoothstep(0.56, 0.82, fbm(cp + fbm(cp*2.1)*0.7)) * 0.32;
-      surfLit = mix(surfLit, vec3(0.85,0.88,0.95) * (0.02 + 1.3*max(dot(n,sun),0.0)), cl);
-      nightCol *= 1.0 - cl*0.7;
-      surfLit = mix(fbLit, surfLit, uReal); nightCol = mix(fbNight, nightCol, uReal);
+    float m = texture(uLand, tuv).r;
+    float coast = (fbm(l*11.0) - 0.5) * 0.22 + (noise(l*48.0) - 0.5) * 0.08;
+    float landMask = smoothstep(0.475, 0.525, m + coast);
+    float relief = fbm(l*22.0);
+    if (uReal > 0.001) {
+      float water = uHasWater > 0.5 ? textureGrad(uWater, tuv, dx, dy).r : 1.0 - landMask;
+      float elev = uHasTopo > 0.5 ? textureGrad(uTopo, tuv, dx, dy).r : relief;
+      landMask = mix(landMask, 1.0 - water, uReal);
+      relief = mix(relief, 0.25 + 0.75*smoothstep(0.0, 0.55, elev) + (relief-0.5)*0.25, uReal);
     }
-    col = mix(nightCol, surfLit, day);
-    // twilight: a warm band along the terminator
-    col += vec3(1.0,0.42,0.16) * exp(-pow((ndl-0.0)/0.045, 2.0)) * 0.012;
+    float land = landMask;
 
-    // atmosphere seen against the surface
+    // soft studio lighting: key light from the sun side, a cool fill, and a glow lifting the lower limb
+    float key = 0.42 + 0.58 * smoothstep(-0.6, 0.9, ndl);
+    vec3 L2 = normalize(vec3(0.0, -0.85, 0.55));
+    float under = pow(max(dot(reflect(rd, n), L2), 0.0), 18.0);
+
+    vec3 sea = vec3(0.030,0.036,0.095);
+    vec3 ground = mix(vec3(0.045,0.052,0.110), vec3(0.135,0.150,0.260), relief);
+    vec3 base = mix(sea, ground, land) * key;
+
+    // sea mesh: faint lines every 3 degrees
+    vec2 ll2 = vec2(lon, lat) * (180.0/PI) / 3.0;
+    vec2 gw = fwidth(ll2) + 1e-4;
+    vec2 gl2 = abs(fract(ll2 - 0.5) - 0.5) / gw;
+    float mesh = (1.0 - min(min(gl2.x, gl2.y), 1.0)) * (1.0 - land);
+    base += vec3(0.30,0.36,0.75) * mesh * 0.10;
+
+    // land dots: an even grid (wider in longitude toward the poles)
+    float cs = 0.78 * PI / 180.0;
+    float cl = max(cos(lat), 0.05);
+    vec2 g = vec2(lon * cl, lat) / cs;
+    vec2 id = floor(g); vec2 fr = fract(g) - 0.5;
+    float rnd = h31(vec3(id, 3.0));
+    float aa = max(fwidth(g.x), fwidth(g.y)) + 1e-4;
+    float dotA = smoothstep(0.21 + aa, 0.21 - aa, length(fr)) * smoothstep(0.35, 0.65, land);
+    dotA *= smoothstep(1.4, 0.5, aa);                     // fade the grid out where it would alias
+    vec3 dotCol = mix(vec3(0.78,0.82,1.0), vec3(0.35,0.95,0.95), step(0.93, rnd));
+    float dotB = (0.30 + 0.70*rnd*rnd) * (0.55 + 0.45*key);
+    float tw = 0.75 + 0.25*sin(uTime*2.0 + rnd*40.0);
+    col = base + dotCol * dotA * dotB * tw * 0.95;
+    col += vec3(0.75,0.80,1.0) * smoothstep(0.35, 0.65, land) * (1.0 - dotA) * 0.02 * key;   // dust between dots
+
+    col += vec3(0.62,0.66,1.0) * under * 0.22;
+    col = toLin(col) * 1.25;   // authored as screen colours; back to linear light for the tone map
+
+    // rim light and atmosphere
     float mu = max(dot(n, -rd), 0.0);
-    float fres = pow(1.0 - mu, 3.2);
-    float sunSide = smoothstep(-0.30, 0.50, ndl);
-    vec3 atm = mix(vec3(0.18,0.42,1.0), vec3(0.55,0.75,1.0), sunSide) * fres * (0.15 + 1.5*sunSide);
-    atm += vec3(0.80,0.90,1.0) * pow(1.0-mu, 7.0) * pow(sd, 4.0) * 2.4;
-    col = col * (1.0 - fres*0.45) + atm;
-    col += vec3(0.05,0.11,0.26) * pow(1.0-mu, 1.4) * 0.30 * day;   // aerial haze
+    float fres = pow(1.0 - mu, 2.6);
+    col = col * (1.0 - fres*0.3) + vec3(0.30,0.36,0.95) * fres * (0.30 + 0.45*smoothstep(-0.4,0.6,ndl));
+    col += vec3(0.80,0.85,1.0) * pow(1.0-mu, 7.0) * pow(sd, 4.0) * 2.2;
+    col += vec3(0.10,0.12,0.35) * pow(1.0-mu, 1.3) * 0.12;
   } else {
     float hgt = dmin - 1.0;
     vec3 pc = normalize(ro + rd*(-b));
     float sunSide = smoothstep(-0.45, 0.6, dot(pc, sun));
     float front = step(0.0, -b);
     float halo = exp(-hgt*42.0) * (0.15 + 2.3*sunSide) + exp(-hgt*10.0) * 0.10 * (0.25 + sunSide);
-    col += mix(vec3(0.20,0.45,1.0), vec3(0.45,0.68,1.0), sunSide) * halo * front;
-    col += vec3(0.88,0.94,1.0) * exp(-hgt*70.0) * pow(sd, 3.0) * 3.2 * front;
+    col += mix(vec3(0.30,0.36,0.95), vec3(0.55,0.62,1.0), sunSide) * (halo * 0.32) * front;
+    col += vec3(0.88,0.94,1.0) * exp(-hgt*70.0) * pow(sd, 3.0) * 2.0 * front;
     col += vec3(1.0, 0.97, 0.92) * pow(sd, 2600.0) * 40.0 + vec3(0.55,0.7,1.0) * pow(sd, 70.0) * 0.5 + vec3(0.3,0.45,0.9) * pow(sd, 8.0) * 0.10;
   }
 
@@ -350,7 +342,7 @@ const px = (unit) => { const tx = gl.createTexture(); gl.activeTexture(gl.TEXTUR
 makeTex(0, landTexture()); px(1); px(2); px(3); px(4);
 gl.uniform1i(U.uLand, 0); gl.uniform1i(U.uDay, 1); gl.uniform1i(U.uNight, 2); gl.uniform1i(U.uWater, 3); gl.uniform1i(U.uTopo, 4);
 
-// NASA Blue Marble / Black Marble imagery, as packaged with the open-source three-globe library
+// NASA-derived water mask and elevation maps, as packaged with the open-source three-globe library
 const IMG_BASES = ['https://cdn.jsdelivr.net/npm/three-globe@2.43.0/example/img/', 'https://unpkg.com/three-globe@2.43.0/example/img/'];
 function loadImg(name) {
   return new Promise((res, rej) => {
@@ -365,9 +357,8 @@ function loadImg(name) {
   });
 }
 const R_STATE = { real: 0, target: 0, water: 0, topo: 0 };
-Promise.all([loadImg('earth-blue-marble.jpg'), loadImg('earth-night.jpg')]).then(([d, n]) => {
-  makeTex(1, d); makeTex(2, n); R_STATE.target = 1;
-  loadImg('earth-water.png').then(w => { makeTex(3, w); R_STATE.water = 1; }).catch(() => {});
+loadImg('earth-water.png').then(w => {
+  makeTex(3, w); R_STATE.water = 1; R_STATE.target = 1;
   loadImg('earth-topology.png').then(t => { makeTex(4, t); R_STATE.topo = 1; }).catch(() => {});
 }).catch(() => { /* stays on the shaded land-mask fallback */ });
 
@@ -471,6 +462,71 @@ const routes = HUBS.map((hub, i) => {
   }
   return { hub, L, pts, delay: 0.25 + i * 0.12, speed: 0.22 + (i % 3) * 0.05, phase: i * 0.37 };
 });
+
+
+/* ---------- decoration: data spikes off the land, orbit rings, sparkles ---------- */
+const MASKBIN = atob(PACKED);
+const isLandLL = (lat, lon) => { const x = Math.min(359, Math.max(0, Math.floor(lon + 180))), y = Math.min(179, Math.max(0, Math.floor(90 - lat))); const i = y * 360 + x; return (MASKBIN.charCodeAt(i >> 3) >> (7 - (i & 7))) & 1; };
+let seed = 7; const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const spikes = [];
+while (spikes.length < 1400) {
+  const z = rand() * 2 - 1, lon = rand() * 360 - 180, lat = Math.asin(z) / D2R;
+  const onLand = isLandLL(lat, lon);
+  if (!onLand && rand() > 0.12) continue;           // mostly over land, a few over the sea
+  const L = ll(lat, lon);
+  spikes.push({ L, h: 0.015 + Math.pow(rand(), 3) * (onLand ? 0.16 : 0.07), a: 0.4 + rand() * 0.55 });
+}
+const sparkles = spikes.filter((_, i) => i % 31 === 0).map(s => ({ L: s.L, ph: rand() * 6.28, sp: 0.6 + rand() * 1.2 }));
+const rings = Array.from({ length: 7 }, (_, i) => {
+  const ax = norm([rand() - 0.5, 1.6 + rand(), rand() - 0.5].map((v, k) => k === 1 ? v * (i % 2 ? 1 : 0.35) : v));
+  const a = norm(cross(ax, [0.3, 0.1, 0.9])), b = cross(ax, a);
+  return { a, b, r: 1.05 + rand() * 0.16, len: 0.45 + rand() * 0.4, speed: (0.04 + rand() * 0.06) * (i % 2 ? 1 : -1), off: rand() * 6.28, w: 0.8 + rand() * 0.6 };
+});
+
+function drawDeco(C, B, M, alpha) {
+  if (alpha <= 0) return;
+  const camDir = (P) => norm(sub(C.cam, P));
+  // spikes: short light bars standing on the surface; edge-on near the limb they read as a corona
+  ctx.lineCap = 'round';
+  for (const s of spikes) {
+    const P = apply(M, s.L);
+    const a = project(P, C, B); if (!a || a.hidden) continue;
+    const top = [P[0] * (1 + s.h), P[1] * (1 + s.h), P[2] * (1 + s.h)];
+    const b = project(top, C, B); if (!b) continue;
+    const edge = 1 - Math.abs(dot(P, camDir(P)));            // brighter toward the limb
+    const al = s.a * alpha * (0.35 + 0.65 * edge);
+    const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+    g.addColorStop(0, `rgba(190,200,255,${al.toFixed(3)})`); g.addColorStop(1, 'rgba(190,200,255,0)');
+    ctx.strokeStyle = g; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  }
+  // orbit rings: partial loops sliding round the globe, hidden where they pass behind it
+  for (const R of rings) {
+    const N = 90, start = R.off + S.time * R.speed;
+    let prev = null;
+    for (let j = 0; j <= N; j++) {
+      const t = j / N, ang = start + t * R.len * Math.PI * 2;
+      const P = [ (R.a[0] * Math.cos(ang) + R.b[0] * Math.sin(ang)) * R.r, (R.a[1] * Math.cos(ang) + R.b[1] * Math.sin(ang)) * R.r, (R.a[2] * Math.cos(ang) + R.b[2] * Math.sin(ang)) * R.r ];
+      const p = project(P, C, B);
+      if (prev && p && !p.hidden && !prev.hidden) {
+        const k = Math.sin(Math.PI * t);
+        ctx.strokeStyle = `rgba(200,208,255,${(k * 0.55 * alpha).toFixed(3)})`; ctx.lineWidth = R.w;
+        ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+      }
+      prev = p;
+    }
+  }
+  // sparkles: small twinkling nodes with a cross glint
+  for (const s of sparkles) {
+    const P = apply(M, s.L); const p = project(P, C, B); if (!p || p.hidden) continue;
+    const tw = Math.max(0, Math.sin(S.time * s.sp + s.ph)); const a = tw * tw * alpha;
+    if (a < 0.05) continue;
+    const r = 2 + tw * 5;
+    ctx.strokeStyle = `rgba(235,240,255,${(a * 0.8).toFixed(3)})`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(p.x - r, p.y); ctx.lineTo(p.x + r, p.y); ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x, p.y + r); ctx.stroke();
+    ctx.fillStyle = `rgba(255,255,255,${a.toFixed(3)})`; ctx.beginPath(); ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2); ctx.fill();
+  }
+}
 
 /* ---------- interaction ---------- */
 function pointer(e) { const r = fx.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
@@ -595,6 +651,7 @@ function frame(now) {
 
 function drawOverlay(C, B, M) {
   ctx.clearRect(0, 0, W, H);
+  drawDeco(C, B, M, clamp((S.intro - 0.35) / 0.4, 0, 1));
   const reveal = clamp((S.intro - 0.62) / 0.38, 0, 1); // pins and routes come in as the camera settles
   screenPins = [];
   if (reveal <= 0) { tip.hidden = true; return; }
@@ -612,7 +669,7 @@ function drawOverlay(C, B, M) {
     for (let j = 1; j < proj.length; j++) {
       const a = proj[j-1], b = proj[j]; if (!a || !b || a.hidden || b.hidden) continue;
       const fade = Math.sin(Math.PI * j / (R.pts.length - 1));
-      ctx.strokeStyle = `rgba(143,176,255,${((lit ? 0.75 : 0.32) + fade * 0.2).toFixed(3)})`;
+      ctx.strokeStyle = `rgba(210,216,255,${((lit ? 0.85 : 0.40) + fade * 0.2).toFixed(3)})`;
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
     }
     // travelling light along the route
