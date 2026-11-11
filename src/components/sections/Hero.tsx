@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Minus, Plus, RotateCcw, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { RotateCcw, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import DotMap, { type DotMapControls } from '@/components/ui/DotMap';
-import Particles from '@/components/ui/Particles';
+import Globe from '@/components/ui/Globe';
 import SplitText from '@/components/ui/SplitText';
-import { allHubs, corridors, homeHub, type Hub } from '@/data/globe';
+import { corridors, globeRegions, homeHub, type Hub } from '@/data/globe';
+import type { GlobeHandle } from '@/lib/globeEngine';
 import { onReady } from '@/lib/ready';
 
 // Which regions light up as the visitor scrolls through the hero
@@ -23,17 +23,9 @@ export default function Hero() {
   const [entered, setEntered] = useState(false);
   const [stage, setStage] = useState(0);
   const [pinned, setPinned] = useState<Hub | null>(null);
-  const controls = useRef<DotMapControls | null>(null);
-  const pinnedRegion = pinned
-    ? pinned.name === homeHub.name
-      ? 'Home base'
-      : corridors.find((c) => c.hubs.some((h) => h.name === pinned.name))?.name
-    : '';
+  const controls = useRef<GlobeHandle | null>(null);
+  const pinnedRegion = pinned ? (pinned.name === homeHub.name ? 'Home base' : 'Sourcing & delivery') : '';
 
-  const selectPin = (hub: Hub) => {
-    setPinned(hub);
-    controls.current?.flyTo(hub);
-  };
   const closePin = () => {
     setPinned(null);
     controls.current?.reset();
@@ -58,7 +50,7 @@ export default function Hero() {
       setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
       const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
       const e = d * d * (3 - 2 * d);
-      const base = window.innerWidth >= 1024 ? 1.12 : 1;
+      const base = 1;
       if (mapRef.current) mapRef.current.style.transform = `scale(${(base + e * 1.4).toFixed(4)})`;
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
@@ -83,48 +75,32 @@ export default function Hero() {
     };
   }, [reduce]);
 
-  // Every route stays lit, like a live network
-  const activeHubs = useMemo(() => allHubs.map((h) => h.name), []);
 
   return (
     <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[280vh]'}`}>
       <div className={`${reduce ? 'relative' : 'sticky top-0'} aurora grain isolate h-[100svh] min-h-[640px] overflow-hidden`}>
-        <Particles />
-        <div aria-hidden="true" className="stars pointer-events-none absolute inset-0 opacity-50" />
+        {/* Interactive globe */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(55%_45%_at_68%_48%,rgba(35,64,142,0.32),transparent_70%)]"
-        />
-
-        {/* Interactive map */}
-        <div
-          className={`absolute inset-x-0 bottom-0 top-[46%] transition-opacity duration-[1400ms] sm:top-[34%] lg:inset-y-0 lg:left-[26%] lg:right-[-2%] ${
-            entered ? (wide ? 'opacity-100' : 'opacity-50') : 'opacity-0'
-          } ${wide ? '' : 'pointer-events-none'}`}
+          className={`absolute inset-0 transition-opacity duration-[1400ms] ${entered ? 'opacity-100' : 'opacity-0'} ${wide ? '' : 'pointer-events-none'}`}
         >
-          <div ref={mapRef} className="h-full w-full origin-[62%_45%] will-change-transform">
+          <div ref={mapRef} className="h-full w-full origin-[66%_50%] will-change-transform">
             {entered && (
-              <DotMap
-                theme="dark"
-                hubs={allHubs}
-                activeHubs={activeHubs}
+              <Globe
+                home={homeHub}
+                hubs={globeRegions}
                 interactive={wide}
-                pannable={wide}
-                pins={wide}
-                labels={wide ? 'active' : 'none'}
-                selectedHub={pinned?.name ?? null}
-                onHubSelect={selectPin}
+                reduce={reduce}
+                centerX={0.66}
                 controlsRef={controls}
-                fit={wide ? 'width' : 'cover'}
-                focusX={0.6}
-                density={wide ? 6.5 : 7.5}
-                label="Interactive dotted world map with routes from New Delhi to sourcing and delivery cities"
+                onSelect={(h) => setPinned(h as Hub | null)}
+                label="Interactive globe with routes from New Delhi to Asia, Europe, Africa and the Americas"
               />
             )}
           </div>
         </div>
-        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-space via-space/80 to-transparent lg:block" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-space to-transparent" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 hidden w-[44%] bg-gradient-to-r from-space via-space/70 to-transparent lg:block" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[55%] bg-gradient-to-b from-space via-space/70 to-transparent lg:hidden" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-space to-transparent" />
 
         {/* Copy */}
         <div
@@ -174,7 +150,7 @@ export default function Hero() {
               </span>
             </div>
             <span className="mono-caps hidden items-center gap-3 text-white/60 md:flex">
-              Drag the map · click a pin
+              Drag the globe · click a pin
               <span aria-hidden="true" className="relative block h-5 w-px overflow-hidden bg-white/20">
                 <span className="absolute inset-0 animate-scrollcue bg-white" />
               </span>
@@ -189,9 +165,7 @@ export default function Hero() {
           } ${pinned ? 'max-lg:hidden' : ''}`}
         >
           {[
-            { label: 'Zoom in', Icon: Plus, run: () => controls.current?.zoomIn() },
-            { label: 'Zoom out', Icon: Minus, run: () => controls.current?.zoomOut() },
-            { label: 'Reset map', Icon: RotateCcw, run: closePin },
+            { label: 'Centre on New Delhi', Icon: RotateCcw, run: closePin },
           ].map(({ label, Icon, run }, i) => (
             <button
               key={label}
