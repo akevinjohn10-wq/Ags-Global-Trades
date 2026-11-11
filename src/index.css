@@ -537,10 +537,29 @@ html.brand-cursor select {
   color: #fff;
   transition: opacity 0.3s ease;
   /* soft white that blends a little into what is behind it; the faint shadow keeps it visible on white sections */
-  filter: drop-shadow(0 0 1px rgba(10, 22, 64, 0.55)) drop-shadow(0 2px 6px rgba(10, 22, 64, 0.25));
+  filter: drop-shadow(0 0 1px rgba(10, 22, 64, 0.55)) drop-shadow(0 2px 6px rgba(35, 64, 142, 0.35));
 }
 .nav-cursor-arrow svg {
   display: block;
   margin: -0.8px 0 0 -7px;
-  opacity: 0.88;
+  opacity: 0.9;
+  /* every few seconds the arrow breathes: a slow blue glow swells and fades */
+  animation: nav-cursor-glow 4.8s ease-in-out infinite;
+}
+@keyframes nav-cursor-glow {
+  0%, 55%, 100% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 0 rgba(127, 155, 234, 0));
+  }
+  72% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px rgba(127, 155, 234, 0.95)) drop-shadow(0 0 10px rgba(62, 91, 176, 0.6));
+  }
+  84% {
+    opacity: 0.75;
+    filter: drop-shadow(0 0 2px rgba(127, 155, 234, 0.4));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-cursor-arrow svg { animation: none; }
 }

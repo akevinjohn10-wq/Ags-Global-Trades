@@ -72,7 +72,14 @@ export default function BrandCursor() {
   return (
     <div ref={arrowRef} aria-hidden="true" className="nav-cursor-arrow" style={{ opacity: 0 }}>
       <svg viewBox="0 0 14 16" width="14" height="16">
-        <path d="M7 0.8 L13.2 15 L7 11.4 L0.8 15 Z" fill="currentColor" />
+        <defs>
+          <linearGradient id="nav-cursor-fill" x1="0.5" y1="0" x2="0.5" y2="1">
+            <stop offset="0" stopColor="#FFFFFF" />
+            <stop offset="0.6" stopColor="#E3EAFF" />
+            <stop offset="1" stopColor="#9DB4F5" />
+          </linearGradient>
+        </defs>
+        <path d="M7 0.8 L13.2 15 L7 11.4 L0.8 15 Z" fill="url(#nav-cursor-fill)" />
       </svg>
     </div>
   );
