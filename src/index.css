@@ -511,3 +511,46 @@ body { top: 0 !important; }
 @keyframes cat-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cat-page { from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .cat-sheet, .cat-cover { transition: none; } .cat-viewer, .cat-page { animation: none; } }
+
+/* ---------- Brand cursor (the AGS "A"), mouse users only ---------- */
+html.brand-cursor,
+html.brand-cursor * {
+  cursor: none !important;
+}
+html.brand-cursor input,
+html.brand-cursor textarea,
+html.brand-cursor select,
+html.brand-cursor [contenteditable='true'] {
+  cursor: text !important;
+}
+html.brand-cursor select {
+  cursor: pointer !important;
+}
+.brand-cursor-el {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transform-origin: 0 0;
+  will-change: transform;
+  transition: opacity 0.25s ease;
+  filter: drop-shadow(0 2px 6px rgba(10, 22, 64, 0.35));
+}
+.brand-cursor-el svg {
+  display: block;
+  overflow: visible;
+}
+.brand-cursor-shine {
+  animation: brand-cursor-shine 2.6s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+}
+.brand-cursor-el[data-hover='1'] .brand-cursor-shine {
+  animation-duration: 1.1s;
+}
+@keyframes brand-cursor-shine {
+  0% { transform: translateX(0); }
+  70%, 100% { transform: translateX(240px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-cursor-shine { animation: none; }
+}

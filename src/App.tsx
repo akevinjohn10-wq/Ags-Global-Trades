@@ -12,6 +12,7 @@ import GlobalReach from '@/components/sections/GlobalReach';
 import Hero from '@/components/sections/Hero';
 import Statement from '@/components/sections/Statement';
 import Story from '@/components/sections/Story';
+import BrandCursor from '@/components/ui/BrandCursor';
 import ScrollProgress from '@/components/ui/ScrollProgress';
 
 /** Makes the soft blue spotlight on every .spot card follow the cursor. */
@@ -111,6 +112,7 @@ export default function App() {
         <Contact />
       </main>
       <Footer />
+      <BrandCursor />
     </>
   );
 }
