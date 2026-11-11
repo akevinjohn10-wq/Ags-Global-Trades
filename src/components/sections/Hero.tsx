@@ -50,8 +50,8 @@ export default function Hero() {
       setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
       const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
       const e = d * d * (3 - 2 * d);
-      const base = 1;
-      if (mapRef.current) mapRef.current.style.transform = `scale(${(base + e * 1.4).toFixed(4)})`;
+      // the globe itself flies in to New Delhi (handled inside the WebGL scene, so it stays sharp)
+      controls.current?.setDive(e);
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
         copyRef.current.style.opacity = String(1 - c);

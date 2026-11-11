@@ -17,7 +17,8 @@ const PART = (n: string) => `/story/parts/${n}.webp`;
 // Scroll share of each leg
 const P_LOAD = 0.296;
 const P_ROAD = 0.591;
-const P_SEA = 0.945;
+// Where the ship leg ends: the last screen of scrolling belongs to the next section rising over the sea
+let P_SEA = 0.84;
 const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
 
 // Side-view sprite geometry, in units of the truck's height (H), measured from the cut-outs
@@ -243,6 +244,7 @@ function StoryFilm() {
       const rect = section!.getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? clamp(-rect.top / span) : 0;
+      if (span > 0) P_SEA = 1 - window.innerHeight / span;
       const sc = p < P_LOAD ? 0 : p < P_ROAD ? 1 : p < P_SEA ? 2 : 3;
       if (sc !== lastScene) {
         lastScene = sc;
@@ -322,11 +324,12 @@ function StoryFilm() {
 
       // ---- Leg 4: through the clouds into the page below ----
       const u = seg(p, P_SEA, 1);
-      set(skyRef.current, { visibility: p > P_SEA - 0.01 ? 'visible' : 'hidden', opacity: String(ease(seg(p, P_SEA - 0.01, P_SEA + 0.03))) });
+      set(skyRef.current, { visibility: p > P_SEA - 0.01 ? 'visible' : 'hidden' });
       if (p > P_SEA - 0.01) {
         set(cloudsBackRef.current, { transform: `translate3d(0,${(-55 + u * 70).toFixed(2)}%,0)` });
         set(cloudsFrontRef.current, { transform: `translate3d(0,${(-65 + u * 110).toFixed(2)}%,0)` });
-        set(bankRef.current, { transform: `translate3d(0,${(100 - easeOut(seg(u, 0.35, 0.9)) * 100).toFixed(2)}%,0)` });
+        // the cloud edge rides just ahead of the next section's top edge as it scrolls up
+        set(bankRef.current, { transform: `translate3d(0,${(((1.15 - u) / 1.5) * 100).toFixed(2)}%,0)` });
       }
 
       // ---- Copy ----
@@ -376,7 +379,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[630vh] scroll-mt-24 bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[680vh] scroll-mt-24 bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
@@ -430,12 +433,12 @@ function StoryFilm() {
 
         {/* ---------- Leg 4: sky ---------- */}
         <div ref={skyRef} className="absolute inset-0 overflow-hidden" style={{ visibility: 'hidden' }}>
-          <div ref={skyLightRef} className="absolute inset-0 bg-[linear-gradient(to_bottom,#C9D1E4_0%,#E4E8F1_55%,#FFFFFF_100%)]" />
-          <div ref={cloudsBackRef} aria-hidden="true" className="absolute inset-x-0 top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
-          <div ref={cloudsFrontRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
+          <div ref={skyLightRef} className="absolute inset-0 opacity-0 bg-[linear-gradient(to_bottom,#C9D1E4_0%,#E4E8F1_55%,#FFFFFF_100%)]" />
+          <div ref={cloudsBackRef} aria-hidden="true" className="absolute inset-x-0 hidden top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
+          <div ref={cloudsFrontRef} aria-hidden="true" className="pointer-events-none hidden absolute inset-x-0 top-0 h-[220%] will-change-transform" style={{ backgroundSize: '100% 100%' }} />
           <div ref={bankRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[150%] will-change-transform" style={{ transform: 'translate3d(0,100%,0)' }}>
             <div ref={bankTopRef} className="absolute inset-x-0 top-0 h-[40%]" style={{ backgroundSize: '100% 100%', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 45%)', maskImage: 'linear-gradient(to bottom, transparent, #000 45%)' }} />
-            <div className="absolute inset-x-0 bottom-0 top-[22%] bg-[linear-gradient(to_bottom,rgba(255,255,255,0),#FFFFFF_25%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(244,246,251,0.35)_8%,rgba(255,255,255,0.9)_18%,#FFFFFF_23%)]" />
           </div>
         </div>
 

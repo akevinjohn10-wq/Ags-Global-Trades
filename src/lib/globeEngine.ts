@@ -7,7 +7,7 @@
 import { PACKED } from '@/lib/landMask';
 
 export interface GlobeHub { name: string; lat: number; lon: number; country?: string; note?: string; region?: string }
-export interface GlobeHandle { flyTo(hub: GlobeHub): void; reset(): void; setRunning(on: boolean): void; destroy(): void }
+export interface GlobeHandle { setDive(d: number): void; flyTo(hub: GlobeHub): void; reset(): void; setRunning(on: boolean): void; destroy(): void }
 export interface GlobeOptions {
   home: GlobeHub;
   hubs: GlobeHub[];
@@ -297,7 +297,7 @@ const S = {
 const SUN0 = norm([-0.18, 0.60, -0.78]);
 const SUN1 = norm([-0.45, 0.80, -0.10]);
 
-let quality = 1, slow = 0, fast = 0;
+let quality = 1, slow = 0, fast = 0, dive = 0;
 let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
 function resize() {
   const r = stage.getBoundingClientRect();
@@ -315,15 +315,17 @@ function camera() {
   const k = ease(clamp(S.intro, 0, 1));
   // globe radius as a share of the screen height, then the camera distance that gives it
   const R = mobile ? 0.62 * W / H : 0.41;
-  const dist = lerp(1.16, Math.sqrt(Math.pow(1.9 / R, 2) + 1), k);
+  const dz = ease(dive);
+  // scroll dive: camera flies in toward New Delhi and the globe slides to the centre
+  const dist = lerp(lerp(1.16, Math.sqrt(Math.pow(1.9 / R, 2) + 1), k), 2.0, dz);
   const ty = lerp(1.02, 0, k);
   const cam = [0, lerp(0.15, 0, k), dist];
   const target = [0, ty, 0];
   const sun = norm(slerp(SUN0, SUN1, k));
   // screen placement of the globe: right of centre on desktop, low centre on phones
-  const cx = mobile ? 0.5 : lerp(0.5, centerX, k);
-  const cyy = mobile ? lerp(0.5, 0.25 - R, k) : 0.5;
-  return { cam, target, sun, cx, cy: cyy, k };
+  const cx = lerp(mobile ? 0.5 : lerp(0.5, centerX, k), 0.5, dz);
+  const cyy = lerp(mobile ? lerp(0.5, 0.25 - R, k) : 0.5, 0.5, dz);
+  return { cam, target, sun, cx, cy: cyy, k, dz };
 }
 
 function basis(cam, target) {
@@ -507,7 +509,15 @@ function frame(now) {
 
   scale = 1;
   const C = camera(); const B = basis(C.cam, C.target);
-  const M = rotMat(S.yaw, S.pitch);
+  // during the dive, turn New Delhi to face the camera (short way round)
+  let ry = S.yaw, rp = S.pitch;
+  if (C.dz > 0) {
+    const ty = -HOME.lon * D2R, tp = HOME.lat * D2R;
+    let d = ty - S.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+    const w = Math.min(1, C.dz * 1.6);
+    ry = S.yaw + d * w; rp = lerp(S.pitch, tp, w);
+  }
+  const M = rotMat(ry, rp);
 
   gl.uniform2f(U.uRes, glCanvas.width, glCanvas.height);
   gl.uniform2f(U.uCenter, C.cx * glCanvas.width, C.cy * glCanvas.height);
@@ -525,7 +535,7 @@ function frame(now) {
 
 function drawOverlay(C, B, M) {
   ctx.clearRect(0, 0, W, H);
-  drawDeco(C, B, M, clamp((S.intro - 0.35) / 0.4, 0, 1));
+  drawDeco(C, B, M, clamp((S.intro - 0.35) / 0.4, 0, 1) * (1 - C.dz));
   const reveal = clamp((S.intro - 0.62) / 0.38, 0, 1); // pins and routes come in as the camera settles
   screenPins = [];
   if (reveal <= 0) return;
@@ -614,6 +624,7 @@ let running = true, raf = requestAnimationFrame(frame);
 return {
   flyTo(hub) { S.selected = hub; S.idle = 0; flyTo(hub); },
   reset() { S.selected = null; S.idle = 0; S.flying = { yaw: HOME_YAW, pitch: homePitch() }; },
+  setDive(d) { dive = clamp(d, 0, 1); if (dive > 0) S.idle = 0; },
   setRunning(on) { if (on === running) return; running = on; if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else if (raf) { cancelAnimationFrame(raf); raf = 0; } },
   destroy() { running = false; if (raf) cancelAnimationFrame(raf); ro.disconnect(); const lose = gl.getExtension('WEBGL_lose_context'); lose && lose.loseContext(); root.removeChild(glCanvas); root.removeChild(fx); },
 };

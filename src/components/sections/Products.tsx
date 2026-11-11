@@ -11,7 +11,7 @@ export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="catalogue" className="section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
+    <section id="catalogue" className="section-y relative isolate z-10 -mt-[100vh] scroll-mt-24 overflow-hidden bg-paper">
       <div className="container-x">
         <SectionHeading
           align="split"
