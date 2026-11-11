@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, ChevronLeft, ChevronRight, Lock, Mail, MessageCircle, Phone, X } from 'lucide-react';
+import { LogoMark } from '@/components/ui/Logo';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { catalogues, contactDetails, type Catalogue } from '@/data/siteContent';
@@ -78,9 +79,13 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
   return (
     <div role="dialog" aria-modal="true" aria-label={`${c.title} catalogue preview`} className="cat-viewer fixed inset-0 z-[90] flex flex-col bg-[#060A18] text-white">
       <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-8">
-        <div className="min-w-0">
+        <div className="flex min-w-0 items-center gap-4">
+          <LogoMark height={28} className="hidden sm:block" />
+          <span aria-hidden="true" className="hidden h-8 w-px bg-white/15 sm:block" />
+          <div className="min-w-0">
           <p className="mono-caps text-sky">Catalogue preview</p>
           <h3 className="truncate font-display text-[18px] font-medium sm:text-[22px]">{c.title}</h3>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="mono-caps hidden text-white/50 sm:inline">

@@ -1,5 +1,6 @@
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
+import Logo from '@/components/ui/Logo';
 import Reveal from '@/components/ui/Reveal';
 import { allHubs } from '@/data/globe';
 import { contactDetails } from '@/data/siteContent';
@@ -17,7 +18,8 @@ export default function CtaBand() {
 
       <div className="container-x grid gap-10 py-20 sm:py-28 lg:grid-cols-12 lg:items-end">
         <Reveal className="lg:col-span-7">
-          <p className="eyebrow eyebrow-light">Start an order</p>
+          <Logo height={44} />
+          <p className="eyebrow eyebrow-light mt-10">Start an order</p>
           <h2 className="mt-5 max-w-2xl font-display text-[30px] font-medium leading-[1.05] sm:text-[44px]">Need a product sourced?</h2>
           <p className="mt-5 max-w-lg text-[16px] leading-[1.7] text-white/60 sm:text-[17px]">
             Tell us the product, the quantity and where it needs to go. We will come back with suppliers, prices and a delivery plan.

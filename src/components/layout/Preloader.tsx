@@ -74,7 +74,7 @@ export default function Preloader() {
       }`}
     >
       <div className="container-x flex items-start justify-between pt-6 sm:pt-8">
-        <Logo height={52} />
+        <Logo height={46} />
         <ul className="hidden text-right font-mono text-[12px] uppercase tracking-eyebrow sm:block">
           {tickerItems.map((item) => (
             <li key={item} className={`transition-colors duration-300 ${item === word ? 'text-white' : 'text-white/30'}`}>

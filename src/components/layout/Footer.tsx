@@ -105,7 +105,7 @@ export default function Footer() {
 
       <div className="container-x grid gap-12 py-14 sm:grid-cols-2 lg:grid-cols-12 lg:py-16">
         <div className="lg:col-span-3">
-          <Logo height={72} />
+          <Logo layout="stacked" height={80} />
           <p className="mt-5 max-w-xs text-[15px] leading-[1.7] text-white/60">
             A sourcing and supply company: we find, check, buy and ship the products your business needs.
           </p>
