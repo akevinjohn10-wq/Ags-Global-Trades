@@ -10,7 +10,7 @@ export default function Contact() {
     { label: 'Email', icon: Mail, href: `mailto:${contactDetails.email}`, lines: [contactDetails.email] },
     { label: 'Phone', icon: Phone, href: `tel:${contactDetails.phone.replace(/\s/g, '')}`, lines: [contactDetails.phone] },
     { label: 'Business Hours', icon: Clock, lines: [contactDetails.hours] },
-    { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['Aditya Dey'], external: true },
+    { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['AGS Global Trade'], external: true },
     { label: 'Instagram', icon: Instagram, href: contactDetails.instagram, lines: ['@agstrades.in'], external: true },
   ];
 
