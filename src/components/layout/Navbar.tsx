@@ -80,7 +80,7 @@ export default function Navbar() {
         </div>
 
         {/* Main bar */}
-        <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/95 backdrop-blur-md' : 'border-transparent bg-transparent'}`}>
+        <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/[0.97]' : 'border-transparent bg-transparent'}`}>
           <nav aria-label="Primary" className="mx-auto flex h-[72px] max-w-content items-center justify-between gap-6 px-5 sm:px-8 lg:px-12">
             <a href="#home" aria-label="AGS Global Trade home" className="shrink-0">
               <Logo height={50} />

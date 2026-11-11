@@ -64,7 +64,6 @@ export default function Hero() {
         const c = Math.min(1, d / 0.6);
         copyRef.current.style.opacity = String(1 - c);
         copyRef.current.style.transform = `translate3d(0, ${(-c * 60).toFixed(1)}px, 0)`;
-        copyRef.current.style.filter = `blur(${(c * 6).toFixed(1)}px)`;
       }
       if (skyRef.current) {
         const s = Math.min(1, Math.max(0, (d - 0.25) / 0.75));

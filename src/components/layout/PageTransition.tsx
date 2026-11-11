@@ -66,9 +66,8 @@ export default function PageTransition() {
           height: "190vh",
           transform: `translate3d(0, ${y}, 0)`,
           transition: shown ? `transform ${ms}ms ${ease}` : 'none',
-          background: 'rgba(10, 22, 64, 0.8)',
-          backdropFilter: 'blur(16px) saturate(120%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(120%)',
+          background: 'rgba(10, 22, 64, 0.9)',
+          willChange: 'transform',
           WebkitMaskImage: feather,
           maskImage: feather,
         }}

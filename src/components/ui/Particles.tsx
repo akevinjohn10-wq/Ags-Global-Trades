@@ -1,5 +1,5 @@
 /** Small glowing specks that drift upwards, like dust in a light beam. */
-export default function Particles({ count = 28 }: { count?: number }) {
+export default function Particles({ count = 20 }: { count?: number }) {
   // Deterministic pseudo-random so the layout is stable between renders
   let seed = 7;
   const rand = () => {
@@ -7,7 +7,7 @@ export default function Particles({ count = 28 }: { count?: number }) {
     return seed / 233280;
   };
   const dots = Array.from({ length: count }, (_, i) => {
-    const size = 1.5 + rand() * 2.5;
+    const size = 5 + rand() * 6;
     return (
       <span
         key={i}

@@ -123,7 +123,7 @@ export default function Products() {
                                 loop
                                 playsInline
                                 preload="metadata"
-                                className="aspect-video w-full object-cover mix-blend-multiply [mask-image:radial-gradient(75%_75%_at_50%_50%,#000_60%,transparent_100%)]"
+                                className="aspect-video w-full object-cover"
                               />
                             ) : (
                               <img src={item.image} alt={item.alt} className="aspect-[4/3] w-full animate-kenburns object-cover" />

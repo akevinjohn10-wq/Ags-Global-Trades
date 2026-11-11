@@ -160,7 +160,7 @@ export default function DotMap({
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const doAnimate = animated && !reduce;
     const mask = getLandMask();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     let base: Layout = { w: 0, h: 0, scale: 1, ox: 0, oy: 0 };
     let layout: Layout = base;
@@ -422,12 +422,19 @@ export default function DotMap({
         if (introStart < 0) introStart = now;
         const e = (now - introStart) / 1000;
         ctx!.fillStyle = pal.dot;
-        for (let i = 0; i < dots.length; i += 3) {
-          const a = Math.min(1, Math.max(0, (e - dots[i + 2] * 1.1) / 0.35));
-          if (a <= 0) continue;
+        // Batch dots into a few fade levels: one path per level instead of one per dot
+        const LEVELS = 6;
+        for (let lv = 1; lv <= LEVELS; lv++) {
+          const a = lv / LEVELS;
+          const r = dotR * (0.4 + 0.6 * a);
           ctx!.globalAlpha = a;
           ctx!.beginPath();
-          ctx!.arc(dots[i], dots[i + 1], dotR * (0.4 + 0.6 * a), 0, Math.PI * 2);
+          for (let i = 0; i < dots.length; i += 3) {
+            const t = Math.min(1, Math.max(0, (e - dots[i + 2] * 1.1) / 0.35));
+            if (t <= 0 || Math.ceil(t * LEVELS) !== lv) continue;
+            ctx!.moveTo(dots[i] + r, dots[i + 1]);
+            ctx!.arc(dots[i], dots[i + 1], r, 0, Math.PI * 2);
+          }
           ctx!.fill();
         }
         ctx!.globalAlpha = 1;

@@ -116,7 +116,6 @@ function StoryFilm() {
   const lanePathRef = useRef<SVGPathElement>(null);
   const topTruckRef = useRef<HTMLImageElement>(null);
   const mistRef = useRef<HTMLDivElement>(null);
-  const mistTopRef = useRef<HTMLDivElement>(null);
   // leg 4
   const skyRef = useRef<HTMLDivElement>(null);
   const skyLightRef = useRef<HTMLDivElement>(null);
@@ -227,8 +226,6 @@ function StoryFilm() {
       const aspect = (2.2 * vh) / vw;
       if (cloudsBackRef.current) cloudsBackRef.current.style.backgroundImage = paintClouds(7, 44, 0.5, 10, 30, aspect);
       if (cloudsFrontRef.current) cloudsFrontRef.current.style.backgroundImage = paintClouds(31, 34, 0.8, 12, 36, aspect);
-      const edge = paintClouds(53, 18, 1, 22, 42, (0.75 * vh) / vw);
-      if (mistTopRef.current) mistTopRef.current.style.backgroundImage = edge;
       if (bankTopRef.current) bankTopRef.current.style.backgroundImage = paintClouds(91, 16, 1, 24, 44, (0.6 * vh) / vw);
 
       draw(true);
@@ -384,7 +381,7 @@ function StoryFilm() {
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_40%,rgba(5,7,15,0.7))]" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.18)] mix-blend-multiply" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
 
         {/* ---------- Leg 1: loading, on white ---------- */}
         <div ref={loadRef} className="absolute inset-0 bg-paper text-ink" style={{ ['--h' as string]: '200px' }}>
@@ -428,12 +425,7 @@ function StoryFilm() {
 
         {/* ---------- Cloud bank between the road and the sea ---------- */}
         <div ref={mistRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[300vh] will-change-transform" style={{ visibility: 'hidden' }}>
-          <div
-            ref={mistTopRef}
-            className="absolute inset-x-0 top-0 h-1/4"
-            style={{ backgroundSize: '100% 100%', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 55%)', maskImage: 'linear-gradient(to bottom, transparent, #000 55%)' }}
-          />
-          <div className="absolute inset-x-0 bottom-0 top-[18%] bg-[linear-gradient(to_bottom,rgba(255,255,255,0),#FFFFFF_12%,#F3F5FA_42%,#FFFFFF_62%,rgba(255,255,255,0.55)_80%,rgba(255,255,255,0))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(255,255,255,0.35)_8%,rgba(255,255,255,0.85)_18%,#FFFFFF_28%,#F4F6FB_50%,#FFFFFF_66%,rgba(255,255,255,0.8)_78%,rgba(255,255,255,0.3)_90%,rgba(255,255,255,0)_100%)]" />
         </div>
 
         {/* ---------- Leg 4: sky ---------- */}
@@ -459,12 +451,12 @@ function StoryFilm() {
         </div>
 
         <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-ink lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
-          <div className="max-lg:rounded-lg max-lg:bg-paper/90 max-lg:p-4 max-lg:backdrop-blur-sm lg:col-span-4">
+          <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
             <p className="eyebrow">What we do</p>
             <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
             <p className="mt-4 max-w-sm text-[15px] leading-[1.65] text-muted">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/90 max-lg:p-4 max-lg:backdrop-blur-sm lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
               <li
                 key={sv.title}
@@ -509,7 +501,7 @@ function StoryFilm() {
         </div>
 
         {/* Journey indicator */}
-        <div className="container-x pointer-events-none absolute inset-x-0 bottom-0 hidden pb-6 mix-blend-difference lg:block [@media(max-height:820px)]:!hidden">
+        <div className="container-x pointer-events-none absolute inset-x-0 bottom-0 hidden pb-6 lg:block [@media(max-height:820px)]:!hidden">
           <div className={`flex items-center gap-4 transition-opacity duration-300 ${scene === 3 ? 'opacity-0' : ''}`}>
             <span className="mono-caps text-white/80">{String(scene + 1).padStart(2, '0')}</span>
             <span className="flex gap-1.5" aria-hidden="true">
