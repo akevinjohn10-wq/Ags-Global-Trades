@@ -511,29 +511,3 @@ body { top: 0 !important; }
 @keyframes cat-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes cat-page { from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.985); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .cat-sheet, .cat-cover { transition: none; } .cat-viewer, .cat-page { animation: none; } }
-
-/* ---------- routes film surroundings ---------- */
-.film-grid {
-  background-image: radial-gradient(circle, rgba(142, 166, 236, 0.22) 1px, transparent 1.4px);
-  background-size: 26px 26px;
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 75%);
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 50%, #000 30%, transparent 75%);
-  animation: film-grid 22s linear infinite;
-  will-change: transform;
-}
-@keyframes film-grid { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-26px, -26px, 0); } }
-.film-orb {
-  border-radius: 9999px;
-  will-change: transform, opacity;
-  animation: film-orb 14s ease-in-out infinite alternate;
-}
-@keyframes film-orb {
-  0% { transform: translate3d(-4%, 2%, 0) scale(1); opacity: 0.7; }
-  100% { transform: translate3d(4%, -3%, 0) scale(1.12); opacity: 1; }
-}
-.film-arc {
-  stroke-dasharray: 6 14;
-  animation: film-arc 6s linear infinite;
-}
-@keyframes film-arc { to { stroke-dashoffset: -200; } }
-@media (prefers-reduced-motion: reduce) { .film-grid, .film-orb, .film-arc { animation: none; } }

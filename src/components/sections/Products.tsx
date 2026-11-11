@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Reveal from '@/components/ui/Reveal';
-import RoutesFilm from '@/components/sections/RoutesFilm';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { productCategories } from '@/data/siteContent';
 import { requestEnquiry } from '@/lib/enquiry';
@@ -12,8 +11,7 @@ export default function Products() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="catalogue" className="relative isolate z-10 -mt-[28vh] scroll-mt-24 overflow-hidden pb-20 sm:pb-28 lg:pb-36">
-      <RoutesFilm />
+    <section id="catalogue" className="section-y relative isolate scroll-mt-24 overflow-hidden bg-paper">
       <div className="container-x">
         <SectionHeading
           align="split"
