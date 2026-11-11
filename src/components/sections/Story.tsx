@@ -15,9 +15,9 @@ const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 
 // Scroll share of each leg
-const P_LOAD = 0.25;
-const P_ROAD = 0.5;
-const P_SEA = 0.9;
+const P_LOAD = 0.296;
+const P_ROAD = 0.591;
+const P_SEA = 0.945;
 const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
 
 // Side-view sprite geometry, in units of the truck's height (H), measured from the cut-outs
@@ -326,7 +326,7 @@ function StoryFilm() {
       if (p > P_SEA - 0.01) {
         set(cloudsBackRef.current, { transform: `translate3d(0,${(-55 + u * 70).toFixed(2)}%,0)` });
         set(cloudsFrontRef.current, { transform: `translate3d(0,${(-65 + u * 110).toFixed(2)}%,0)` });
-        set(bankRef.current, { transform: `translate3d(0,${(100 - easeOut(seg(u, 0.5, 1)) * 100).toFixed(2)}%,0)` });
+        set(bankRef.current, { transform: `translate3d(0,${(100 - easeOut(seg(u, 0.35, 0.9)) * 100).toFixed(2)}%,0)` });
       }
 
       // ---- Copy ----
@@ -376,7 +376,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[745vh] scroll-mt-24 bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[630vh] scroll-mt-24 bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />

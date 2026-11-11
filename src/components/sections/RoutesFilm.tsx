@@ -35,12 +35,12 @@ export default function RoutesFilm() {
       const r = wrap.getBoundingClientRect();
       const vh = window.innerHeight;
       const p = Math.min(1, Math.max(0, (vh - r.top) / (vh + r.height)));
-      const inn = Math.min(1, p / 0.35);
-      const out = Math.min(1, (1 - p) / 0.3);
+      const inn = Math.min(1, p / 0.16);
+      const out = Math.min(1, (1 - p) / 0.25);
       const k = Math.min(inn, out);
       const e = k * k * (3 - 2 * k);
       wrap.style.opacity = String(e);
-      wrap.style.transform = `translate3d(0, ${((1 - inn) * 60).toFixed(1)}px, 0) scale(${(0.94 + 0.06 * e).toFixed(4)})`;
+      wrap.style.transform = `translate3d(0, ${((1 - inn) * 30).toFixed(1)}px, 0) scale(${(0.94 + 0.06 * e).toFixed(4)})`;
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
