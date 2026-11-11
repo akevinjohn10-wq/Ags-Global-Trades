@@ -112,7 +112,7 @@ export default function InquiryForm() {
         <CircleCheck size={40} strokeWidth={1.5} className="text-accent" aria-hidden="true" />
         <div>
           <h3 className="font-display text-2xl text-ink">Thank you for your enquiry.</h3>
-          <p className="mt-3 text-[16px] leading-[1.7] text-muted">
+          <p className="mt-3 text-[16px] lg:text-[18px] leading-[1.7] text-muted">
             Your message has reached our team. A member of staff will respond within one business day.
           </p>
         </div>

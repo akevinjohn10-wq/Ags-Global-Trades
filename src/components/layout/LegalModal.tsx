@@ -53,7 +53,7 @@ export default function LegalModal({ doc, onClose }: LegalModalProps) {
           </button>
         </div>
 
-        <div className="overflow-y-auto p-5 text-[15px] leading-[1.7] text-muted sm:p-6">
+        <div className="overflow-y-auto p-5 text-[16px] lg:text-[17px] leading-[1.7] text-muted sm:p-6">
           <p>{doc.intro}</p>
           {doc.sections.map((section) => (
             <section key={section.heading} className="mt-6">

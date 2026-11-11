@@ -23,7 +23,7 @@ function RequestOptions({ text, subject, onForm, tone = 'light' }: { text: strin
     tone === 'dark'
       ? 'border-white/15 text-white hover:border-white hover:bg-white hover:text-ink'
       : 'border-ink/15 text-ink hover:border-ink hover:bg-ink hover:text-white';
-  const item = `flex items-center gap-3 rounded-md border px-4 py-3 text-[14px] transition-colors duration-300 ${base}`;
+  const item = `flex items-center gap-3 rounded-md border px-4 py-3 text-[15px] lg:text-[16px] transition-colors duration-300 ${base}`;
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       <a className={item} href={`https://wa.me/${whatsappDigits}?text=${encodeURIComponent(text)}`} target="_blank" rel="noopener noreferrer">
@@ -125,7 +125,7 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
                   <Lock size={18} aria-hidden="true" />
                 </span>
                 <h4 className="mt-5 font-display text-[24px] font-medium leading-tight">Get the full {c.pages}-page catalogue</h4>
-                <p className="mt-3 text-[14px] leading-[1.65] text-white/65">
+                <p className="mt-3 text-[15px] lg:text-[16px] leading-[1.65] text-white/65">
                   Full specifications, sizes, packing and loading details. Contact us and we will send the PDF with prices for your quantity.
                 </p>
                 <div className="mt-6">

@@ -60,7 +60,7 @@ export default function Products() {
                         {item.name}
                       </span>
                       <span
-                        className={`hidden items-center gap-2 rounded border px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow transition-[opacity,color,border-color] duration-500 md:flex ${
+                        className={`hidden items-center gap-2 rounded border px-3 py-1.5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow transition-[opacity,color,border-color] duration-500 md:flex ${
                           isOpen ? 'border-accent text-accent opacity-100' : 'border-ink/15 text-muted opacity-0 group-hover:opacity-100'
                         }`}
                       >
@@ -99,7 +99,7 @@ export default function Products() {
                           </div>
                           <ul className="mt-5 space-y-3">
                             {item.points.map((point) => (
-                              <li key={point} className="flex gap-3 text-[16px] leading-[1.6] text-muted">
+                              <li key={point} className="flex gap-3 text-[16px] lg:text-[18px] leading-[1.6] text-muted">
                                 <span aria-hidden="true" className="mt-[9px] h-1.5 w-1.5 shrink-0 bg-accent" />
                                 {point}
                               </li>

@@ -218,7 +218,7 @@ export default function Hero() {
               <div>
                 <p className="mono-caps text-sky">{pinnedRegion}</p>
                 <p className="mt-2 font-display text-[26px] font-medium leading-none">{pinned.name}</p>
-                {pinned.country && <p className="mt-1.5 text-[14px] text-white/60">{pinned.country}</p>}
+                {pinned.country && <p className="mt-1.5 text-[15px] lg:text-[16px] text-white/60">{pinned.country}</p>}
               </div>
               <button
                 type="button"
@@ -229,7 +229,7 @@ export default function Hero() {
                 <X size={16} strokeWidth={1.75} />
               </button>
             </div>
-            {pinned.note && <p className="mt-4 text-[15px] leading-[1.6] text-white/80">{pinned.note}</p>}
+            {pinned.note && <p className="mt-4 text-[16px] lg:text-[17px] leading-[1.6] text-white/80">{pinned.note}</p>}
             <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
               <span className="mono-caps text-white/50">
                 {pinned.name === homeHub.name ? 'AGS Trade HQ' : `Route from ${homeHub.name}`}

@@ -454,7 +454,7 @@ function StoryFilm() {
           <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
             <p className="eyebrow">What we do</p>
             <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[15px] leading-[1.65] text-muted">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-muted">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
@@ -466,9 +466,9 @@ function StoryFilm() {
                 className="border-l border-ink/15 pl-4"
                 style={{ opacity: 0 }}
               >
-                <p className="mono-caps text-accent">{String(i + 1).padStart(2, '0')}</p>
-                <p className="mt-1 font-display text-[15px] leading-tight sm:text-[18px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[13px] text-muted sm:block">{sv.short}</p>
+                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-accent sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
+                <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
+                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-muted sm:block">{sv.short}</p>
               </li>
             ))}
           </ul>
@@ -533,7 +533,7 @@ function StoryStatic() {
             {services.map((s) => (
               <article key={s.title} className="border-l border-white/15 pl-5">
                 <h3 className="font-display text-[22px]">{s.title}</h3>
-                <p className="mt-2 text-[15px] text-white/65">{s.description}</p>
+                <p className="mt-2 text-[16px] lg:text-[17px] text-white/65">{s.description}</p>
               </article>
             ))}
           </div>

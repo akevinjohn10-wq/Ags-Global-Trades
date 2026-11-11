@@ -14,7 +14,7 @@ export default {
         ink: '#1B1E24',
         ink2: '#2E333D',
         muted: '#62677A',
-        soft: '#9FA6B4',
+        soft: '#6B7285',
         accent: '#23408E',
         accent2: '#3E5BB0',
         sky: '#B8C4E6',
@@ -28,7 +28,7 @@ export default {
       letterSpacing: {
         tightest: '-0.02em',
         display: '-0.035em',
-        eyebrow: '0.14em',
+        eyebrow: '0.12em',
       },
       borderRadius: {
         md: '4px',

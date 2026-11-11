@@ -49,14 +49,14 @@ export default function Statement() {
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
             <Reveal className="border-t border-ink/10 pt-5">
-              <p className="mono-caps text-accent">Our mission</p>
-              <p className="mt-3 text-[17px] leading-[1.65] text-muted">
+              <h3 className="flex items-center gap-3 font-display text-[24px] font-medium tracking-[-0.02em] text-ink sm:text-[28px]"><span className="h-2 w-2 bg-accent" aria-hidden="true" />Our mission</h3>
+              <p className="mt-3 text-[17px] leading-[1.65] text-muted lg:text-[18px]">
                 To make sourcing simple, transparent, and reliable for businesses of every size.
               </p>
             </Reveal>
             <Reveal delay={100} className="border-t border-ink/10 pt-5">
-              <p className="mono-caps text-accent">Our values</p>
-              <p className="mt-3 text-[17px] leading-[1.65] text-muted">
+              <h3 className="flex items-center gap-3 font-display text-[24px] font-medium tracking-[-0.02em] text-ink sm:text-[28px]"><span className="h-2 w-2 bg-accent" aria-hidden="true" />Our values</h3>
+              <p className="mt-3 text-[17px] leading-[1.65] text-muted lg:text-[18px]">
                 Integrity, precision, and long-term partnerships guide every order we handle.
               </p>
             </Reveal>
@@ -70,7 +70,7 @@ export default function Statement() {
               verified suppliers, negotiate the price, check the goods and arrange shipping through established shipping lines
               and courier partners.
             </p>
-            <p className="mt-4 text-[16px] leading-[1.7] text-muted">
+            <p className="mt-4 text-[16px] lg:text-[18px] leading-[1.7] text-muted">
               No chasing multiple vendors, no surprises at delivery. Just one team, accountable from enquiry to your door.
             </p>
           </Reveal>
@@ -81,7 +81,7 @@ export default function Statement() {
                   <CountUp to={fact.value} play={isInView} />
                   {fact.suffix}
                 </p>
-                <p className="mt-2 text-[15px] text-muted">{fact.label}</p>
+                <p className="mt-2 text-[16px] lg:text-[17px] text-muted">{fact.label}</p>
               </Reveal>
             ))}
           </ul>

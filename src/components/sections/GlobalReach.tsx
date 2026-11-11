@@ -39,7 +39,7 @@ export default function GlobalReach() {
                   aria-selected={selected}
                   aria-controls="corridor-panel"
                   onClick={() => setActiveId(c.id)}
-                  className={`group flex shrink-0 items-center gap-2 rounded-md border px-4 py-2.5 font-mono text-[12px] uppercase tracking-eyebrow transition-all duration-300 ${
+                  className={`group flex shrink-0 items-center gap-2 rounded-md border px-4 py-2.5 font-mono text-[13px] lg:text-[14px] uppercase tracking-eyebrow transition-all duration-300 ${
                     selected ? 'border-accent bg-accent text-white' : 'border-ink/10 bg-paper text-ink/70 hover:border-ink hover:text-ink'
                   }`}
                 >
@@ -74,20 +74,20 @@ export default function GlobalReach() {
               <div key={corridor.id} className="animate-panelin">
                 <p className="mono-caps text-accent">Region</p>
                 <h3 className="mt-2 font-display text-[26px] leading-none text-ink">{corridor.name}</h3>
-                <p className="mt-3 text-[15px] leading-[1.6] text-muted">{corridor.summary}</p>
+                <p className="mt-3 text-[16px] lg:text-[17px] leading-[1.6] text-muted">{corridor.summary}</p>
                 <ul className="mt-4 flex flex-wrap gap-2">
-                  <li className="flex items-center gap-1.5 rounded bg-accent px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow text-white">
+                  <li className="flex items-center gap-1.5 rounded bg-accent px-2.5 py-1.5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow text-white">
                     <span className="h-1.5 w-1.5 bg-white" aria-hidden="true" />
                     {homeHub.name}
                   </li>
                   {corridor.hubs.map((hub) => (
-                    <li key={hub.name} className="flex items-center gap-1.5 rounded bg-mist px-2.5 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow text-ink">
+                    <li key={hub.name} className="flex items-center gap-1.5 rounded bg-mist px-2.5 py-1.5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow text-ink">
                       <MapPin size={12} strokeWidth={1.75} aria-hidden="true" className="text-accent" />
                       {hub.name}
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-[12px] text-soft">Example cities shown for each region.</p>
+                <p className="mt-4 text-[13px] lg:text-[14px] text-soft">Example cities shown for each region.</p>
               </div>
             </div>
           </div>

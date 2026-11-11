@@ -36,7 +36,7 @@ export default function Contact() {
                     <span className="min-w-0">
                       <span className="mono-caps block text-soft">{detail.label}</span>
                       {detail.lines.map((line) => (
-                        <span key={line} className="block text-[16px] leading-[1.6] text-ink">
+                        <span key={line} className="block text-[16px] lg:text-[18px] leading-[1.6] text-ink">
                           {line}
                         </span>
                       ))}

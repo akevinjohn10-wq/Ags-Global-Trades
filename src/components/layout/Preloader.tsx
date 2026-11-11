@@ -75,7 +75,7 @@ export default function Preloader() {
     >
       <div className="container-x flex items-start justify-between pt-6 sm:pt-8">
         <Logo height={46} />
-        <ul className="hidden text-right font-mono text-[12px] uppercase tracking-eyebrow sm:block">
+        <ul className="hidden text-right font-mono text-[13px] lg:text-[14px] uppercase tracking-eyebrow sm:block">
           {tickerItems.map((item) => (
             <li key={item} className={`transition-colors duration-300 ${item === word ? 'text-white' : 'text-white/30'}`}>
               {item}
@@ -88,7 +88,7 @@ export default function Preloader() {
         <div className="absolute inset-x-0 top-1/2 mx-auto aspect-[2.6/1] w-full max-w-[1300px] -translate-y-1/2 px-5">
           <DotMap theme="dark" labels="none" animated={false} density={8} label="Loading" />
         </div>
-        <ul className="absolute left-5 top-1/2 hidden -translate-y-1/2 font-mono text-[11px] uppercase tracking-eyebrow sm:left-8 lg:left-12 lg:block">
+        <ul className="absolute left-5 top-1/2 hidden -translate-y-1/2 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow sm:left-8 lg:left-12 lg:block">
           {regions.map((name, i) => (
             <li key={name} className={`transition-colors duration-300 ${i === regionIndex ? 'text-white' : 'text-white/25'}`}>
               {name}
@@ -98,7 +98,7 @@ export default function Preloader() {
       </div>
 
       <div className="container-x flex items-end justify-between pb-6 sm:pb-8">
-        <div className="font-mono text-[12px] uppercase tracking-eyebrow text-white/60">
+        <div className="font-mono text-[13px] lg:text-[14px] uppercase tracking-eyebrow text-white/60">
           <span className="mr-2 inline-block h-2 w-2 animate-blink bg-accent2" />
           <span className="sm:hidden">{word}</span>
           <span className="hidden sm:inline">You name it · We source it</span>

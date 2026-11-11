@@ -58,7 +58,7 @@ export default function Navbar() {
         >
           <div className="flex h-9 items-center">
             <div className="marquee-pause relative flex-1 overflow-hidden">
-              <ul className="flex w-max animate-marquee-fast items-center whitespace-nowrap font-mono text-[11px] uppercase tracking-eyebrow">
+              <ul className="flex w-max animate-marquee-fast items-center whitespace-nowrap font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow">
                 {ticker.map((item, i) => (
                   <li key={`${item}-${i}`} className="flex items-center gap-6 pr-6">
                     <span className="h-1.5 w-1.5 bg-accent2" aria-hidden="true" />
@@ -67,7 +67,7 @@ export default function Navbar() {
                 ))}
               </ul>
             </div>
-            <div className="hidden shrink-0 items-center gap-5 border-l border-white/10 bg-ink px-5 font-mono text-[11px] uppercase tracking-eyebrow md:flex lg:px-12">
+            <div className="hidden shrink-0 items-center gap-5 border-l border-white/10 bg-ink px-5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow md:flex lg:px-12">
               <a href={`mailto:${contactDetails.email}`} className="transition-colors hover:text-white">
                 {contactDetails.email}
               </a>
@@ -86,10 +86,10 @@ export default function Navbar() {
               <Logo height={40} />
             </a>
 
-            <ul className="hidden items-center gap-8 xl:flex">
+            <ul className="hidden items-center gap-6 xl:flex 2xl:gap-8">
               {navLinks.slice(1).map((link) => (
                 <li key={link.href}>
-                  <a href={link.href} className="group relative py-2 font-mono text-[12px] uppercase tracking-eyebrow text-white/75 transition-colors hover:text-white">
+                  <a href={link.href} className="group relative whitespace-nowrap py-2 font-mono text-[13px] uppercase tracking-eyebrow text-white/80 2xl:text-[14px] transition-colors hover:text-white">
                     <span className="roll">
                       <span data-text={link.label}>{link.label}</span>
                     </span>
@@ -109,7 +109,7 @@ export default function Navbar() {
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
                 aria-controls="site-menu"
-                className="group flex h-11 items-center gap-3 rounded-md border border-white/20 px-4 font-mono text-[12px] uppercase tracking-eyebrow text-white transition-colors hover:border-white hover:bg-white hover:text-ink"
+                className="group flex h-11 items-center gap-3 rounded-md border border-white/20 px-4 font-mono text-[13px] lg:text-[14px] uppercase tracking-eyebrow text-white transition-colors hover:border-white hover:bg-white hover:text-ink"
               >
                 <span className="roll">
                   <span data-text={open ? 'Close' : 'Menu'}>{open ? 'Close' : 'Menu'}</span>
@@ -152,7 +152,7 @@ export default function Navbar() {
                     transition: `transform 0.9s cubic-bezier(0.16,1,0.3,1) ${open ? 200 + i * 60 : 0}ms`,
                   }}
                 >
-                  <span className="font-mono text-[12px] text-white/40 transition-colors group-hover:text-accent2">
+                  <span className="font-mono text-[13px] lg:text-[14px] text-white/40 transition-colors group-hover:text-accent2">
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <span className="font-display text-[34px] font-medium leading-none transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[64px]">
@@ -168,7 +168,7 @@ export default function Navbar() {
           >
             <div>
               <p className="eyebrow eyebrow-light">Get in touch</p>
-              <ul className="mt-5 space-y-3 text-[15px] text-white/80">
+              <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px] text-white/80">
                 <li>
                   <a tabIndex={open ? 0 : -1} href={`mailto:${contactDetails.email}`} className="flex items-center gap-3 hover:text-white">
                     <Mail size={16} strokeWidth={1.5} aria-hidden="true" /> {contactDetails.email}

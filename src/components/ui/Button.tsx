@@ -39,7 +39,7 @@ export default function Button({
 }: ButtonProps) {
   const v = variantClass[variant];
   const text = label ?? (typeof children === 'string' ? children : undefined);
-  const classes = `group inline-flex h-12 items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[15px] font-normal tracking-[-0.01em] transition-[background-color,color,border-color,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
+  const classes = `group inline-flex h-12 whitespace-nowrap items-center justify-between gap-4 rounded-md pl-5 ${arrow ? 'pr-1.5' : 'pr-5'} text-[16px] lg:text-[17px] font-normal tracking-[-0.01em] transition-[background-color,color,border-color,transform] duration-300 disabled:cursor-not-allowed disabled:opacity-60 ${v.root} ${className}`;
 
   const content = (
     <>

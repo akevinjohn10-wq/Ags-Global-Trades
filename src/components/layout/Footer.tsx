@@ -106,7 +106,7 @@ export default function Footer() {
       <div className="container-x grid gap-12 py-14 sm:grid-cols-2 lg:grid-cols-12 lg:py-16">
         <div className="lg:col-span-3">
           <Logo layout="stacked" height={80} />
-          <p className="mt-5 max-w-xs text-[15px] leading-[1.7] text-white/60">
+          <p className="mt-5 max-w-xs text-[16px] lg:text-[17px] leading-[1.7] text-white/60">
             A sourcing and supply company: we find, check, buy and ship the products your business needs.
           </p>
           <div className="mt-6 flex gap-2">
@@ -133,7 +133,7 @@ export default function Footer() {
 
         <nav aria-label="Footer" className="lg:col-span-2">
           <p className="mono-caps text-white/40">Explore</p>
-          <ul className="mt-5 space-y-3 text-[15px]">
+          <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px]">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <a href={link.href} className={linkClass}>
@@ -146,7 +146,7 @@ export default function Footer() {
 
         <div className="lg:col-span-3">
           <p className="mono-caps text-white/40">Services</p>
-          <ul className="mt-5 space-y-3 text-[15px]">
+          <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px]">
             {services.map((item) => (
               <li key={item.title}>
                 <a href="#services" className={linkClass}>
@@ -159,7 +159,7 @@ export default function Footer() {
 
         <div className="lg:col-span-4">
           <p className="mono-caps text-white/40">Head office</p>
-          <ul className="mt-5 space-y-3 text-[15px] text-white/70">
+          <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px] text-white/70">
             <li className="flex gap-3">
               <MapPin size={18} strokeWidth={1.5} className="mt-0.5 shrink-0 text-sky" aria-hidden="true" />
               <span>{contactDetails.address.join(', ')}</span>
@@ -178,7 +178,7 @@ export default function Footer() {
             </li>
           </ul>
           <p className="mono-caps mt-6 text-white/40">Hours · {contactDetails.hours}</p>
-          <p className="mt-6 text-[13px] leading-[1.7] text-white/40">{productCategories.length} product categories · {services.length} services</p>
+          <p className="mt-6 text-[14px] lg:text-[15px] leading-[1.7] text-white/40">{productCategories.length} product categories · {services.length} services</p>
         </div>
       </div>
 
@@ -200,7 +200,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container-x flex flex-col gap-5 py-6 text-[13px] text-white/50 lg:flex-row lg:items-center lg:justify-between">
+        <div className="container-x flex flex-col gap-5 py-6 text-[14px] lg:text-[15px] text-white/50 lg:flex-row lg:items-center lg:justify-between">
           <p>&copy; {year} AGS Global Trade. All rights reserved.</p>
           <nav aria-label="Legal">
             <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -227,7 +227,7 @@ export default function Footer() {
                 setLanguage(event.target.value);
                 changeLanguage(event.target.value);
               }}
-              className="rounded-md border border-white/15 bg-ink px-3 py-2 text-[13px] text-white focus:border-accent2 focus:outline-none"
+              className="rounded-md border border-white/15 bg-ink px-3 py-2 text-[14px] lg:text-[15px] text-white focus:border-accent2 focus:outline-none"
             >
               {languages.map((item) => (
                 <option key={item.code} value={item.code}>

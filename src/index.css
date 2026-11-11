@@ -10,7 +10,7 @@
   }
 
   body {
-    @apply bg-paper font-sans text-[16px] leading-[1.65] text-ink;
+    @apply bg-paper font-sans text-[16px] leading-[1.65] text-ink lg:text-[17px];
   }
 
   h1,
@@ -46,7 +46,7 @@
 
   /* Mono caps label with the "blue square" mark */
   .eyebrow {
-    @apply inline-flex items-center gap-3 font-mono text-[12px] font-medium uppercase tracking-eyebrow text-muted;
+    @apply inline-flex items-center gap-3 font-mono text-[13px] font-medium uppercase tracking-eyebrow text-muted lg:text-[14px];
   }
 
   .eyebrow::before {
@@ -59,7 +59,7 @@
   }
 
   .mono-caps {
-    @apply font-mono text-[12px] font-medium uppercase tracking-eyebrow;
+    @apply font-mono text-[13px] font-medium uppercase tracking-eyebrow lg:text-[14px];
   }
 
   .field-input {
