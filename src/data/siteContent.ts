@@ -347,3 +347,9 @@ export const catalogues: Catalogue[] = [
   { slug: 'wardrobes', title: 'Wardrobes & Closets', category: 'Construction Materials', pages: 28, summary: 'Sliding, pull-out, folding and walk-in closets, modular wardrobes, organisers and door styles.', tags: ['Bedroom', 'Fit-out'] },
   { slug: 'chandeliers', title: 'Chandeliers & Lighting', category: 'Consumer Goods', pages: 41, summary: 'Sculptural pendants, crystal and statement chandeliers, glass and brass fittings and wall lights.', tags: ['Lighting', 'Hotels & homes'] },
 ];
+
+/** Company leadership, shown in the About section and in the site's search-engine data */
+export const leaders = [
+  { name: 'Aditya Dey', role: 'Founder' },
+  { name: 'Kevin Johnson', role: 'Co-Founder' },
+];

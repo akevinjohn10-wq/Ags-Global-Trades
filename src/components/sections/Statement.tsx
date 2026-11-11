@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Reveal from '@/components/ui/Reveal';
 import ScrubText from '@/components/ui/ScrubText';
 import { useInView } from '@/hooks/useInView';
-import { productCategories, services } from '@/data/siteContent';
+import { leaders as LEADERS, productCategories, services } from '@/data/siteContent';
 
 const FACTS = [
   { value: productCategories.length, suffix: '', label: 'Product categories we source' },
@@ -61,6 +61,24 @@ export default function Statement() {
               </p>
             </Reveal>
           </div>
+
+          {/* Leadership */}
+          <Reveal delay={150} className="mt-10 border-t border-ink/10 pt-5">
+            <h3 className="flex items-center gap-3 font-display text-[24px] font-medium tracking-[-0.02em] text-ink sm:text-[28px]"><span className="h-2 w-2 bg-accent" aria-hidden="true" />Leadership</h3>
+            <ul className="mt-5 grid gap-4 sm:grid-cols-2">
+              {LEADERS.map((p) => (
+                <li key={p.name} className="flex items-center gap-4 rounded-lg border border-ink/10 bg-mist/60 p-4">
+                  <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-ink font-display text-[17px] font-medium text-white">
+                    {p.name.split(' ').map((w) => w[0]).join('')}
+                  </span>
+                  <span>
+                    <span className="block font-display text-[19px] font-medium leading-tight text-ink lg:text-[20px]">{p.name}</span>
+                    <span className="mt-1 block font-mono text-[12px] uppercase tracking-eyebrow text-accent lg:text-[13px]">{p.role}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
         </div>
 
         <div ref={ref} className="flex flex-col justify-end lg:col-span-4 lg:col-start-9">
