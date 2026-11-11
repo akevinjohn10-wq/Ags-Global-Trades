@@ -497,3 +497,8 @@
   }
 }
 
+
+/* Google in-page translator: hide its banner and tooltips */
+body { top: 0 !important; }
+.goog-te-banner-frame, .skiptranslate iframe, #goog-gt-tt, .goog-te-balloon-frame, .VIpgJd-ZVi9od-ORHb-OEVmcd { display: none !important; }
+.goog-text-highlight { background: none !important; box-shadow: none !important; }

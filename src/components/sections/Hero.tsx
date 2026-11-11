@@ -100,8 +100,8 @@ export default function Hero() {
         {/* Interactive map */}
         <div
           className={`absolute inset-x-0 bottom-0 top-[46%] transition-opacity duration-[1400ms] sm:top-[34%] lg:inset-y-0 lg:left-[26%] lg:right-[-2%] ${
-            entered ? 'opacity-100' : 'opacity-0'
-          }`}
+            entered ? (wide ? 'opacity-100' : 'opacity-50') : 'opacity-0'
+          } ${wide ? '' : 'pointer-events-none'}`}
         >
           <div ref={mapRef} className="h-full w-full origin-[62%_45%] will-change-transform">
             {entered && (
@@ -109,9 +109,10 @@ export default function Hero() {
                 theme="dark"
                 hubs={allHubs}
                 activeHubs={activeHubs}
-                interactive
-                pannable
-                pins
+                interactive={wide}
+                pannable={wide}
+                pins={wide}
+                labels={wide ? 'active' : 'none'}
                 selectedHub={pinned?.name ?? null}
                 onHubSelect={selectPin}
                 controlsRef={controls}
@@ -184,7 +185,7 @@ export default function Hero() {
 
         {/* Map controls */}
         <div
-          className={`absolute bottom-5 right-4 z-[15] flex flex-col overflow-hidden rounded-md border border-white/15 bg-space/70 backdrop-blur transition-opacity duration-700 lg:bottom-24 lg:right-8 ${
+          className={`absolute bottom-5 right-4 z-[15] hidden lg:flex flex-col overflow-hidden rounded-md border border-white/15 bg-space/70 backdrop-blur transition-opacity duration-700 lg:bottom-24 lg:right-8 ${
             entered ? 'opacity-100' : 'opacity-0'
           } ${pinned ? 'max-lg:hidden' : ''}`}
         >

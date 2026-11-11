@@ -11,8 +11,6 @@ import { contactDetails, navLinks, productCategories, services } from '@/data/si
 import { legalDocuments } from '@/data/legal';
 import type { LegalKey } from '@/data/legal';
 
-const PROXY_SUFFIX = '.translate.goog';
-
 const languages = [
   { code: 'en', label: 'English (original)' },
   { code: 'nl', label: 'Nederlands' },
@@ -34,32 +32,48 @@ const legalLinks: { key: LegalKey; label: string }[] = [
   { key: 'terms', label: 'Terms & Conditions' },
 ];
 
-function getOriginalHost(host: string) {
-  if (!host.endsWith(PROXY_SUFFIX)) return host;
-  return host
-    .slice(0, -PROXY_SUFFIX.length)
-    .replace(/--/g, '\u0000')
-    .replace(/-/g, '.')
-    .replace(/\u0000/g, '-');
+function readCookieLang() {
+  if (typeof document === 'undefined') return 'en';
+  const m = document.cookie.match(/(?:^|;\s*)googtrans=\/[^/]*\/([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : 'en';
 }
 
 function getCurrentLanguage() {
-  if (typeof window === 'undefined' || !window.location.hostname.endsWith(PROXY_SUFFIX)) return 'en';
-  return new URLSearchParams(window.location.search).get('_x_tr_tl') ?? 'en';
+  return readCookieLang();
 }
 
+/** Google's in-page translator: set its cookie and reload; the widget translates the page in place. */
 function changeLanguage(code: string) {
-  const { hostname, pathname } = window.location;
-  const original = getOriginalHost(hostname);
-
-  if (code === 'en') {
-    window.location.href = `https://${original}${pathname}`;
-    return;
+  const host = window.location.hostname;
+  const parts = host.split('.');
+  const root = parts.length > 2 ? '.' + parts.slice(-2).join('.') : host;
+  const expire = 'Thu, 01 Jan 1970 00:00:00 GMT';
+  for (const d of ['', `domain=${host};`, `domain=${root};`]) {
+    document.cookie = `googtrans=; expires=${expire}; path=/; ${d}`;
   }
-
-  const proxyHost = original.replace(/-/g, '--').replace(/\./g, '-') + PROXY_SUFFIX;
-  window.location.href = `https://${proxyHost}${pathname}?_x_tr_sl=en&_x_tr_tl=${code}&_x_tr_hl=${code}&_x_tr_pto=wapp`;
+  if (code !== 'en') {
+    document.cookie = `googtrans=/en/${code}; path=/;`;
+    document.cookie = `googtrans=/en/${code}; path=/; domain=${root};`;
+  }
+  window.location.reload();
 }
+
+function loadTranslator() {
+  if (typeof window === 'undefined' || readCookieLang() === 'en' || document.getElementById('gt-script')) return;
+  const w = window as unknown as { googleTranslateElementInit?: () => void; google?: { translate: { TranslateElement: new (o: object, id: string) => unknown } } };
+  w.googleTranslateElementInit = () => {
+    if (w.google) new w.google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'gt-element');
+  };
+  const el = document.createElement('div');
+  el.id = 'gt-element';
+  el.style.display = 'none';
+  document.body.appendChild(el);
+  const sc = document.createElement('script');
+  sc.id = 'gt-script';
+  sc.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+  document.body.appendChild(sc);
+}
+loadTranslator();
 
 export default function Footer() {
   const year = new Date().getFullYear();
