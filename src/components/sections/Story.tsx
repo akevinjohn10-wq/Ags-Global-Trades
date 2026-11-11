@@ -115,7 +115,8 @@ function StoryFilm() {
   const roadPathRef = useRef<SVGPathElement>(null);
   const lanePathRef = useRef<SVGPathElement>(null);
   const topTruckRef = useRef<HTMLImageElement>(null);
-  const seaRef = useRef<HTMLDivElement>(null);
+  const mistRef = useRef<HTMLDivElement>(null);
+  const mistTopRef = useRef<HTMLDivElement>(null);
   // leg 4
   const skyRef = useRef<HTMLDivElement>(null);
   const skyLightRef = useRef<HTMLDivElement>(null);
@@ -213,20 +214,14 @@ function StoryFilm() {
       const cx = vw * 0.5;
       const tw = Wr * 0.48;
       const tl = tw / TOP_RATIO;
-      // the road runs down to the coast, then the sea takes over
-      const len = vh * 0.95 + tl;
-      const coastY = Y0 + R + len;
+      const len = vh * 4;
       const d = `M ${-Wr * 2} ${Y0} H ${cx - R} A ${R} ${R} 0 0 1 ${cx} ${Y0 + R} V ${Y0 + R + len}`;
       roadPathRef.current?.setAttribute('d', d);
       lanePathRef.current?.setAttribute('d', d);
       roadPathRef.current?.setAttribute('stroke-width', String(Wr));
       if (roadSvgRef.current) {
         roadSvgRef.current.setAttribute('width', String(vw));
-        roadSvgRef.current.setAttribute('height', String(coastY + 4));
-      }
-      if (seaRef.current) {
-        seaRef.current.style.top = `${coastY - 18}px`;
-        seaRef.current.style.height = `${vh * 2.6}px`;
+        roadSvgRef.current.setAttribute('height', String(Y0 + R + len + Wr));
       }
       if (topTruckRef.current) {
         topTruckRef.current.style.width = `${tw}px`;
@@ -238,6 +233,8 @@ function StoryFilm() {
       const aspect = (2.2 * vh) / vw;
       if (cloudsBackRef.current) cloudsBackRef.current.style.backgroundImage = paintClouds(7, 44, 0.5, 10, 30, aspect);
       if (cloudsFrontRef.current) cloudsFrontRef.current.style.backgroundImage = paintClouds(31, 34, 0.8, 12, 36, aspect);
+      const edge = paintClouds(53, 18, 1, 22, 42, (0.75 * vh) / vw);
+      if (mistTopRef.current) mistTopRef.current.style.backgroundImage = edge;
       if (bankTopRef.current) bankTopRef.current.style.backgroundImage = paintClouds(91, 16, 1, 24, 44, (0.6 * vh) / vw);
 
       draw(true);
@@ -284,15 +281,12 @@ function StoryFilm() {
       // ---- Leg 2: the road, seen from above ----
       const r = seg(p, P_LOAD, P_ROAD);
       set(roadRef.current, {
-        visibility: p >= P_LOAD && p < P_ROAD + 0.01 ? 'visible' : 'hidden',
-        opacity: String(1 - ease(seg(p, P_ROAD - 0.03, P_ROAD + 0.005))),
+        visibility: p >= P_LOAD && p < P_ROAD ? 'visible' : 'hidden',
       });
       if (p >= P_LOAD - 0.01 && p < P_ROAD + 0.02) {
-        const { Y0, R, cx, LA, LArc, tw, tl, len } = road;
-        // drive to the quay and stop just short of the water
-        const sStop = LA + LArc + len - tl * 0.75;
-        const drive = seg(r, 0, 0.72);
-        const s = lerp(-tl, sStop, drive * 0.8 + easeOut(drive) * 0.2);
+        const { Y0, R, cx, LA, LArc, tw, tl } = road;
+        const sEnd = LA + LArc + vh * 1.3;
+        const s = lerp(-tl, sEnd, ease(r) * 0.25 + r * 0.75);
         let x: number;
         let y: number;
         let rot: number;
@@ -312,16 +306,22 @@ function StoryFilm() {
         }
         // Camera follows the truck down the page once it has turned
         const screenY = lerp(Y0, vh * 0.55, ease(seg(s, LA, LA + LArc + vh * 0.5)));
-        // ...then the view keeps going, out over the sea
-        const cam = Math.max(0, y - screenY) + ease(seg(r, 0.62, 1)) * vh * 1.05;
+        const cam = Math.max(0, y - screenY);
         set(worldRef.current, { transform: `translate3d(0,${(-cam).toFixed(1)}px,0)` });
         set(topTruckRef.current, {
           transform: `translate3d(${(x - tw / 2).toFixed(1)}px,${(y - tl / 2).toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg)`,
         });
       }
 
+      // ---- Road → sea: a bank of cloud rolls over the screen and lifts off the ship ----
+      const m = seg(p, P_ROAD - 0.07, P_ROAD + 0.07);
+      set(mistRef.current, {
+        visibility: m > 0 && m < 1 ? 'visible' : 'hidden',
+        transform: `translate3d(0,${lerp(100, -300, m).toFixed(2)}vh,0)`,
+      });
+
       // ---- Leg 3: sea (film) ----
-      if (p >= P_ROAD - 0.035 && p < P_SEA + 0.02) {
+      if (p >= P_ROAD - 0.01 && p < P_SEA + 0.02) {
         wanted = Math.round(seg(p, P_ROAD, P_SEA) * (FRAME_COUNT - 1));
         draw();
       }
@@ -342,7 +342,7 @@ function StoryFilm() {
       const ranges: [number, number][] = [
         [-1, P_LOAD - 0.06],
         [P_LOAD + 0.02, P_LOAD + (P_ROAD - P_LOAD) * 0.72],
-        [P_ROAD + 0.02, P_SEA - 0.02],
+        [P_ROAD + 0.05, P_SEA - 0.02],
       ];
       ranges.forEach(([a, b], k) => {
         const el = copyRefs[k].current;
@@ -424,24 +424,22 @@ function StoryFilm() {
         {/* ---------- Leg 2: road from above, on white ---------- */}
         <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-paper" style={{ visibility: 'hidden' }}>
           <div ref={worldRef} className="absolute inset-x-0 top-0 will-change-transform">
-            {/* the coast: land ends, the sea begins, and a dotted shipping route heads out */}
-            <div ref={seaRef} className="absolute inset-x-0" style={{ top: 0, height: 0 }}>
-              <svg className="absolute inset-x-0 top-0 h-[40px] w-[200%] animate-[shore_14s_linear_infinite]" viewBox="0 0 2400 40" preserveAspectRatio="none">
-                <path d="M0 18 Q 75 6 150 18 T 300 18 T 450 18 T 600 18 T 750 18 T 900 18 T 1050 18 T 1200 18 T 1350 18 T 1500 18 T 1650 18 T 1800 18 T 1950 18 T 2100 18 T 2250 18 T 2400 18 V 40 H 0 Z" fill="#16191E" />
-                <path d="M0 18 Q 75 6 150 18 T 300 18 T 450 18 T 600 18 T 750 18 T 900 18 T 1050 18 T 1200 18 T 1350 18 T 1500 18 T 1650 18 T 1800 18 T 1950 18 T 2100 18 T 2250 18 T 2400 18" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2.5" />
-              </svg>
-              <div className="absolute inset-x-0 bottom-0 top-[39px] bg-[linear-gradient(to_bottom,#16191E,#14171B_40%,#121417)]">
-                <div className="absolute inset-0 opacity-50 [background-image:repeating-linear-gradient(170deg,rgba(255,255,255,0.035)_0_2px,transparent_2px_34px)]" />
-                <div className="absolute inset-0 bg-[radial-gradient(60%_30%_at_50%_15%,rgba(62,91,176,0.18),transparent_70%)]" />
-                <div className="absolute bottom-0 left-1/2 top-6 w-[3px] -translate-x-1/2 [background-image:radial-gradient(circle,rgba(255,255,255,0.55)_1.5px,transparent_2px)] [background-size:3px_18px]" />
-              </div>
-            </div>
             <svg ref={roadSvgRef} className="absolute left-0 top-0 overflow-visible" fill="none">
               <path ref={roadPathRef} stroke="#1B1E24" strokeLinejoin="round" />
               <path ref={lanePathRef} stroke="rgba(255,255,255,0.55)" strokeWidth={3} strokeDasharray="28 26" />
             </svg>
             <img ref={topTruckRef} src={PART('truck-top')} alt="" draggable={false} className="absolute left-0 top-0 max-w-none origin-center will-change-transform" />
           </div>
+        </div>
+
+        {/* ---------- Cloud bank between the road and the sea ---------- */}
+        <div ref={mistRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[300vh] will-change-transform" style={{ visibility: 'hidden' }}>
+          <div
+            ref={mistTopRef}
+            className="absolute inset-x-0 top-0 h-1/4"
+            style={{ backgroundSize: '100% 100%', WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 55%)', maskImage: 'linear-gradient(to bottom, transparent, #000 55%)' }}
+          />
+          <div className="absolute inset-x-0 bottom-0 top-[18%] bg-[linear-gradient(to_bottom,rgba(255,255,255,0),#FFFFFF_12%,#F3F5FA_42%,#FFFFFF_62%,rgba(255,255,255,0.55)_80%,rgba(255,255,255,0))]" />
         </div>
 
         {/* ---------- Leg 4: sky ---------- */}
