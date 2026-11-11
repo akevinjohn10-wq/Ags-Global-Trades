@@ -108,15 +108,15 @@ export default function Navbar() {
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] opacity-50">
           {open && <DotMap theme="dark" labels="none" animated={false} density={8} />}
         </div>
-        <div className="container-x relative grid min-h-full gap-12 pb-12 pt-40 lg:grid-cols-12">
-          <ul className="lg:col-span-8">
+        <div className="container-x relative grid min-h-full gap-12 pb-12 pt-40 lg:grid-cols-12 lg:items-center lg:pt-28">
+          <ul className="lg:col-span-6">
             {navLinks.map((link, i) => (
               <li key={link.href} className="overflow-hidden border-b border-white/10">
                 <a
                   href={link.href}
                   tabIndex={open ? 0 : -1}
                   onClick={() => setOpen(false)}
-                  className="group flex items-baseline gap-5 py-3 sm:gap-8 sm:py-4"
+                  className="group flex items-baseline gap-5 py-3 sm:gap-8 sm:py-4 lg:gap-6 lg:py-3"
                   style={{
                     transform: open ? 'none' : 'translateY(100%)',
                     transition: `transform 0.9s cubic-bezier(0.16,1,0.3,1) ${open ? 200 + i * 60 : 0}ms`,
@@ -125,7 +125,7 @@ export default function Navbar() {
                   <span className="font-mono text-[13px] lg:text-[14px] text-white/40 transition-colors group-hover:text-accent2">
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span className="font-display text-[34px] font-medium leading-none transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[64px]">
+                  <span className="font-display text-[34px] font-medium leading-none transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[34px] xl:text-[38px]">
                     {link.label}
                   </span>
                 </a>
