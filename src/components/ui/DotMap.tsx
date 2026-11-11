@@ -1,8 +1,9 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
 import { homeHub, type Hub } from '@/data/globe';
 import { getLandMask, isLand } from '@/lib/landMask';
+import { subscribeNightTexture, type NightTexture } from '@/lib/nightTexture';
 
-type Theme = 'light' | 'dark' | 'blue';
+type Theme = 'light' | 'dark' | 'blue' | 'night';
 
 interface DotMapProps {
   className?: string;
@@ -81,6 +82,18 @@ const PALETTES: Record<Theme, { dot: string; tint: string; arc: string; arcDim: 
     home: '#3E5BB0',
     labelBg: '#FFFFFF',
     labelFg: '#1B1E24',
+  },
+  // night Earth, matching the hero globe: dark textured map, pale-blue land dots, amber routes
+  night: {
+    dot: 'rgba(170,190,255,0.30)',
+    tint: '255,200,130',
+    arc: 'rgba(255,214,170,0.6)',
+    arcDim: 'rgba(255,255,255,0.07)',
+    comet: '255,205,140',
+    hub: '#FFD2A0',
+    home: '#3E5BB0',
+    labelBg: '#0A1640',
+    labelFg: '#F3F5FA',
   },
   blue: {
     dot: 'rgba(255,255,255,0.22)',
@@ -179,6 +192,10 @@ export default function DotMap({
     let hover: Hub | null = null;
     const drawState = new Map<string, number>(); // arc draw-in progress per hub
     let last = performance.now();
+    let tex: NightTexture | null = null;
+    const unsubTex = live.current.theme === 'night'
+      ? subscribeNightTexture((t) => { tex = t; kick(); }, { lonMin: LON_MIN, latMax: LAT_MAX, lonSpan: LON_SPAN, latSpan: LAT_SPAN })
+      : () => {};
 
     const isActive = (hub: Hub) => {
       const set = live.current.activeHubs;
@@ -416,6 +433,35 @@ export default function DotMap({
       const pal = PALETTES[live.current.theme];
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx!.clearRect(0, 0, layout.w, layout.h);
+
+      // Night-Earth texture under the dots (same look as the hero globe), with gently pulsing city glow
+      if (tex && live.current.theme === 'night') {
+        const tw = LON_SPAN * layout.scale, th = LAT_SPAN * layout.scale;
+        ctx!.drawImage(tex.base, layout.ox, layout.oy, tw, th);
+        const tS = now / 1000;
+        ctx!.globalCompositeOperation = 'lighter';
+        ctx!.globalAlpha = doAnimate ? 0.55 + 0.25 * Math.sin(tS * 0.8) : 0.6;
+        ctx!.drawImage(tex.glow, layout.ox, layout.oy, tw, th);
+        ctx!.globalAlpha = 1;
+        // twinkling city sparks
+        if (doAnimate) {
+          for (let i = 0; i < tex.sparks.length; i += 2) {
+            const ph = Math.sin(tS * (0.7 + (i % 7) * 0.13) + i * 1.7);
+            if (ph < 0.6) continue;
+            const a = (ph - 0.6) / 0.4;
+            const x = layout.ox + tex.sparks[i] * tw, y = layout.oy + tex.sparks[i + 1] * th;
+            if (x < -10 || x > layout.w + 10 || y < -10 || y > layout.h + 10) continue;
+            const r = 2 + a * 4;
+            ctx!.strokeStyle = `rgba(255,220,170,${(a * 0.8).toFixed(3)})`;
+            ctx!.lineWidth = 1;
+            ctx!.beginPath();
+            ctx!.moveTo(x - r, y); ctx!.lineTo(x + r, y);
+            ctx!.moveTo(x, y - r); ctx!.lineTo(x, y + r);
+            ctx!.stroke();
+          }
+        }
+        ctx!.globalCompositeOperation = 'source-over';
+      }
 
       // Dots
       if (!introDone) {
@@ -705,6 +751,7 @@ export default function DotMap({
     }
 
     return () => {
+      unsubTex();
       cancelAnimationFrame(raf);
       ro.disconnect();
       io.disconnect();

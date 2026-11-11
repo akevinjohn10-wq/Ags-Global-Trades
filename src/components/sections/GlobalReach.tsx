@@ -52,9 +52,10 @@ export default function GlobalReach() {
         </Reveal>
 
         <Reveal delay={120} className="mt-6">
-          <div className="relative overflow-hidden rounded-lg border border-line bg-paper">
+          <div className="relative overflow-hidden rounded-lg border border-white/10 bg-[#050B1E] shadow-[0_40px_90px_-50px_rgba(10,22,64,0.8)]">
             <div className="relative aspect-[2/1] sm:aspect-[2.45/1]">
               <DotMap
+                theme="night"
                 hubs={allHubs}
                 activeHubs={activeHubs}
                 interactive
