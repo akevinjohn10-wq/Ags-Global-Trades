@@ -291,14 +291,15 @@ const HOME_YAW = -72 * D2R;
 const homePitch = () => (mobile ? -20 * D2R : 16 * D2R);
 const S = {
   yaw: -18 * D2R, pitch: 34 * D2R, vy: 0, vp: 0,
-  dragging: false, lastX: 0, lastY: 0, idle: 0, flying: null,
+  dragging: false, lastX: 0, lastY: 0, idle: 99, flying: null,
   intro: reduce ? 1 : 0, t0: performance.now(), time: 0,
   hover: null, selected: null,
 };
 const SUN0 = norm([-0.18, 0.60, -0.78]);
 const SUN1 = norm([-0.45, 0.80, -0.10]);
 
-let quality = 1, slow = 0, fast = 0, dive = 0;
+let quality = 1, slow = 0, fast = 0, dive = 0, introSpin = 0;
+const SPIN = 0.11;   // radians per second
 let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
 function resize() {
   const r = stage.getBoundingClientRect();
@@ -491,7 +492,9 @@ function frame(now) {
   if (S.intro < 1) {
     S.intro = clamp((now - S.t0) / INTRO_MS, 0, 1);
     const k = ease(S.intro);
-    S.yaw = lerp(-18*D2R, HOME_YAW, k); S.pitch = lerp(34*D2R, homePitch(), k);
+    // the spin starts the moment the page opens and carries straight on after the intro
+    if (!reduce) introSpin += dt * SPIN;
+    S.yaw = lerp(-18*D2R, HOME_YAW, k) + introSpin; S.pitch = lerp(34*D2R, homePitch(), k);
   } else if (S.flying) {
     S.yaw += (S.flying.yaw - S.yaw) * Math.min(1, dt * 3.2);
     S.pitch += (S.flying.pitch - S.pitch) * Math.min(1, dt * 3.2);
@@ -501,10 +504,10 @@ function frame(now) {
     S.yaw += S.vy; S.pitch = clamp(S.pitch + S.vp, -1.1, 1.1);
     S.vy *= Math.pow(0.04, dt); S.vp *= Math.pow(0.04, dt);
     S.idle += dt;
-    if (!S.selected && S.idle > 1.0 && !reduce && dive === 0) {
-      const w = Math.min(1, (S.idle - 1.0) / 2) * dt * 0.22;
-      S.yaw += w * 0.5;   // slow eastward spin so every region comes into view
-      S.pitch += (homePitch() - S.pitch) * w;
+    if (!S.selected && !reduce && dive === 0) {
+      const ramp = Math.min(1, S.idle / 1.2);           // eases back in after a drag
+      S.yaw += dt * SPIN * ramp;                        // slow eastward spin so every region comes into view
+      S.pitch += (homePitch() - S.pitch) * Math.min(1, dt * 0.25 * ramp);
     }
   }
 
