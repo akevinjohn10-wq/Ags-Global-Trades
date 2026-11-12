@@ -239,7 +239,6 @@ export default function Catalogues() {
   }, []);
 
   const folded = !!layout && !expanded;
-  const extra = layout ? catalogues.length - layout.hiddenFrom : 0;
 
   const toggle = () => {
     setAnimating(true);
@@ -338,7 +337,7 @@ export default function Catalogues() {
 
           {layout && (
             <div
-              className={`cat-fold absolute inset-x-0 bottom-0 flex flex-col items-center justify-end gap-3 pb-2 transition-opacity duration-500 ${folded ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+              className={`cat-fold absolute inset-x-0 bottom-0 flex flex-col items-center justify-end gap-3 pb-8 transition-opacity duration-500 ${folded ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
               style={{ top: folded ? Math.max(0, layout.peek - 40) : undefined, height: folded ? undefined : 0 }}
               onClick={folded ? toggle : undefined}
               aria-hidden={!folded}
@@ -354,7 +353,6 @@ export default function Catalogues() {
                 View all {catalogues.length} catalogues
                 <ChevronDown size={17} aria-hidden="true" className="transition-transform duration-300 group-hover:translate-y-0.5" />
               </button>
-              <p className="mono-caps text-soft">+{extra} more {extra === 1 ? 'range' : 'ranges'} · tap to reveal</p>
             </div>
           )}
         </div>
