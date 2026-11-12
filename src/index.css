@@ -593,8 +593,8 @@ html.brand-cursor select {
   -webkit-touch-callout: none;
 }
 .cat-viewer img, .cat-card img { pointer-events: none; }
+.cat-shield { pointer-events: auto; }
 .cat-watermark {
-  pointer-events: auto;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='200'%3E%3Ctext x='170' y='105' text-anchor='middle' transform='rotate(-24 170 100)' font-family='monospace' font-size='15' letter-spacing='4' fill='%237F8FB8' fill-opacity='0.22'%3EAGS GLOBAL TRADE %C2%B7 SAMPLE%3C/text%3E%3C/svg%3E");
   background-repeat: repeat;
 }

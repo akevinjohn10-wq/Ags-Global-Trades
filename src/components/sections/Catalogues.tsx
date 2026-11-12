@@ -129,8 +129,8 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
             decoding="async"
             {...guard}
           />
-          {/* a clear layer over the page takes the clicks and long-presses, so "Save image" and image search have nothing to grab; it also carries a faint watermark */}
-          {!locked && <span aria-hidden="true" className="cat-watermark absolute inset-0" {...guard} />}
+          {/* a clear layer over the page takes the clicks and long-presses, so "Save image" and image search have nothing to grab; inner pages also carry a faint watermark (the cover stays clean) */}
+          {!locked && <span aria-hidden="true" className={`cat-shield absolute inset-0 ${page > 0 ? 'cat-watermark' : ''}`} {...guard} />}
           {locked && (
             <div className="absolute inset-0 flex items-center justify-center p-4">
               <div className="max-h-full w-full max-w-md overflow-y-auto rounded-lg border border-white/10 bg-[#0A1640] p-6 sm:p-8">
