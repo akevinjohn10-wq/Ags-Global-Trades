@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronLeft, ChevronRight, Lock, Mail, MessageCircle, Phone, X } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight, Lock, Mail, MessageCircle, Phone, X } from 'lucide-react';
 import { LogoMark } from '@/components/ui/Logo';
 import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { catalogues, contactDetails, type Catalogue } from '@/data/siteContent';
 import { requestEnquiry } from '@/lib/enquiry';
 
+/** Catalogues shown before "View all": six (two rows of three) on larger screens, four on phones */
+const FIRST = 6;
+const FIRST_PHONE = 4;
 const SAMPLES = 3; // public sample pages per catalogue (0 = cover)
 const LOCKED = SAMPLES; // index of the locked "full catalogue" slide
 
@@ -167,9 +170,21 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
 export default function Catalogues() {
   const [open, setOpen] = useState<Catalogue | null>(null);
   const close = useCallback(() => setOpen(null), []);
+  const [expanded, setExpanded] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const extra = catalogues.length - FIRST;
+  const collapsible = catalogues.length > FIRST_PHONE;
+  const showAll = expanded || !collapsible;
+  const toggle = () => {
+    if (expanded) {
+      // collapse and bring the top of the section back into view
+      setExpanded(false);
+      requestAnimationFrame(() => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    } else setExpanded(true);
+  };
 
   return (
-    <section id="catalogues" className="section-y relative scroll-mt-24 bg-mist">
+    <section ref={sectionRef} id="catalogues" className="section-y relative scroll-mt-24 bg-mist">
       <div className="container-x">
         <SectionHeading
           align="split"
@@ -178,9 +193,9 @@ export default function Catalogues() {
           description="Preview sample pages from each range. For the full catalogue with specifications and pricing, contact us and we will send it over."
         />
 
-        <ul className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
+        <ul id="catalogue-list" className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
           {catalogues.map((c, i) => (
-            <Reveal as="li" key={c.slug} delay={(i % 3) * 90}>
+            <Reveal as="li" key={c.slug} delay={(i % 3) * 90} className={showAll || i < FIRST_PHONE ? '' : i < FIRST ? 'hidden sm:block' : 'hidden'}>
               <button type="button" onClick={() => setOpen(c)} className="cat-card group block w-full text-left" aria-label={`Preview the ${c.title} catalogue`}>
                 <div className="relative aspect-[297/210]">
                   {/* page stack behind the cover */}
@@ -211,7 +226,7 @@ export default function Catalogues() {
               </button>
             </Reveal>
           ))}
-          <Reveal as="li" delay={180}>
+          <Reveal as="li" delay={180} className={showAll ? '' : 'hidden'}>
             <div className="flex h-full flex-col justify-between rounded-md bg-ink p-7 text-white">
               <div>
                 <p className="eyebrow eyebrow-light">Need another range?</p>
@@ -229,6 +244,22 @@ export default function Catalogues() {
             </div>
           </Reveal>
         </ul>
+
+        {collapsible && (
+          <div className={`mt-14 flex flex-col items-center gap-3 lg:mt-16 ${extra > 0 ? '' : 'sm:hidden'}`}>
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={expanded}
+              aria-controls="catalogue-list"
+              className="group inline-flex items-center gap-3 rounded-full border border-ink/15 bg-paper px-6 py-3.5 text-[15px] font-medium text-ink transition-colors duration-300 hover:border-ink hover:bg-ink hover:text-white"
+            >
+              {expanded ? 'Show fewer catalogues' : `View all ${catalogues.length} catalogues`}
+              <ChevronDown size={17} aria-hidden="true" className={`transition-transform duration-500 ease-expo ${expanded ? 'rotate-180' : 'group-hover:translate-y-0.5'}`} />
+            </button>
+            {!expanded && extra > 0 && <p className="mono-caps hidden text-soft sm:block">+{extra} more {extra === 1 ? 'range' : 'ranges'}</p>}
+          </div>
+        )}
       </div>
       {open && <Viewer c={open} onClose={close} />}
     </section>
