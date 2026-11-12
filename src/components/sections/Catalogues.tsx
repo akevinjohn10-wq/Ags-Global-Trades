@@ -6,9 +6,6 @@ import SectionHeading from '@/components/ui/SectionHeading';
 import { catalogues, contactDetails, type Catalogue } from '@/data/siteContent';
 import { requestEnquiry } from '@/lib/enquiry';
 
-/** Catalogues shown before "View all": six (two rows of three) on larger screens, four on phones */
-const FIRST = 6;
-const FIRST_PHONE = 4;
 const SAMPLES = 3; // public sample pages per catalogue (0 = cover)
 const LOCKED = SAMPLES; // index of the locked "full catalogue" slide
 
@@ -201,22 +198,70 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
   );
 }
 
-/** Catalogue library: covers in a grid, a sample-page viewer, and the full PDF on request. */
+/** Catalogue library: covers in a grid, a sample-page viewer, and the full PDF on request.
+ *  Collapsed, the grid shows its first row and half of the second under a frosted fade, with a button to reveal the rest. */
 export default function Catalogues() {
   const [open, setOpen] = useState<Catalogue | null>(null);
   const close = useCallback(() => setOpen(null), []);
-  const [expanded, setExpanded] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const extra = catalogues.length - FIRST;
-  const collapsible = catalogues.length > FIRST_PHONE;
-  const showAll = expanded || !collapsible;
+  const listRef = useRef<HTMLUListElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  // cut: the collapsed height (px); peek: where the second row starts; hiddenFrom: index of the first item below the cut
+  const [layout, setLayout] = useState<{ cut: number; peek: number; full: number; hiddenFrom: number } | null>(null);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    const ul = listRef.current;
+    if (!ul) return;
+    const measure = () => {
+      const lis = Array.from(ul.children) as HTMLElement[];
+      if (!lis.length) return;
+      // the row to half-show: the first new row that starts at least two cards in (row 2 on grids, card 3 on phones)
+      const row2 = lis.find((li, i) => i >= 2 && li.offsetTop > lis[i - 1].offsetTop + 4);
+      const row3 = row2 && lis.find((li) => li.offsetTop > row2.offsetTop + 4);
+      if (!row2 || !row3) return setLayout(null); // nothing below the peek row: no need to fold
+      const cover = (row2.firstElementChild?.firstElementChild as HTMLElement | null)?.offsetHeight ?? row2.offsetHeight;
+      setLayout({
+        peek: row2.offsetTop,
+        cut: Math.round(row2.offsetTop + cover * 0.55),
+        full: ul.scrollHeight,
+        hiddenFrom: lis.indexOf(row2),
+      });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(ul);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  const folded = !!layout && !expanded;
+  const extra = layout ? catalogues.length - layout.hiddenFrom : 0;
+
   const toggle = () => {
+    setAnimating(true);
+    window.setTimeout(() => setAnimating(false), 900);
     if (expanded) {
-      // collapse and bring the top of the section back into view
-      setExpanded(false);
-      requestAnimationFrame(() => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      // pin the current full height first so the fold animates instead of snapping
+      requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(false)));
+      sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else setExpanded(true);
   };
+
+  // folded-away cards can't be reached by keyboard or screen readers until revealed
+  useEffect(() => {
+    const lis = Array.from(listRef.current?.children ?? []) as HTMLElement[];
+    lis.forEach((li, i) => {
+      if (folded && layout && i >= layout.hiddenFrom) li.setAttribute('inert', '');
+      else li.removeAttribute('inert');
+    });
+  }, [folded, layout]);
+
+  // collapsed: clip at the cut; opening/closing: animate between the cut and the full height; open: no limit
+  const maxHeight = !layout ? undefined : folded ? layout.cut : animating ? layout.full : undefined;
 
   return (
     <section ref={sectionRef} id="catalogues" className="section-y relative scroll-mt-24 bg-mist">
@@ -228,60 +273,94 @@ export default function Catalogues() {
           description="Preview sample pages from each range. For the full catalogue with specifications and pricing, contact us and we will send it over."
         />
 
-        <ul id="catalogue-list" onContextMenu={(e) => { if ((e.target as HTMLElement).closest('.cat-card')) e.preventDefault(); }} className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
-          {catalogues.map((c, i) => (
-            <Reveal as="li" key={c.slug} delay={(i % 3) * 90} className={showAll || i < FIRST_PHONE ? '' : i < FIRST ? 'hidden sm:block' : 'hidden'}>
-              <button type="button" onClick={() => setOpen(c)} className="cat-card group block w-full text-left" aria-label={`Preview the ${c.title} catalogue`}>
-                <div className="relative aspect-[297/210]">
-                  {/* page stack behind the cover */}
-                  <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '3deg', ['--x' as string]: '10px' }} />
-                  <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '-2.5deg', ['--x' as string]: '-8px' }} />
-                  <span className="cat-cover absolute inset-0 overflow-hidden rounded-md shadow-[0_24px_50px_-28px_rgba(10,22,64,0.55)]">
-                    <img src={src(c.slug, 0)} alt="" loading="lazy" decoding="async" className="cat-protect h-full w-full object-cover" {...guard} />
-                    <span className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-between bg-accent px-4 py-3 text-white transition-transform duration-500 ease-expo group-hover:translate-y-0 group-focus-visible:translate-y-0">
-                      <span className="mono-caps">Preview pages</span>
-                      <ArrowUpRight size={16} aria-hidden="true" />
-                    </span>
-                  </span>
-                </div>
-                <div className="mt-6 flex items-start justify-between gap-4">
+        <div className="relative mt-14 lg:mt-20">
+          <div
+            className="overflow-hidden transition-[max-height] duration-[900ms] ease-expo"
+            style={{ maxHeight }}
+          >
+            <ul
+              id="catalogue-list"
+              ref={listRef}
+              onContextMenu={(e) => { if ((e.target as HTMLElement).closest('.cat-card')) e.preventDefault(); }}
+              className="grid gap-x-6 gap-y-12 pb-2 sm:grid-cols-2 lg:grid-cols-3"
+            >
+              {catalogues.map((c, i) => (
+                <Reveal as="li" key={c.slug} delay={(i % 3) * 90}>
+                  <button type="button" onClick={() => setOpen(c)} className="cat-card group block w-full text-left" aria-label={`Preview the ${c.title} catalogue`}>
+                    <div className="relative aspect-[297/210]">
+                      {/* page stack behind the cover */}
+                      <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '3deg', ['--x' as string]: '10px' }} />
+                      <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '-2.5deg', ['--x' as string]: '-8px' }} />
+                      <span className="cat-cover absolute inset-0 overflow-hidden rounded-md shadow-[0_24px_50px_-28px_rgba(10,22,64,0.55)]">
+                        <img src={src(c.slug, 0)} alt="" loading="lazy" decoding="async" className="cat-protect h-full w-full object-cover" {...guard} />
+                        <span className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-between bg-accent px-4 py-3 text-white transition-transform duration-500 ease-expo group-hover:translate-y-0 group-focus-visible:translate-y-0">
+                          <span className="mono-caps">Preview pages</span>
+                          <ArrowUpRight size={16} aria-hidden="true" />
+                        </span>
+                      </span>
+                    </div>
+                    <div className="mt-6 flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="font-display text-[22px] font-medium leading-tight text-ink transition-colors group-hover:text-accent">{c.title}</h3>
+                        <p className="mt-2 text-[14.5px] leading-[1.6] text-muted">{c.summary}</p>
+                      </div>
+                      <span className="mono-caps shrink-0 pt-1.5 text-soft">{c.pages} pp</span>
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {c.tags.map((t) => (
+                        <span key={t} className="mono-caps rounded-full border border-ink/10 bg-paper px-3 py-1 text-[10.5px] text-muted">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </button>
+                </Reveal>
+              ))}
+              <Reveal as="li" delay={180}>
+                <div className="flex h-full flex-col justify-between rounded-md bg-ink p-7 text-white">
                   <div>
-                    <h3 className="font-display text-[22px] font-medium leading-tight text-ink transition-colors group-hover:text-accent">{c.title}</h3>
-                    <p className="mt-2 text-[14.5px] leading-[1.6] text-muted">{c.summary}</p>
+                    <p className="eyebrow eyebrow-light">Need another range?</p>
+                    <h3 className="mt-4 font-display text-[24px] font-medium leading-tight">We source far more than what is shown here.</h3>
+                    <p className="mt-3 text-[14.5px] leading-[1.65] text-white/60">Tell us the product and we will put together options, specifications and prices from our suppliers.</p>
                   </div>
-                  <span className="mono-caps shrink-0 pt-1.5 text-soft">{c.pages} pp</span>
+                  <div className="mt-8">
+                    <RequestOptions
+                      text="Hello AGS Trade, I am looking for a product that is not in your catalogues. Here are the details:"
+                      subject="Sourcing enquiry"
+                      onForm={() => requestEnquiry('General Trading')}
+                      tone="dark"
+                    />
+                  </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {c.tags.map((t) => (
-                    <span key={t} className="mono-caps rounded-full border border-ink/10 bg-paper px-3 py-1 text-[10.5px] text-muted">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </button>
-            </Reveal>
-          ))}
-          <Reveal as="li" delay={180} className={showAll ? '' : 'hidden'}>
-            <div className="flex h-full flex-col justify-between rounded-md bg-ink p-7 text-white">
-              <div>
-                <p className="eyebrow eyebrow-light">Need another range?</p>
-                <h3 className="mt-4 font-display text-[24px] font-medium leading-tight">We source far more than what is shown here.</h3>
-                <p className="mt-3 text-[14.5px] leading-[1.65] text-white/60">Tell us the product and we will put together options, specifications and prices from our suppliers.</p>
-              </div>
-              <div className="mt-8">
-                <RequestOptions
-                  text="Hello AGS Trade, I am looking for a product that is not in your catalogues. Here are the details:"
-                  subject="Sourcing enquiry"
-                  onForm={() => requestEnquiry('General Trading')}
-                  tone="dark"
-                />
-              </div>
-            </div>
-          </Reveal>
-        </ul>
+              </Reveal>
+            </ul>
+          </div>
 
-        {collapsible && (
-          <div className={`mt-14 flex flex-col items-center gap-3 lg:mt-16 ${extra > 0 ? '' : 'sm:hidden'}`}>
+          {layout && (
+            <div
+              className={`cat-fold absolute inset-x-0 bottom-0 flex flex-col items-center justify-end gap-3 pb-2 transition-opacity duration-500 ${folded ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+              style={{ top: folded ? Math.max(0, layout.peek - 40) : undefined, height: folded ? undefined : 0 }}
+              onClick={folded ? toggle : undefined}
+              aria-hidden={!folded}
+            >
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggle(); }}
+                aria-expanded={expanded}
+                aria-controls="catalogue-list"
+                tabIndex={folded ? 0 : -1}
+                className="group relative inline-flex items-center gap-3 rounded-full bg-ink px-7 py-4 text-[15px] font-medium text-white shadow-[0_18px_40px_-18px_rgba(10,22,64,0.6)] transition-transform duration-300 hover:-translate-y-0.5"
+              >
+                View all {catalogues.length} catalogues
+                <ChevronDown size={17} aria-hidden="true" className="transition-transform duration-300 group-hover:translate-y-0.5" />
+              </button>
+              <p className="mono-caps text-soft">+{extra} more {extra === 1 ? 'range' : 'ranges'} · tap to reveal</p>
+            </div>
+          )}
+        </div>
+
+        {layout && expanded && (
+          <div className="mt-12 flex justify-center">
             <button
               type="button"
               onClick={toggle}
@@ -289,10 +368,9 @@ export default function Catalogues() {
               aria-controls="catalogue-list"
               className="group inline-flex items-center gap-3 rounded-full border border-ink/15 bg-paper px-6 py-3.5 text-[15px] font-medium text-ink transition-colors duration-300 hover:border-ink hover:bg-ink hover:text-white"
             >
-              {expanded ? 'Show fewer catalogues' : `View all ${catalogues.length} catalogues`}
-              <ChevronDown size={17} aria-hidden="true" className={`transition-transform duration-500 ease-expo ${expanded ? 'rotate-180' : 'group-hover:translate-y-0.5'}`} />
+              Show fewer catalogues
+              <ChevronDown size={17} aria-hidden="true" className="rotate-180" />
             </button>
-            {!expanded && extra > 0 && <p className="mono-caps hidden text-soft sm:block">+{extra} more {extra === 1 ? 'range' : 'ranges'}</p>}
           </div>
         )}
       </div>
