@@ -86,6 +86,23 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
   const locked = page === LOCKED;
   const touchX = useRef<number | null>(null);
 
+  // the shield + watermark sit exactly over the rendered page, not the dark stage around it
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [box, setBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img) return;
+    const measure = () => setBox(img.offsetWidth ? { left: img.offsetLeft, top: img.offsetTop, width: img.offsetWidth, height: img.offsetHeight } : null);
+    measure();
+    img.addEventListener('load', measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(img);
+    return () => {
+      img.removeEventListener('load', measure);
+      ro.disconnect();
+    };
+  }, [page]);
+
   return (
     <div role="dialog" aria-modal="true" aria-label={`${c.title} catalogue preview`} className="cat-viewer fixed inset-0 z-[90] flex flex-col bg-[#060A18] text-white" onContextMenu={(e) => e.preventDefault()}>
       <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-8">
@@ -125,12 +142,20 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
             key={page}
             src={src(c.slug, page)}
             alt={locked ? '' : `${c.title}, sample page ${page + 1}`}
+            ref={imgRef}
             className="cat-page cat-protect max-h-full max-w-full rounded-md object-contain shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
             decoding="async"
             {...guard}
           />
           {/* a clear layer over the page takes the clicks and long-presses, so "Save image" and image search have nothing to grab; inner pages also carry a faint watermark (the cover stays clean) */}
-          {!locked && <span aria-hidden="true" className={`cat-shield absolute inset-0 ${page > 0 ? 'cat-watermark' : ''}`} {...guard} />}
+          {!locked && box && (
+            <span
+              aria-hidden="true"
+              className={`cat-shield absolute rounded-md ${page > 0 ? 'cat-watermark' : ''}`}
+              style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+              {...guard}
+            />
+          )}
           {locked && (
             <div className="absolute inset-0 flex items-center justify-center p-4">
               <div className="max-h-full w-full max-w-md overflow-y-auto rounded-lg border border-white/10 bg-[#0A1640] p-6 sm:p-8">
