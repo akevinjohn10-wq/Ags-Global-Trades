@@ -16,6 +16,13 @@ const src = (slug: string, i: number) => `/catalogues/${slug}-${i === LOCKED ? '
 const phoneDigits = contactDetails.phone.replace(/\D/g, '');
 const whatsappDigits = contactDetails.whatsapp.replace(/\D/g, '');
 
+/** Discourage saving the catalogue pages: no right-click menu, dragging or long-press save. */
+const guard = {
+  draggable: false,
+  onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+  onDragStart: (e: React.DragEvent) => e.preventDefault(),
+};
+
 function requestText(c: Catalogue) {
   return `Hello AGS Trade, please send me the full ${c.title} catalogue (${c.pages} pages).`;
 }
@@ -80,7 +87,7 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
   const touchX = useRef<number | null>(null);
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${c.title} catalogue preview`} className="cat-viewer fixed inset-0 z-[90] flex flex-col bg-[#060A18] text-white">
+    <div role="dialog" aria-modal="true" aria-label={`${c.title} catalogue preview`} className="cat-viewer fixed inset-0 z-[90] flex flex-col bg-[#060A18] text-white" onContextMenu={(e) => e.preventDefault()}>
       <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4 sm:px-8">
         <div className="flex min-w-0 items-center gap-4">
           <LogoMark height={28} className="hidden sm:block" />
@@ -118,9 +125,12 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
             key={page}
             src={src(c.slug, page)}
             alt={locked ? '' : `${c.title}, sample page ${page + 1}`}
-            className="cat-page max-h-full max-w-full rounded-md object-contain shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
+            className="cat-page cat-protect max-h-full max-w-full rounded-md object-contain shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
             decoding="async"
+            {...guard}
           />
+          {/* a clear layer over the page takes the clicks and long-presses, so "Save image" and image search have nothing to grab; it also carries a faint watermark */}
+          {!locked && <span aria-hidden="true" className="cat-watermark absolute inset-0" {...guard} />}
           {locked && (
             <div className="absolute inset-0 flex items-center justify-center p-4">
               <div className="max-h-full w-full max-w-md overflow-y-auto rounded-lg border border-white/10 bg-[#0A1640] p-6 sm:p-8">
@@ -153,7 +163,7 @@ function Viewer({ c, onClose }: { c: Catalogue; onClose: () => void }) {
             aria-current={i === page}
             className={`relative h-14 w-20 shrink-0 overflow-hidden rounded border transition-[border-color,opacity] duration-300 sm:h-16 sm:w-24 ${i === page ? 'border-white opacity-100' : 'border-white/15 opacity-60 hover:opacity-100'}`}
           >
-            <img src={src(c.slug, i)} alt="" loading="lazy" className="h-full w-full object-cover" />
+            <img src={src(c.slug, i)} alt="" loading="lazy" className="cat-protect h-full w-full object-cover" {...guard} />
             {i === LOCKED && (
               <span className="absolute inset-0 flex items-center justify-center bg-ink/60">
                 <Lock size={15} aria-hidden="true" />
@@ -193,7 +203,7 @@ export default function Catalogues() {
           description="Preview sample pages from each range. For the full catalogue with specifications and pricing, contact us and we will send it over."
         />
 
-        <ul id="catalogue-list" className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
+        <ul id="catalogue-list" onContextMenu={(e) => { if ((e.target as HTMLElement).closest('.cat-card')) e.preventDefault(); }} className="mt-14 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-20 lg:grid-cols-3">
           {catalogues.map((c, i) => (
             <Reveal as="li" key={c.slug} delay={(i % 3) * 90} className={showAll || i < FIRST_PHONE ? '' : i < FIRST ? 'hidden sm:block' : 'hidden'}>
               <button type="button" onClick={() => setOpen(c)} className="cat-card group block w-full text-left" aria-label={`Preview the ${c.title} catalogue`}>
@@ -202,7 +212,7 @@ export default function Catalogues() {
                   <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '3deg', ['--x' as string]: '10px' }} />
                   <span aria-hidden="true" className="cat-sheet absolute inset-0 rounded-md bg-white shadow-sm" style={{ ['--r' as string]: '-2.5deg', ['--x' as string]: '-8px' }} />
                   <span className="cat-cover absolute inset-0 overflow-hidden rounded-md shadow-[0_24px_50px_-28px_rgba(10,22,64,0.55)]">
-                    <img src={src(c.slug, 0)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+                    <img src={src(c.slug, 0)} alt="" loading="lazy" decoding="async" className="cat-protect h-full w-full object-cover" {...guard} />
                     <span className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-between bg-accent px-4 py-3 text-white transition-transform duration-500 ease-expo group-hover:translate-y-0 group-focus-visible:translate-y-0">
                       <span className="mono-caps">Preview pages</span>
                       <ArrowUpRight size={16} aria-hidden="true" />

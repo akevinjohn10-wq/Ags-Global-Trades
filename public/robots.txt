@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /globe-preview.html
+Disallow: /catalogues/
+
+User-agent: Googlebot-Image
+Disallow: /catalogues/
 
 Sitemap: https://www.agsglobaltrades.in/sitemap.xml

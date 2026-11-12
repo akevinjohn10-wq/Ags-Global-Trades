@@ -584,3 +584,18 @@ html.brand-cursor select {
   will-change: transform;
   transition: opacity 0.3s ease;
 }
+
+/* Catalogue pages: no saving by drag, long-press or selection; a faint repeating watermark over the open page */
+.cat-protect, .cat-protect img, .cat-card img, .cat-viewer img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.cat-viewer img, .cat-card img { pointer-events: none; }
+.cat-watermark {
+  pointer-events: auto;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='340' height='200'%3E%3Ctext x='170' y='105' text-anchor='middle' transform='rotate(-24 170 100)' font-family='monospace' font-size='15' letter-spacing='4' fill='%237F8FB8' fill-opacity='0.22'%3EAGS GLOBAL TRADE %C2%B7 SAMPLE%3C/text%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+@media print { .cat-viewer, #catalogues ul img { display: none !important; } }
