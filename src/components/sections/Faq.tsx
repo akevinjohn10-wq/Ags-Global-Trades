@@ -4,7 +4,7 @@ import Reveal from '@/components/ui/Reveal';
 import SplitText from '@/components/ui/SplitText';
 import { contactDetails } from '@/data/siteContent';
 
-const FAQS = [
+export const FAQS = [
   {
     q: 'What does AGS Trade do?',
     a: 'We are a sourcing and supply company. You tell us the product and the quantity; we find verified suppliers, negotiate the price, check the goods and arrange shipping to you.',

@@ -238,6 +238,19 @@ export default function Catalogues() {
     };
   }, []);
 
+  // the chat assistant can open a catalogue's sample pages
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const slug = (e as CustomEvent<string>).detail;
+      const c = catalogues.find((x) => x.slug === slug);
+      if (!c) return;
+      sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setOpen(c);
+    };
+    window.addEventListener('ags:open-catalogue', onOpen);
+    return () => window.removeEventListener('ags:open-catalogue', onOpen);
+  }, []);
+
   const folded = !!layout && !expanded;
 
   const toggle = () => {
