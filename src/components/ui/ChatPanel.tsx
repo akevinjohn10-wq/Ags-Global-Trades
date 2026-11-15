@@ -303,7 +303,7 @@ export default function ChatPanel({ open, onClose }: { open: boolean; onClose: (
 
   function start() {
     say(
-      ['Hi, I’m the AGS assistant 👋', 'I can get you a quote, show our catalogues or answer common questions. What would you like to do?'],
+      ['Hello, I’m the AGS assistant.', 'I can get you a quote, show our catalogues or answer common questions. What would you like to do?'],
       menuChips(),
       'menu',
     );
