@@ -200,7 +200,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/10">
-        <div className="container-x flex flex-col gap-5 py-6 text-[14px] lg:text-[15px] text-white/50 lg:flex-row lg:items-center lg:justify-between">
+        <div className="container-x flex flex-col gap-5 pt-6 pb-24 sm:pb-28 text-[14px] lg:text-[15px] text-white/50 lg:flex-row lg:items-center lg:justify-between">
           <p>&copy; {year} AGS Global Trade. All rights reserved.</p>
           <nav aria-label="Legal">
             <ul className="flex flex-wrap items-center gap-x-5 gap-y-2">

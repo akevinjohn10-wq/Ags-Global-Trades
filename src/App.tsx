@@ -13,6 +13,7 @@ import Hero from '@/components/sections/Hero';
 import Statement from '@/components/sections/Statement';
 import Story from '@/components/sections/Story';
 import ChatAssistant from '@/components/ui/ChatAssistant';
+import BackToTop from '@/components/ui/BackToTop';
 import BrandCursor from '@/components/ui/BrandCursor';
 import ScrollProgress from '@/components/ui/ScrollProgress';
 
@@ -113,6 +114,7 @@ export default function App() {
         <Contact />
       </main>
       <Footer />
+      <BackToTop />
       <ChatAssistant />
       <BrandCursor />
     </>
