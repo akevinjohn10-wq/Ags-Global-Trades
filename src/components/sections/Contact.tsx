@@ -8,7 +8,7 @@ export default function Contact() {
   const details = [
     { label: 'Address', icon: MapPin, lines: contactDetails.address },
     { label: 'Email', icon: Mail, href: `mailto:${contactDetails.email}`, lines: [contactDetails.email] },
-    { label: 'Phone & WhatsApp', icon: Phone, href: `tel:${contactDetails.phone.replace(/\s/g, '')}`, lines: [contactDetails.phone] },
+    { label: 'Phone', icon: Phone, href: `tel:${contactDetails.phone.replace(/\s/g, '')}`, lines: [contactDetails.phone] },
     { label: 'WhatsApp', icon: MessageCircle, href: `https://wa.me/${contactDetails.whatsapp2.replace(/\D/g, '')}`, lines: [contactDetails.whatsapp2], external: true },
     { label: 'Business Hours', icon: Clock, lines: [contactDetails.hours] },
     { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['AGS Global Trade'], external: true },

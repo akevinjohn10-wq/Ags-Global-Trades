@@ -227,7 +227,7 @@ export default function ChatPanel({ open, onClose }: { open: boolean; onClose: (
 
   function showContact() {
     say(
-      [`You can reach our team (${contactDetails.hours}):\n• Phone & WhatsApp: ${contactDetails.phone}\n• WhatsApp: ${contactDetails.whatsapp2}\n• Email: ${contactDetails.email}`],
+      [`You can reach our team (${contactDetails.hours}):\n• Phone: ${contactDetails.phone}\n• WhatsApp: ${contactDetails.whatsapp2}\n• Email: ${contactDetails.email}`],
       [
         { label: 'WhatsApp us', run: () => window.open(waLink('Hi AGS, I have a question.'), '_blank', 'noopener') },
         { label: 'Call', run: () => (window.location.href = telHref) },
