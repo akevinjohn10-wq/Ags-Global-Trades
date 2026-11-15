@@ -8,7 +8,7 @@ import { requestEnquiry } from '@/lib/enquiry';
 
 /** Numbered accordion of product categories (the unitedcarriers.com "Industries" list). */
 export default function Products() {
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
 
   return (
     <section id="catalogue" className="section-y relative isolate z-10 -mt-[100vh] scroll-mt-24 overflow-hidden bg-paper">
