@@ -320,9 +320,12 @@ export const tickerItems = [
 export const contactDetails = {
   address: ['AGS Trade', 'New Delhi 110045, India'],
   email: 'info@agsglobaltrades.in',
-  phone: '+91 9013165871',
-  whatsapp: '+91 9090050574',
-  hours: '9:00 – 21:00 IST',
+  phone: '+91 90131 65871',
+  /** Main WhatsApp line (same as the phone number) */
+  whatsapp: '+91 90131 65871',
+  /** Second WhatsApp line */
+  whatsapp2: '+91 90900 50574',
+  hours: 'Mon–Sat, 9:00 – 21:00 IST',
   linkedin: 'https://www.linkedin.com/in/aditya-dey-07708634a/',
   instagram: 'https://www.instagram.com/agstrade.in/',
 };
