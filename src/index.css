@@ -41,7 +41,7 @@
   }
 
   .section-y {
-    @apply py-20 sm:py-28 lg:py-36;
+    @apply py-16 sm:py-28 lg:py-36;
   }
 
   /* Mono caps label with the "blue square" mark */

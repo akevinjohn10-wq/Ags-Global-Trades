@@ -37,7 +37,7 @@ export default function Statement() {
 
   return (
     <section id="about" className="relative scroll-mt-24 bg-paper pb-20 pt-10 sm:pb-28 lg:pb-36">
-      <div className="container-x grid gap-14 lg:grid-cols-12 lg:gap-10">
+      <div className="container-x grid gap-10 lg:grid-cols-12 lg:gap-10">
         <div className="lg:col-span-7">
           <Reveal>
             <p className="eyebrow">About AGS Trade</p>
@@ -47,7 +47,7 @@ export default function Statement() {
             highlight={['source', 'outcome']}
             className="mt-8 font-display text-[44px] font-medium leading-[0.95] tracking-display text-ink sm:text-[72px] lg:text-[92px]"
           />
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+          <div className="mt-10 grid gap-6 sm:mt-12 sm:grid-cols-2">
             <Reveal className="border-t border-ink/10 pt-5">
               <h3 className="flex items-center gap-3 font-display text-[24px] font-medium tracking-[-0.02em] text-ink sm:text-[28px]"><span className="h-2 w-2 bg-accent" aria-hidden="true" />Our mission</h3>
               <p className="mt-3 text-[17px] leading-[1.65] text-muted lg:text-[18px]">
@@ -92,14 +92,14 @@ export default function Statement() {
               No chasing multiple vendors, no surprises at delivery. Just one team, accountable from enquiry to your door.
             </p>
           </Reveal>
-          <ul className="mt-10">
+          <ul className="mt-8 grid grid-cols-3 gap-3 lg:mt-10 lg:block">
             {FACTS.map((fact, i) => (
-              <Reveal as="li" key={fact.label} delay={i * 120} className="border-t border-ink/10 py-6">
-                <p className="font-display text-[64px] font-medium leading-none text-ink sm:text-[80px]">
+              <Reveal as="li" key={fact.label} delay={i * 120} className="border-t border-ink/10 pt-4 lg:py-6">
+                <p className="font-display text-[40px] font-medium leading-none text-ink sm:text-[64px] lg:text-[80px]">
                   <CountUp to={fact.value} play={isInView} />
                   {fact.suffix}
                 </p>
-                <p className="mt-2 text-[16px] lg:text-[17px] text-muted">{fact.label}</p>
+                <p className="mt-2 text-[13px] leading-snug text-muted sm:text-[16px] lg:text-[17px]">{fact.label}</p>
               </Reveal>
             ))}
           </ul>

@@ -80,7 +80,7 @@ export default function Hero() {
 
 
   return (
-    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[280vh]'}`}>
+    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[200vh] md:h-[280vh]'}`}>
       <div className={`${reduce ? 'relative' : 'sticky top-0'} isolate h-[100svh] min-h-[640px] overflow-hidden`}>
         {/* Interactive globe */}
         <div

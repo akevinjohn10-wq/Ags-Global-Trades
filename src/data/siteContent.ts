@@ -324,7 +324,7 @@ export const contactDetails = {
   whatsapp: '+91 9090050574',
   hours: '9:00- 21:00 IST',
   linkedin: 'https://www.linkedin.com/in/aditya-dey-07708634a/',
-  instagram: 'https://www.instagram.com/agstrades.in/',
+  instagram: 'https://www.instagram.com/agstrade.in/',
 };
 
 export interface Catalogue {

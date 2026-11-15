@@ -91,7 +91,7 @@ export default function Footer() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[200px] -z-10 h-[320px] bg-gradient-to-b from-transparent to-ink" />
 
       {/* Top call to action */}
-      <div className="container-x flex flex-col gap-8 border-b border-white/10 py-16 sm:py-20 lg:flex-row lg:items-end lg:justify-between">
+      <div className="container-x flex flex-col gap-6 border-b border-white/10 py-12 sm:gap-8 sm:py-20 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="eyebrow eyebrow-light">Work with us</p>
           <p className="mt-5 max-w-2xl font-display text-[30px] font-medium leading-[1.05] sm:text-[44px]">
@@ -103,8 +103,8 @@ export default function Footer() {
         </Button>
       </div>
 
-      <div className="container-x grid gap-12 py-14 sm:grid-cols-2 lg:grid-cols-12 lg:py-16">
-        <div className="lg:col-span-3">
+      <div className="container-x grid grid-cols-2 gap-x-6 gap-y-10 py-12 sm:gap-12 sm:py-14 lg:grid-cols-12 lg:py-16">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-3">
           <Logo layout="stacked" height={80} />
           <p className="mt-5 max-w-xs text-[16px] lg:text-[17px] leading-[1.7] text-white/60">
             A sourcing and supply company: we find, check, buy and ship the products your business needs.
@@ -133,7 +133,7 @@ export default function Footer() {
 
         <nav aria-label="Footer" className="lg:col-span-2">
           <p className="mono-caps text-white/40">Explore</p>
-          <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px]">
+          <ul className="mt-4 space-y-2.5 text-[15px] sm:mt-5 sm:space-y-3 sm:text-[16px] lg:text-[17px]">
             {navLinks.map((link) => (
               <li key={link.href}>
                 <a href={link.href} className={linkClass}>
@@ -146,7 +146,7 @@ export default function Footer() {
 
         <div className="lg:col-span-3">
           <p className="mono-caps text-white/40">Services</p>
-          <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px]">
+          <ul className="mt-4 space-y-2.5 text-[15px] sm:mt-5 sm:space-y-3 sm:text-[16px] lg:text-[17px]">
             {services.map((item) => (
               <li key={item.title}>
                 <a href="#services" className={linkClass}>
@@ -157,7 +157,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="col-span-2 sm:col-span-1 lg:col-span-4">
           <p className="mono-caps text-white/40">Head office</p>
           <ul className="mt-5 space-y-3 text-[16px] lg:text-[17px] text-white/70">
             <li className="flex gap-3">
@@ -183,7 +183,7 @@ export default function Footer() {
       </div>
 
       {/* Oversized wordmark made of dots that scatter around the cursor */}
-      <div className="container-x">
+      <div className="container-x hidden sm:block">
         <DotWordmark text="AGS GLOBAL TRADE" className="h-[16vw] max-h-[220px]" />
       </div>
 
