@@ -12,7 +12,7 @@ export default function Contact() {
     { label: 'WhatsApp', icon: MessageCircle, href: `https://wa.me/${contactDetails.whatsapp2.replace(/\D/g, '')}`, lines: [contactDetails.whatsapp2], external: true },
     { label: 'Business Hours', icon: Clock, lines: [contactDetails.hours] },
     { label: 'LinkedIn', icon: Linkedin, href: contactDetails.linkedin, lines: ['AGS Global Trade'], external: true },
-    { label: 'Instagram', icon: Instagram, href: contactDetails.instagram, lines: ['@agstrade.in'], external: true },
+    { label: 'Instagram', icon: Instagram, href: contactDetails.instagram, lines: ['@agstrades.in'], external: true },
   ];
 
   return (
