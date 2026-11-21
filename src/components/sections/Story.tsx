@@ -9,9 +9,21 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg plays from the brand film (public/story/001-097.webp, frames interpolated for a longer, smooth shot)
-const FRAME_COUNT = 97;
-const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
+// Three films, scrubbed by scroll: loading the truck, the forest road from above, then the sea leg.
+// Each frame is drawn on a canvas; between two frames the next one fades in, so scrolling stays smooth.
+const pad = (i: number) => String(i + 1).padStart(3, '0');
+const FILMS = [
+  { n: 94, src: (i: number, v: string) => `/story/load/${v}/${pad(i)}.webp` },
+  { n: 94, src: (i: number, v: string) => `/story/road/${v}/${pad(i)}.webp` },
+  { n: 97, src: (i: number) => `/story/${pad(i)}.webp` },
+];
+const OFFSETS = FILMS.map((_, k) => FILMS.slice(0, k).reduce((a, f) => a + f.n, 0));
+const FRAME_COUNT = OFFSETS[2] + FILMS[2].n;
+const filmOf = (g: number) => (g >= OFFSETS[2] ? 2 : g >= OFFSETS[1] ? 1 : 0);
+const frameSrc = (g: number, v: string) => {
+  const k = filmOf(g);
+  return FILMS[k].src(g - OFFSETS[k], v);
+};
 const PART = (n: string) => `/story/parts/${n}.webp`;
 
 // Scroll share of each leg
@@ -101,6 +113,8 @@ function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const dipRef = useRef<HTMLDivElement>(null);
+  const seaShadeRef = useRef<HTMLDivElement>(null);
+  const roadShadeRef = useRef<HTMLDivElement>(null);
   // leg 1
   const loadRef = useRef<HTMLDivElement>(null);
   const groundRef = useRef<HTMLDivElement>(null);
@@ -141,6 +155,7 @@ function StoryFilm() {
     const loaded = new Array(FRAME_COUNT).fill(false);
     let current = -1;
     let wanted = 0;
+    const variant = window.innerWidth < 900 || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData ? 'm' : 'd';
     let started = false;
     const load = (i: number) => {
       if (images[i]) return;
@@ -150,13 +165,15 @@ function StoryFilm() {
         loaded[i] = true;
         if (Math.abs(i - wanted) < 6) draw(true);
       };
-      img.src = frameSrc(i);
+      img.src = frameSrc(i, variant);
       images[i] = img;
     };
     const loadAll = () => {
       if (started) return;
       started = true;
-      for (const step of [10, 5, 2, 1]) for (let i = 0; i < FRAME_COUNT; i += step) load(i);
+      // first the opening film, coarse to fine, then the rest
+      for (const step of [12, 4, 1]) for (let i = 0; i < OFFSETS[1]; i += step) load(i);
+      for (const step of [10, 5, 2, 1]) for (let i = OFFSETS[1]; i < FRAME_COUNT; i += step) load(i);
     };
     const io = new IntersectionObserver(([e]) => e.isIntersecting && loadAll(), { rootMargin: '120% 0px' });
     io.observe(section);
@@ -167,18 +184,43 @@ function StoryFilm() {
       }
       return -1;
     }
-    function draw(force = false) {
-      const i = nearestLoaded(wanted);
-      if (i < 0 || (i === current && !force)) return;
-      current = i;
-      const img = images[i]!;
+    let wantedF = 0; // fractional frame, for the cross-fade
+    let currentF = -1;
+    // On narrow screens the frame is cropped; keep the action in view (forklift first, then the departing truck)
+    let focusX = 0.5;
+    const paint = (img: HTMLImageElement, alpha: number) => {
       const cw = canvas!.width;
       const ch = canvas!.height;
       const iw = img.naturalWidth;
       const ih = img.naturalHeight;
       const cover = Math.max(cw / iw, ch / ih);
-      ctx!.drawImage(img, (cw - iw * cover) / 2, (ch - ih * cover) / 2, iw * cover, ih * cover);
+      ctx!.globalAlpha = alpha;
+      ctx!.drawImage(img, (cw - iw * cover) * focusX, (ch - ih * cover) / 2, iw * cover, ih * cover);
+      ctx!.globalAlpha = 1;
+    };
+    function draw(force = false) {
+      const i = nearestLoaded(wanted);
+      if (i < 0) return;
+      const frac = i === wanted ? wantedF - wanted : 0;
+      const key = i + frac;
+      if (key === currentF && !force) return;
+      currentF = key;
+      current = i;
+      paint(images[i]!, 1);
+      const nxt = i + 1;
+      if (frac > 0.02 && nxt < FRAME_COUNT && loaded[nxt] && filmOf(nxt) === filmOf(i)) paint(images[nxt]!, frac);
     }
+    const show = (film: number, t: number) => {
+      const fx = film === 0 ? lerp(0.3, 0.68, ease(clamp(t))) : 0.5;
+      if (Math.abs(fx - focusX) > 0.001) {
+        focusX = fx;
+        currentF = -1;
+      }
+      const f = OFFSETS[film] + clamp(t) * (FILMS[film].n - 1);
+      wantedF = Math.min(f, OFFSETS[film] + FILMS[film].n - 1);
+      wanted = Math.floor(wantedF);
+      draw();
+    };
 
     // ---------- layout ----------
     let H = 200; // side-view truck height
@@ -192,6 +234,7 @@ function StoryFilm() {
       canvas.width = Math.round(canvas.clientWidth * dpr);
       canvas.height = Math.round(canvas.clientHeight * dpr);
       current = -1;
+      currentF = -1;
       vw = window.innerWidth;
       vh = window.innerHeight;
       const mobile = vw < 768;
@@ -269,7 +312,10 @@ function StoryFilm() {
       });
       set(truckRef.current, { transform: `translate3d(${truckX.toFixed(1)}px,0,0)` });
       set(laneRef.current, { backgroundPositionX: `${(-easeIn(seg(l, 0.72, 1)) * 600).toFixed(0)}px` });
-      set(loadRef.current, { visibility: p < P_LOAD ? 'visible' : 'hidden' });
+      if (p < P_LOAD + 0.01) show(0, seg(p, 0, P_LOAD));
+      else if (p < P_ROAD) show(1, seg(p, P_LOAD, P_ROAD));
+      set(seaShadeRef.current, { opacity: String(seg(p, P_ROAD - 0.04, P_ROAD + 0.02)) });
+      set(roadShadeRef.current, { opacity: String(window01(p, P_LOAD - 0.01, P_ROAD - 0.02, 0.18)) });
 
       // ---- Leg 2: the road, seen from above ----
       const r = seg(p, P_LOAD, P_ROAD);
@@ -314,10 +360,7 @@ function StoryFilm() {
       });
 
       // ---- Leg 3: sea (film) ----
-      if (p >= P_ROAD - 0.01 && p < P_SEA + 0.02) {
-        wanted = Math.round(seg(p, P_ROAD, P_SEA) * (FRAME_COUNT - 1));
-        draw();
-      }
+      if (p >= P_ROAD && p < P_SEA + 0.02) show(2, seg(p, P_ROAD, P_SEA));
       let dip = 0;
       for (const b of [] as number[]) dip = Math.max(dip, 1 - Math.abs(p - b) / 0.02);
       set(dipRef.current, { opacity: String(clamp(dip) * 0.9) });
@@ -383,48 +426,12 @@ function StoryFilm() {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_40%,rgba(5,7,15,0.7))]" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
-
-        {/* ---------- Leg 1: loading, on white ---------- */}
-        <div ref={loadRef} className="absolute inset-0 bg-paper text-ink" style={{ ['--h' as string]: '200px' }}>
-          <div ref={groundRef} className="absolute inset-x-0 bottom-0 bg-ink" style={{ height: '22%' }}>
-            <div
-              ref={laneRef}
-              aria-hidden="true"
-              className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2"
-              style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.55) 0 50%, transparent 50% 100%)', backgroundSize: '54px 3px' }}
-            />
-          </div>
-          <div aria-hidden="true" className="absolute inset-x-0" style={{ bottom: '22%' }}>
-            <div ref={forkRef} className="absolute bottom-0 left-0" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
-              <img src={PART('forklift')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
-              <img
-                ref={carriageRef}
-                src={PART('carriage')}
-                alt=""
-                draggable={false}
-                className="absolute"
-                style={{ left: unit(CARRIAGE.left), top: unit(CARRIAGE.top), width: unit(CARRIAGE.w), height: unit(CARRIAGE.h) }}
-              />
-            </div>
-            <img ref={crateRef} src={PART('crate')} alt="" draggable={false} className="absolute bottom-0 left-0" style={{ width: unit(CRATE_W), height: unit(CRATE_H) }} />
-            <div ref={truckRef} className="absolute bottom-0 left-0" style={{ width: unit(TRUCK_W), height: unit(1) }}>
-              <img src={PART('truck')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
-            </div>
-          </div>
+        <div ref={seaShadeRef} aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: 0 }}>
+          <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_40%,rgba(5,7,15,0.7))]" />
+          <div className="absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
         </div>
-
-        {/* ---------- Leg 2: road from above, on white ---------- */}
-        <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-paper" style={{ visibility: 'hidden' }}>
-          <div ref={worldRef} className="absolute inset-x-0 top-0 will-change-transform">
-            <svg ref={roadSvgRef} className="absolute left-0 top-0 overflow-visible" fill="none">
-              <path ref={roadPathRef} stroke="#1B1E24" strokeLinejoin="round" />
-              <path ref={lanePathRef} stroke="rgba(255,255,255,0.55)" strokeWidth={3} strokeDasharray="28 26" />
-            </svg>
-            <img ref={topTruckRef} src={PART('truck-top')} alt="" draggable={false} className="absolute left-0 top-0 max-w-none origin-center will-change-transform" />
-          </div>
-        </div>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(5,7,15,0.35))]" />
+        <div ref={roadShadeRef} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,8,20,0.78)_0%,rgba(5,8,20,0.35)_34%,transparent_50%,rgba(5,8,20,0.35)_70%,rgba(5,8,20,0.78)_100%)] max-lg:bg-[linear-gradient(180deg,rgba(5,8,20,0.8)_0%,rgba(5,8,20,0.2)_45%,rgba(5,8,20,0.75)_100%)]" style={{ opacity: 0 }} />
 
         {/* ---------- Cloud bank between the road and the sea ---------- */}
         <div ref={mistRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[300vh] will-change-transform" style={{ visibility: 'hidden' }}>
@@ -445,7 +452,7 @@ function StoryFilm() {
         <div ref={dipRef} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-space" style={{ opacity: 0 }} />
 
         {/* ---------- Copy ---------- */}
-        <div ref={copyRefs[0]} className="container-x absolute inset-x-0 top-0 pt-28 text-ink sm:pt-32">
+        <div ref={copyRefs[0]} className="container-x absolute inset-x-0 top-0 pt-28 text-ink sm:pt-32 [text-shadow:0_1px_18px_rgba(255,255,255,0.55)]">
           <p className="eyebrow">Our services</p>
           <h2 className="mt-5 max-w-3xl text-[36px] font-medium leading-[1.02] sm:text-[56px] lg:text-[64px]">Every order, packed and on its way.</h2>
           <p className="mt-5 max-w-md text-[16px] leading-[1.65] text-muted sm:text-[17px]">
@@ -453,25 +460,25 @@ function StoryFilm() {
           </p>
         </div>
 
-        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-ink lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
-          <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
-            <p className="eyebrow">What we do</p>
+        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
+          <div className="max-lg:rounded-lg max-lg:bg-ink/55 max-lg:backdrop-blur-md max-lg:p-4 lg:col-span-4">
+            <p className="eyebrow eyebrow-light">What we do</p>
             <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-muted">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-white/70">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-ink/55 max-lg:backdrop-blur-md max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
               <li
                 key={sv.title}
                 ref={(el) => {
                   serviceRefs.current[i] = el;
                 }}
-                className="border-l border-ink/15 pl-4"
+                className="border-l border-white/25 pl-4"
                 style={{ opacity: 0 }}
               >
-                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-accent sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
+                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
                 <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-muted sm:block">{sv.short}</p>
+                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-white/70 sm:block">{sv.short}</p>
               </li>
             ))}
           </ul>
