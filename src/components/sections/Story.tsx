@@ -9,8 +9,8 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg scrubs 97 frames (1920x1080, 8 fps) of an overhead container-ship clip: public/story/sea/001-097.webp
-const FRAME_COUNT = 97;
+// The sea leg scrubs 117 frames (1920x1080, 8 fps, 14.6 s) of an overhead container-ship clip: public/story/sea/001-097.webp
+const FRAME_COUNT = 117;
 const frameSrc = (i: number) => `/story/sea/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
@@ -26,9 +26,12 @@ const LANE = W_ROAD / 4; // traffic keeps left: the truck holds the outer lane t
 const A_TRUCK_W = W_ROAD * 0.42;
 const A_TRUCK_L = A_TRUCK_W * (686 / 336);
 
-// Scroll share of each leg
-const P_LOAD = 0.296;
-const P_ROAD = 0.591;
+// Scroll share of each leg. The loading and road legs keep their original lengths (in screens);
+// the section grew to give the ship shot ~2.5 s more footage, so their shares are set from the span
+const LOAD_VH = { desk: 171.7, phone: 106.6 };
+const ROAD_VH = { desk: 342.8, phone: 212.8 };
+let P_LOAD = 0.296;
+let P_ROAD = 0.591;
 // Where the ship leg ends: the last screen of scrolling belongs to the next section rising over the sea
 let P_SEA = 0.84;
 const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
@@ -264,7 +267,13 @@ function StoryFilm() {
       const rect = section!.getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? clamp(-rect.top / span) : 0;
-      if (span > 0) P_SEA = 1 - window.innerHeight / span;
+      if (span > 0) {
+        P_SEA = 1 - window.innerHeight / span;
+        const spanVh = (span / window.innerHeight) * 100;
+        const desk = window.innerWidth >= 768; // the section's md: height
+        P_LOAD = (desk ? LOAD_VH.desk : LOAD_VH.phone) / spanVh;
+        P_ROAD = (desk ? ROAD_VH.desk : ROAD_VH.phone) / spanVh;
+      }
       const sc = p < P_LOAD ? 0 : p < P_ROAD ? 1 : p < P_SEA ? 2 : 3;
       if (sc !== lastScene) {
         lastScene = sc;
@@ -460,7 +469,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[460vh] scroll-mt-24 md:h-[680vh] bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[470vh] scroll-mt-24 md:h-[710vh] bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
