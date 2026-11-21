@@ -45,6 +45,8 @@ const CRATE_H = CRATE_W * (498 / 900);
 const CRATE_OFFSET = 690 * SF;
 const TRUCK_FLOOR = 0.28;
 const LIFT = TRUCK_FLOOR - FORK_TOP + 0.012;
+// Type follows Apple's system (awesome-design-md/apple): SF Pro where the device has it, Inter elsewhere
+const APPLE_FONT = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, system-ui, sans-serif';
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -124,8 +126,6 @@ function StoryFilm() {
   const bayRef = useRef<HTMLDivElement>(null);
   const bayFogRef = useRef<HTMLDivElement>(null);
   const bayFogTexRef = useRef<HTMLDivElement>(null);
-  const treesRef = useRef<HTMLDivElement>(null);
-  const treeLayerRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
   const forestRef = useRef<HTMLDivElement>(null);
   const aerialTruckRef = useRef<HTMLDivElement>(null);
   const fogARef = useRef<HTMLDivElement>(null);
@@ -224,7 +224,6 @@ function StoryFilm() {
       Wr = mobile ? Math.min(vh * 0.2, vw * 0.36) : vh * 0.22;
       loadRef.current?.style.setProperty('--h', `${H}px`);
       if (groundRef.current) groundRef.current.style.height = `${Wr}px`;
-      if (treesRef.current) treesRef.current.style.bottom = `${Wr - 2}px`;
       if (truckRef.current?.parentElement) truckRef.current.parentElement.style.bottom = `${Wr}px`;
 
       z = mobile ? 0.6 : Math.max(vw / W_W, 0.9);
@@ -293,9 +292,6 @@ function StoryFilm() {
       const c1x = T + vw * 0.06 + (TRUCK_W * H) / 2;
       const bandY = vh - Wr / 2;
       set(loadRef.current, { visibility: p < P_LOAD + 0.06 ? 'visible' : 'hidden' });
-      // the mist drifts at three depths as the scene plays
-      const drift = l + lt * 0.6;
-      [60, 140, 260].forEach((d, i) => set(treeLayerRefs[i].current, { backgroundPositionX: `${(-drift * d).toFixed(1)}px` }));
       const fogIn = ease(seg(lt, 0, 0.45));
       const clear = ease(seg(lt, 0.5, 1));
       if (clear > 0 && clear < 1) {
@@ -451,7 +447,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[460vh] scroll-mt-24 md:h-[680vh] bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[460vh] scroll-mt-24 md:h-[680vh] bg-space text-white antialiased" style={{ fontFamily: APPLE_FONT, fontFeatureSettings: '"ss03"' }}>
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
@@ -460,16 +456,8 @@ function StoryFilm() {
 
         {/* ---------- Leg 1: loading, on white ---------- */}
         <div ref={loadRef} className="absolute inset-0 z-[1] text-ink" style={{ ['--h' as string]: '200px' }}>
-          {/* a foggy morning behind the yard */}
-          <div ref={bayRef} aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,#C9D0D2_0%,#DCE1E2_40%,#EDEFEE_80%,#F4F5F4_100%)]">
-            {/* drifting morning mist, thickest along the horizon */}
-            <div ref={treesRef} className="absolute inset-x-0 top-0" style={{ bottom: '22%' }}>
-              <div ref={treeLayerRefs[0]} className="absolute -inset-x-[30%] inset-y-0 opacity-50" style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '1400px 1400px' }} />
-              <div ref={treeLayerRefs[1]} className="absolute -inset-x-[30%] inset-y-0 opacity-40" style={{ backgroundImage: `url(${PART('fog-b')})`, backgroundSize: '900px 900px', backgroundPosition: '300px 200px' }} />
-              <div ref={treeLayerRefs[2]} className="absolute -inset-x-[30%] bottom-0 h-[45%] opacity-70" style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '700px 700px', backgroundPosition: '0 100%', maskImage: 'linear-gradient(to top, #000 30%, transparent)', WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)' }} />
-              <div className="absolute inset-x-0 bottom-0 h-[30%] bg-[linear-gradient(to_top,rgba(246,247,246,0.95),rgba(246,247,246,0))]" />
-            </div>
-          </div>
+          {/* the light tile: Apple's parchment, the truck and forklift rest on the road like products */}
+          <div ref={bayRef} aria-hidden="true" className="absolute inset-0 bg-[#f5f5f7]" />
           <div ref={groundRef} className="absolute inset-x-0 bottom-0 bg-[#2a2c2f] bg-repeat-x" style={{ height: '22%', backgroundImage: `url(${PART('ground-side')})`, backgroundSize: 'auto 100%' }}>
             <div
               ref={laneRef}
@@ -479,8 +467,7 @@ function StoryFilm() {
             />
           </div>
           <div aria-hidden="true" className="absolute inset-x-0" style={{ bottom: '22%' }}>
-            <div ref={forkRef} className="absolute bottom-0 left-0" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
-              <div aria-hidden="true" className="absolute -bottom-[5%] left-[2%] right-[10%] h-[11%] rounded-[50%] bg-black/40 blur-[5px]" />
+            <div ref={forkRef} className="absolute bottom-0 left-0 [filter:drop-shadow(3px_5px_30px_rgba(0,0,0,0.22))]" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
               <img src={PART('forklift')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
               <img
                 ref={carriageRef}
@@ -492,8 +479,7 @@ function StoryFilm() {
               />
             </div>
             <img ref={crateRef} src={PART('crate')} alt="" draggable={false} className="absolute bottom-0 left-0" style={{ width: unit(CRATE_W), height: unit(CRATE_H) }} />
-            <div ref={truckRef} className="absolute bottom-0 left-0" style={{ width: unit(TRUCK_W), height: unit(1) }}>
-              <div aria-hidden="true" className="absolute -bottom-[4%] left-[1%] right-[3%] h-[9%] rounded-[50%] bg-black/45 blur-[6px]" />
+            <div ref={truckRef} className="absolute bottom-0 left-0 [filter:drop-shadow(3px_5px_30px_rgba(0,0,0,0.22))]" style={{ width: unit(TRUCK_W), height: unit(1) }}>
               <img src={PART('truck')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
             </div>
           </div>
@@ -553,19 +539,23 @@ function StoryFilm() {
         <div ref={dipRef} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-space" style={{ opacity: 0 }} />
 
         {/* ---------- Copy ---------- */}
-        <div ref={copyRefs[0]} className="container-x absolute inset-x-0 top-0 z-[2] pt-28 text-ink sm:pt-32">
-          <p className="eyebrow">Our services</p>
-          <h2 className="mt-5 max-w-3xl text-[36px] font-medium leading-[1.02] sm:text-[56px] lg:text-[64px]">Every order, packed and on its way.</h2>
-          <p className="mt-5 max-w-md text-[16px] leading-[1.65] text-muted sm:text-[17px]">
-            From the supplier&apos;s door to yours, we handle each step and keep you posted along the way.
+        <div ref={copyRefs[0]} className="absolute inset-x-0 top-0 z-[2] px-5 pt-24 text-center text-[#1d1d1f] sm:pt-28 lg:pt-32">
+          <p className="text-[17px] font-semibold leading-[1.19] tracking-[0.231px] sm:text-[21px]">Our services</p>
+          <h2 className="mx-auto mt-2 max-w-3xl text-[34px] font-semibold leading-[1.07] tracking-[-0.02em] sm:text-[48px] lg:text-[56px]">Every order, packed and on its way.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[19px] leading-[1.3] tracking-[0.196px] text-[#1d1d1f] sm:text-[24px]">
+            From the supplier&apos;s door to yours, we handle each step and keep you posted.
           </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <a href="#contact" className="rounded-full bg-[#0066cc] px-[22px] py-[11px] text-[17px] leading-none tracking-[-0.374px] text-white transition-transform active:scale-95">Get a quote</a>
+            <a href="#products" className="rounded-full border border-[#0066cc] px-[22px] py-[11px] text-[17px] leading-none tracking-[-0.374px] text-[#0066cc] transition-transform active:scale-95">See products</a>
+          </div>
         </div>
 
         <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 z-[2] grid gap-6 pt-24 text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
           <div className="lg:col-span-4">
-            <p className="eyebrow text-white/80">What we do</p>
-            <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-white/75">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+            <p className="text-[17px] font-semibold leading-[1.19] tracking-[0.231px] sm:text-[21px]">What we do</p>
+            <h3 className="mt-2 text-[34px] font-semibold leading-[1.07] tracking-[-0.02em] sm:text-[48px]">Six services. One team.</h3>
+            <p className="mt-4 max-w-sm text-[17px] leading-[1.47] tracking-[-0.374px] text-[#cccccc]">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
           <ul className="grid grid-cols-2 gap-x-6 gap-y-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
@@ -574,12 +564,12 @@ function StoryFilm() {
                 ref={(el) => {
                   serviceRefs.current[i] = el;
                 }}
-                className="border-l border-white/25 pl-4"
+                className="border-l border-white/15 pl-4"
                 style={{ opacity: 0 }}
               >
-                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
-                <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-white/70 sm:block">{sv.short}</p>
+                <p className="text-[14px] font-semibold leading-[1.29] tracking-[-0.224px] text-[#2997ff]">{String(i + 1).padStart(2, '0')}</p>
+                <p className="mt-1 text-[17px] font-semibold leading-[1.24] tracking-[-0.374px]">{sv.title}</p>
+                <p className="mt-0.5 hidden text-[14px] leading-[1.43] tracking-[-0.224px] text-[#cccccc] sm:block">{sv.short}</p>
               </li>
             ))}
           </ul>
@@ -587,8 +577,8 @@ function StoryFilm() {
 
         <div ref={copyRefs[2]} className="container-x absolute inset-0 z-[2] flex flex-col justify-between py-28 sm:py-24" style={{ opacity: 0 }}>
           <div className="text-center">
-            <p className="eyebrow eyebrow-light justify-center">Why AGS Trade</p>
-            <h3 className="mx-auto mt-4 max-w-3xl font-display text-[30px] font-medium leading-[1.02] sm:text-[52px]">Sourcing that works as hard as you do.</h3>
+            <p className="text-[17px] font-semibold leading-[1.19] tracking-[0.231px] sm:text-[21px]">Why AGS Trade</p>
+            <h3 className="mx-auto mt-2 max-w-3xl text-[34px] font-semibold leading-[1.07] tracking-[-0.02em] sm:text-[48px] lg:text-[56px]">Sourcing that works as hard as you do.</h3>
           </div>
           <ul className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-x-6 gap-y-6 sm:gap-x-[300px] lg:gap-x-[380px]">
             {VALUES.map((v, i) => {
@@ -602,9 +592,9 @@ function StoryFilm() {
                   className={i % 2 ? 'text-left' : 'text-left sm:text-right'}
                   style={{ opacity: 0 }}
                 >
-                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" className={`text-sky ${i % 2 ? '' : 'sm:ml-auto'}`} />
-                  <p className="mt-2.5 font-display text-[16px] leading-tight sm:text-[19px]">{v.title}</p>
-                  <p className="mt-1 text-[13px] leading-[1.55] text-white/65 sm:text-[14px]">{v.text}</p>
+                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" className={`text-[#2997ff] ${i % 2 ? '' : 'sm:ml-auto'}`} />
+                  <p className="mt-2.5 text-[17px] font-semibold leading-[1.24] tracking-[-0.374px]">{v.title}</p>
+                  <p className="mt-1 text-[14px] leading-[1.43] tracking-[-0.224px] text-[#cccccc]">{v.text}</p>
                 </li>
               );
             })}
@@ -614,7 +604,7 @@ function StoryFilm() {
         {/* Journey indicator */}
         <div className="container-x pointer-events-none absolute inset-x-0 bottom-0 z-[2] hidden pb-6 lg:block [@media(max-height:820px)]:!hidden">
           <div className={`flex items-center gap-4 transition-opacity duration-300 ${scene === 3 ? 'opacity-0' : ''}`}>
-            <span className="mono-caps text-white/80">{String(scene + 1).padStart(2, '0')}</span>
+            <span className="text-[12px] tracking-[-0.12px] text-white/80">{String(scene + 1).padStart(2, '0')}</span>
             <span className="flex gap-1.5" aria-hidden="true">
               {LABELS.map((_, i) => (
                 <span key={i} className="h-[2px] w-10 overflow-hidden bg-white/25">
@@ -622,7 +612,7 @@ function StoryFilm() {
                 </span>
               ))}
             </span>
-            <span key={scene} className="mono-caps animate-panelin text-white/70">
+            <span key={scene} className="animate-panelin text-[12px] tracking-[-0.12px] text-white/70">
               {LABELS[scene]}
             </span>
           </div>
