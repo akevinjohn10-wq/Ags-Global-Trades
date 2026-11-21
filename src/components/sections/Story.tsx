@@ -14,10 +14,17 @@ const FRAME_COUNT = 97;
 const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
-const FOREST_W = 1600;
-const FOREST_H = 2400;
-const ROAD_HALF = 75; // road half-width in tile pixels
-const TRUCK_RATIO = 686 / 336;
+// World (public/story/parts/world.webp) is 1600 x 3800 world px: the road runs in from the left at
+// y = W_YH, turns a corner of radius W_R round (W_CX - W_R, W_YH + W_R) and runs down at x = W_CX.
+const W_W = 1600;
+const W_H = 3800;
+const W_YH = 1500;
+const W_R = 300;
+const W_CX = 800;
+const W_ROAD = 200;
+const LANE = W_ROAD / 4; // traffic keeps left: the truck holds the outer lane through the turn
+const A_TRUCK_W = W_ROAD * 0.42;
+const A_TRUCK_L = A_TRUCK_W * (686 / 336);
 
 // Scroll share of each leg
 const P_LOAD = 0.296;
@@ -113,12 +120,12 @@ function StoryFilm() {
   const crateRef = useRef<HTMLImageElement>(null);
   // leg 2
   const roadRef = useRef<HTMLDivElement>(null);
-  const driveCamRef = useRef<HTMLDivElement>(null);
   const forestRef = useRef<HTMLDivElement>(null);
-  const aerialTruckRef = useRef<HTMLImageElement>(null);
+  const aerialTruckRef = useRef<HTMLDivElement>(null);
   const fogARef = useRef<HTMLDivElement>(null);
   const fogBRef = useRef<HTMLDivElement>(null);
   const driveVeilRef = useRef<HTMLDivElement>(null);
+  const sunRef = useRef<HTMLDivElement>(null);
   const mistRef = useRef<HTMLDivElement>(null);
   // leg 4
   const skyRef = useRef<HTMLDivElement>(null);
@@ -190,8 +197,7 @@ function StoryFilm() {
     }
 
     // ---------- road ----------
-    let tileS = 1; // forest tile scale
-    let truckW = 50;
+    let z = 1; // screen px per world px
 
     // ---------- layout ----------
     let H = 200; // side-view truck height
@@ -214,16 +220,14 @@ function StoryFilm() {
       if (groundRef.current) groundRef.current.style.height = `${Wr}px`;
       if (truckRef.current?.parentElement) truckRef.current.parentElement.style.bottom = `${Wr}px`;
 
-      tileS = mobile ? 0.72 : Math.max(vw / FOREST_W, 0.85) * 1.35;
-      truckW = 70 * tileS;
+      z = mobile ? 0.6 : Math.max(vw / W_W, 0.9);
       if (forestRef.current) {
-        forestRef.current.style.backgroundImage = `url(/story/parts/${mobile ? 'forest-m' : 'forest'}.webp)`;
-        forestRef.current.style.backgroundSize = `${FOREST_W * tileS}px ${FOREST_H * tileS}px`;
-        forestRef.current.style.height = `${vh * 1.3 + FOREST_H * tileS}px`;
+        forestRef.current.style.width = `${W_W * z}px`;
+        forestRef.current.style.height = `${W_H * z}px`;
       }
       if (aerialTruckRef.current) {
-        aerialTruckRef.current.style.width = `${truckW}px`;
-        aerialTruckRef.current.style.height = `${truckW * TRUCK_RATIO}px`;
+        aerialTruckRef.current.style.width = `${A_TRUCK_W * z}px`;
+        aerialTruckRef.current.style.height = `${A_TRUCK_L * z}px`;
       }
 
       // Clouds, painted once for this screen shape
@@ -275,24 +279,59 @@ function StoryFilm() {
       set(loadRef.current, { visibility: p < P_LOAD ? 'visible' : 'hidden' });
 
       // ---- Leg 2: the road from the air, through forest and fog ----
-      const r = seg(p, P_LOAD, P_ROAD + 0.07);
+      const r = seg(p, P_LOAD, P_ROAD);
       set(roadRef.current, {
         visibility: p >= P_LOAD && p < P_ROAD + 0.02 ? 'visible' : 'hidden',
       });
       if (p >= P_LOAD - 0.01 && p < P_ROAD + 0.02) {
-        const tileH = FOREST_H * tileS;
-        // the truck drives down the page, so the forest slides up beneath it
-        const travel = r * tileH * 1.6;
-        set(forestRef.current, { transform: `translate3d(0,${(-(travel % tileH) - vh * 0.15).toFixed(1)}px,0)` });
-        // the camera starts low and pulls up as the truck settles into frame
-        set(driveCamRef.current, { transform: `scale(${lerp(1.22, 1, easeOut(seg(r, 0, 0.7))).toFixed(4)})` });
-        const tx = vw / 2 + (ROAD_HALF / 2) * tileS - truckW / 2;
-        const ty = lerp(vh * 0.16, vh * 0.42, easeOut(seg(r, 0, 0.55))) + Math.sin(r * 9) * 4;
-        set(aerialTruckRef.current, { transform: `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0)` });
+        const mobile = vw < 768;
+        // horizontal: where the camera keeps the corner on screen (phones see little of the straight)
+        const ax = W_CX - W_R;
+        const ay = W_YH + W_R;
+        const RL = W_R + LANE;
+        const anchor0 = mobile ? 0.8 : 0.5;
+        const left0 = W_CX - (anchor0 * vw) / z; // world x at the screen's left edge to begin with
+        const startX = left0 - A_TRUCK_L;
+        const LA = ax - startX;
+        const LArc = (Math.PI * RL) / 2;
+        const LV = Math.min((vh * 1.3) / z, 1300);
+        const u = lerp(0, LA + LArc + LV, ease(r) * 0.25 + r * 0.75);
+        let x: number;
+        let y: number;
+        let rot: number;
+        if (u <= LA) {
+          x = startX + u;
+          y = W_YH - LANE;
+          rot = -90;
+        } else if (u <= LA + LArc) {
+          const th = (u - LA) / RL;
+          x = ax + RL * Math.sin(th);
+          y = ay - RL * Math.cos(th);
+          rot = -90 + (th * 180) / Math.PI;
+        } else {
+          x = W_CX + LANE;
+          y = ay + (u - LA - LArc);
+          rot = 0;
+        }
+        // camera: road along the bottom of the screen (where the loading bay's road was), then it
+        // follows the truck down the page once it has turned
+        const k = ease(seg(u, LA - 120, LA + LArc + vh * 0.4 / z));
+        const screenY = lerp(vh - W_ROAD * z * 0.6, vh * (mobile ? 0.74 : 0.55), k);
+        const camY = Math.max(W_YH * z - (vh - W_ROAD * z * 0.6), y * z - screenY);
+        const camX = W_CX * z - lerp(anchor0, 0.5, k) * vw;
+        set(forestRef.current, { transform: `translate3d(${(-camX).toFixed(1)}px,${(-camY).toFixed(1)}px,0)` });
+        set(aerialTruckRef.current, {
+          transform: `translate3d(${((x - A_TRUCK_W / 2) * z).toFixed(1)}px,${((y - A_TRUCK_L / 2) * z).toFixed(1)}px,0)`,
+        });
+        const img = aerialTruckRef.current?.firstElementChild as HTMLElement | null;
+        if (img) img.style.transform = `rotate(${rot.toFixed(2)}deg)`;
         // fog drifts across faster than the ground: it hangs between the camera and the trees
         set(fogARef.current, { transform: `translate3d(${(-r * 18).toFixed(2)}%,${(-r * 55).toFixed(2)}%,0)` });
         set(fogBRef.current, { transform: `translate3d(${(r * 12).toFixed(2)}%,${(-r * 70).toFixed(2)}%,0)` });
-        set(driveVeilRef.current, { opacity: String(1 - ease(seg(r, 0, 0.1))) });
+        set(driveVeilRef.current, { opacity: String(1 - ease(seg(r, 0, 0.08))) });
+        // low sun breaks through as the truck takes the corner, then softens
+        const glare = 0.6 + 0.4 * window01(u, LA - 300, LA + LArc + 500, 0.4);
+        set(sunRef.current, { opacity: glare.toFixed(3), transform: `translate3d(${(-r * 4).toFixed(2)}%,${(r * 3).toFixed(2)}%,0)` });
       }
 
       // ---- Road → sea: a bank of cloud rolls over the screen and lifts off the ship ----
@@ -406,15 +445,18 @@ function StoryFilm() {
 
         {/* ---------- Leg 2: the road from the air ---------- */}
         <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#16201a]" style={{ visibility: 'hidden' }}>
-          <div ref={driveCamRef} className="absolute inset-0 origin-[50%_45%] will-change-transform">
-            <div ref={forestRef} className="absolute inset-x-0 top-0 bg-center bg-repeat-y will-change-transform" style={{ backgroundPositionY: '0px' }} />
-            <img
-              ref={aerialTruckRef}
-              src={PART('truck-aerial')}
-              alt=""
-              draggable={false}
-              className="absolute left-0 top-0 max-w-none will-change-transform [filter:drop-shadow(9px_10px_5px_rgba(0,0,0,0.55))]"
-            />
+          <div ref={forestRef} className="absolute left-0 top-0 will-change-transform" style={{ backgroundImage: `url(${PART('world')})`, backgroundSize: '100% 100%' }}>
+            <div ref={aerialTruckRef} className="absolute left-0 top-0 will-change-transform [filter:drop-shadow(9px_10px_5px_rgba(0,0,0,0.55))]">
+              <img src={PART('truck-aerial')} alt="" draggable={false} className="h-full w-full max-w-none origin-center" />
+            </div>
+          </div>
+          {/* sun glare, from the upper left where the light falls from */}
+          <div ref={sunRef} className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
+            <div className="absolute inset-0 bg-[radial-gradient(38%_34%_at_14%_10%,rgba(255,228,175,0.95)_0%,rgba(255,206,140,0.45)_35%,rgba(255,190,120,0)_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_14%_10%,rgba(255,214,160,0.3)_0%,rgba(255,214,160,0)_70%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,230,190,0.16)_0%,rgba(255,230,190,0)_34%,rgba(255,230,190,0)_100%)]" />
+            <div className="absolute left-[34%] top-[30%] h-16 w-16 rounded-full bg-[radial-gradient(circle,rgba(255,236,200,0.35),rgba(255,236,200,0)_70%)]" />
+            <div className="absolute left-[52%] top-[52%] h-28 w-28 rounded-full border border-[rgba(255,230,190,0.12)] bg-[radial-gradient(circle,rgba(255,230,190,0)_55%,rgba(255,230,190,0.10)_70%,rgba(255,230,190,0)_72%)]" />
           </div>
           {/* fog */}
           <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)', WebkitMaskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)' }}>
@@ -425,6 +467,7 @@ function StoryFilm() {
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(220,226,224,0.45)_0%,rgba(220,226,224,0)_22%,rgba(220,226,224,0)_78%,rgba(220,226,224,0.45)_100%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(6,10,8,0.45))]" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(6,10,8,0.55),rgba(6,10,8,0))]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%] bg-[linear-gradient(to_bottom,rgba(6,10,8,0.6),rgba(6,10,8,0.35)_55%,rgba(6,10,8,0))] lg:hidden" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(6,10,8,0.45)_0%,rgba(6,10,8,0)_30%,rgba(6,10,8,0)_70%,rgba(6,10,8,0.3)_100%)]" />
           <div ref={driveVeilRef} className="pointer-events-none absolute inset-0 bg-paper" />
         </div>
@@ -456,25 +499,25 @@ function StoryFilm() {
           </p>
         </div>
 
-        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-ink lg:text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
-          <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
-            <p className="eyebrow lg:text-white/80">What we do</p>
+        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
+          <div className="lg:col-span-4">
+            <p className="eyebrow text-white/80">What we do</p>
             <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-muted lg:text-white/75">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-white/75">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
               <li
                 key={sv.title}
                 ref={(el) => {
                   serviceRefs.current[i] = el;
                 }}
-                className="border-l border-ink/15 pl-4 lg:border-white/25"
+                className="border-l border-white/25 pl-4"
                 style={{ opacity: 0 }}
               >
-                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-accent lg:text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
+                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
                 <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-muted lg:text-white/70 sm:block">{sv.short}</p>
+                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-white/70 sm:block">{sv.short}</p>
               </li>
             ))}
           </ul>
