@@ -9,9 +9,9 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg scrubs 117 frames (1920x1080, 8 fps, 14.6 s) of an overhead container-ship clip: public/story/sea/001-097.webp
-const FRAME_COUNT = 117;
-const frameSrc = (i: number) => `/story/sea/${String(i + 1).padStart(3, '0')}.webp`;
+// The sea leg scrubs 133 frames (1920x1080, 6 fps, 22 s) of an overhead container-ship clip: public/story/sea2/001-133.webp
+const FRAME_COUNT = 133;
+const frameSrc = (i: number) => `/story/sea2/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
 // World (public/story/parts/world.webp) is 2600 x 3800 world px: the road runs in from the left at
@@ -480,8 +480,9 @@ function StoryFilm() {
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_40%,rgba(5,7,15,0.7))]" />
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
+        {/* dimmed into the page's navy so the film sits in the background */}
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_65%_at_50%_50%,rgba(7,11,28,0.15)_30%,rgba(7,11,28,0.85))]" />
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,20,52,0.38)]" />
         {/* sun glare over the first close-up frames: the cloud's white burns off into sunlight on the water */}
         <div ref={seaGlareRef} aria-hidden="true" className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
           <div className="absolute inset-0 bg-[radial-gradient(45%_40%_at_62%_22%,rgba(255,246,226,0.95)_0%,rgba(255,226,180,0.55)_30%,rgba(255,206,150,0)_70%)]" />
