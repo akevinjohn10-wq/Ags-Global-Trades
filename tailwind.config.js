@@ -21,13 +21,15 @@ export default {
         signal: '#F73636',
       },
       fontFamily: {
-        sans: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // Apple's type (awesome-design-md/apple): SF Pro on Apple devices, Inter everywhere else
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', 'Inter', 'system-ui', 'sans-serif'],
+        // labels set in SF Pro Text too (Apple has no mono voice); still uppercase and tracked
+        mono: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Text"', 'Inter', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         tightest: '-0.02em',
-        display: '-0.035em',
+        display: '-0.022em', // Apple-tight headlines, adjusted for Inter
         eyebrow: '0.12em',
       },
       borderRadius: {

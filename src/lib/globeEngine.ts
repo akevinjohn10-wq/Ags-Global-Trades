@@ -625,7 +625,7 @@ function drawOverlay(C, B, M) {
         ctx.beginPath(); ctx.arc(s.x, s.y, 5 + ph * 22, 0, Math.PI * 2); ctx.stroke();
       }
       ctx.fillStyle = `rgba(255,255,255,${a})`; ctx.beginPath(); ctx.arc(s.x, s.y, 4.5, 0, Math.PI*2); ctx.fill();
-      ctx.font = '500 11px "Geist Mono", ui-monospace, monospace';
+      ctx.font = '500 11px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif';
       const label = 'NEW DELHI · HQ';
       const w = ctx.measureText(label).width + 16;
       ctx.fillStyle = `rgba(35,64,142,${0.88 * a})`; ctx.fillRect(s.x + 14, s.y - 11, w, 22);
@@ -642,7 +642,7 @@ function drawOverlay(C, B, M) {
         ctx.strokeStyle = `rgba(255,190,120,${((1 - ph) * 0.5 * a).toFixed(3)})`; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.arc(s.x, s.y, 4 + ph * 16, 0, Math.PI * 2); ctx.stroke();
       }
-      ctx.font = '500 11px "Geist Mono", ui-monospace, monospace';
+      ctx.font = '500 11px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif';
       const lab = p.hub.name.toUpperCase();
       const lw = ctx.measureText(lab).width + 14;
       ctx.fillStyle = `rgba(10,22,64,${0.78 * a})`; ctx.fillRect(s.x + 12, s.y - 10, lw, 20);

@@ -379,7 +379,7 @@ export default function DotMap({
     let placed: { x: number; y: number; w: number; h: number }[] = [];
 
     function drawLabel(text: string, x: number, y: number, pal: (typeof PALETTES)[Theme], strong = false) {
-      ctx!.font = `600 ${layout.w < 640 ? 9 : 11}px "Geist Mono", ui-monospace, monospace`;
+      ctx!.font = `600 ${layout.w < 640 ? 9 : 11}px -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, system-ui, sans-serif`;
       const t = text.toUpperCase();
       const bw = ctx!.measureText(t).width + 14;
       const bh = layout.w < 640 ? 18 : 22;
