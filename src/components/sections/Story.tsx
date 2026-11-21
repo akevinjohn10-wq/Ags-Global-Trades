@@ -500,23 +500,26 @@ function StoryFilm() {
           </div>
           {/* sun glare, from the upper left where the light falls from */}
           <div ref={sunRef} className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-[radial-gradient(38%_34%_at_14%_10%,rgba(255,228,175,0.95)_0%,rgba(255,206,140,0.45)_35%,rgba(255,190,120,0)_70%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_14%_10%,rgba(255,214,160,0.3)_0%,rgba(255,214,160,0)_70%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,230,190,0.16)_0%,rgba(255,230,190,0)_34%,rgba(255,230,190,0)_100%)]" />
-            <div className="absolute left-[34%] top-[30%] h-16 w-16 rounded-full bg-[radial-gradient(circle,rgba(255,236,200,0.35),rgba(255,236,200,0)_70%)]" />
-            <div className="absolute left-[52%] top-[52%] h-28 w-28 rounded-full border border-[rgba(255,230,190,0.12)] bg-[radial-gradient(circle,rgba(255,230,190,0)_55%,rgba(255,230,190,0.10)_70%,rgba(255,230,190,0)_72%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(38%_34%_at_14%_10%,rgba(214,226,255,0.95)_0%,rgba(176,196,245,0.45)_35%,rgba(150,175,235,0)_70%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_14%_10%,rgba(190,206,250,0.3)_0%,rgba(190,206,250,0)_70%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(205,218,252,0.16)_0%,rgba(205,218,252,0)_34%,rgba(205,218,252,0)_100%)]" />
+            <div className="absolute left-[34%] top-[30%] h-16 w-16 rounded-full bg-[radial-gradient(circle,rgba(220,230,255,0.35),rgba(220,230,255,0)_70%)]" />
+            <div className="absolute left-[52%] top-[52%] h-28 w-28 rounded-full border border-[rgba(205,218,252,0.12)] bg-[radial-gradient(circle,rgba(205,218,252,0)_55%,rgba(205,218,252,0.10)_70%,rgba(205,218,252,0)_72%)]" />
           </div>
           {/* fog */}
           <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)', WebkitMaskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)' }}>
             <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-70" ref={fogARef} style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '1100px 1100px' }} />
             <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-45" ref={fogBRef} style={{ backgroundImage: `url(${PART('fog-b')})`, backgroundSize: '760px 760px' }} />
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(225,230,228,0.55)_0%,rgba(225,230,228,0.12)_28%,rgba(225,230,228,0)_50%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(220,226,224,0.45)_0%,rgba(220,226,224,0)_22%,rgba(220,226,224,0)_78%,rgba(220,226,224,0.45)_100%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(6,10,8,0.45))]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(6,10,8,0.55),rgba(6,10,8,0))]" />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%] bg-[linear-gradient(to_bottom,rgba(6,10,8,0.6),rgba(6,10,8,0.35)_55%,rgba(6,10,8,0))] lg:hidden" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(6,10,8,0.45)_0%,rgba(6,10,8,0)_30%,rgba(6,10,8,0)_70%,rgba(6,10,8,0.3)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(214,224,242,0.55)_0%,rgba(214,224,242,0.12)_28%,rgba(214,224,242,0)_50%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(206,218,240,0.45)_0%,rgba(206,218,240,0)_22%,rgba(206,218,240,0)_78%,rgba(206,218,240,0.45)_100%)]" />
+          {/* brand grade: pulls the forest toward the site's blue without losing the photo's light */}
+          <div className="pointer-events-none absolute inset-0 bg-[#23408E] opacity-[0.2] mix-blend-color" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,22,64,0.18),rgba(10,22,64,0.04)_45%,rgba(10,22,64,0.22))] mix-blend-multiply" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(10,22,64,0.45))]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(10,22,64,0.55),rgba(10,22,64,0))]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%] bg-[linear-gradient(to_bottom,rgba(10,22,64,0.6),rgba(10,22,64,0.35)_55%,rgba(10,22,64,0))] lg:hidden" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(10,22,64,0.45)_0%,rgba(10,22,64,0)_30%,rgba(10,22,64,0)_70%,rgba(10,22,64,0.3)_100%)]" />
           <div ref={driveVeilRef} className="pointer-events-none absolute inset-0 bg-paper" />
         </div>
 
