@@ -9,9 +9,9 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg scrubs 133 frames (1920x1080, 6 fps, 22 s) of an overhead container-ship clip: public/story/sea2/001-133.webp
-const FRAME_COUNT = 133;
-const frameSrc = (i: number) => `/story/sea2/${String(i + 1).padStart(3, '0')}.webp`;
+// The sea leg is a seamless 20 s loop of an overhead container-ship clip that plays on its own,
+// so the water keeps moving while the page is still; scroll drives the camera pull-back and the copy
+const SEA_SRC = { desk: '/story/sea-1080.mp4', phone: '/story/sea-720.mp4', poster: '/story/sea-poster.jpg' };
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
 // World (public/story/parts/world.webp) is 2600 x 3800 world px: the road runs in from the left at
@@ -111,7 +111,7 @@ export default function Story() {
 
 function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const seaGlareRef = useRef<HTMLDivElement>(null);
   const dipRef = useRef<HTMLDivElement>(null);
   // leg 1
@@ -151,65 +151,30 @@ function StoryFilm() {
 
   useEffect(() => {
     const section = sectionRef.current;
-    const canvas = canvasRef.current;
-    if (!section || !canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const video = videoRef.current;
+    if (!section || !video) return;
+    video.muted = true; // React does not always write the muted attribute, and autoplay needs it
 
     // ---------- sea film ----------
-    const images: (HTMLImageElement | null)[] = new Array(FRAME_COUNT).fill(null);
-    const loaded = new Array(FRAME_COUNT).fill(false);
-    let current = -1;
-    let wanted = 0;
-    let seaZoom = 1; // camera pull-back: starts tight on the container deck, ends on the whole ship
-    let drawnZoom = 0;
     let started = false;
-    const load = (i: number) => {
-      if (images[i]) return;
-      const img = new Image();
-      img.decoding = 'async';
-      img.onload = () => {
-        loaded[i] = true;
-        if (Math.abs(i - wanted) < 6) draw(true);
-      };
-      img.src = frameSrc(i);
-      images[i] = img;
-    };
-    const loadAll = () => {
-      if (started) return;
-      started = true;
-      for (const step of [10, 5, 2, 1]) for (let i = 0; i < FRAME_COUNT; i += step) load(i);
-    };
+    let seaOn = false;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (!e.isIntersecting) return;
-        loadAll();
+        if (!e.isIntersecting || started) return;
+        started = true;
+        video.src = window.innerWidth < 768 ? SEA_SRC.phone : SEA_SRC.desk;
+        video.load();
       },
       { rootMargin: '120% 0px' },
     );
     io.observe(section);
-    function nearestLoaded(i: number) {
-      for (let d = 0; d < FRAME_COUNT; d++) {
-        if (i - d >= 0 && loaded[i - d]) return i - d;
-        if (i + d < FRAME_COUNT && loaded[i + d]) return i + d;
-      }
-      return -1;
-    }
-    function draw(force = false) {
-      const i = nearestLoaded(wanted);
-      if (i < 0 || (i === current && Math.abs(seaZoom - drawnZoom) < 0.0005 && !force)) return;
-      current = i;
-      drawnZoom = seaZoom;
-      const img = images[i]!;
-      const cw = canvas!.width;
-      const ch = canvas!.height;
-      const iw = img.naturalWidth;
-      const ih = img.naturalHeight;
-      const s = Math.max(cw / iw, ch / ih) * seaZoom;
-      // zoom about the ship's deck (where it sits in the clip), easing to a plain centred cover at 1x
-      const fx = 0.5, fy = lerp(0.5, 0.47, (seaZoom - 1) / 1.6);
-      ctx!.drawImage(img, cw / 2 - fx * iw * s, ch / 2 - fy * ih * s, iw * s, ih * s);
-    }
+    // only plays while the sea is on screen, to save battery
+    const playSea = (on: boolean) => {
+      if (on === seaOn) return;
+      seaOn = on;
+      if (on) video.play().catch(() => {});
+      else video.pause();
+    };
 
     // ---------- road ----------
     let z = 1; // screen px per world px
@@ -221,10 +186,6 @@ function StoryFilm() {
     let vh = 900;
     let Wr = 200; // road width
     const size = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-      canvas.width = Math.round(canvas.clientWidth * dpr);
-      canvas.height = Math.round(canvas.clientHeight * dpr);
-      current = -1;
       vw = window.innerWidth;
       vh = window.innerHeight;
       const mobile = vw < 768;
@@ -253,7 +214,6 @@ function StoryFilm() {
       if (cloudsFrontRef.current) cloudsFrontRef.current.style.backgroundImage = paintClouds(31, 34, 0.8, 12, 36, aspect);
       if (bankTopRef.current) bankTopRef.current.style.backgroundImage = paintClouds(91, 16, 1, 24, 44, (0.6 * vh) / vw);
 
-      draw(true);
       update();
     };
 
@@ -404,15 +364,15 @@ function StoryFilm() {
 
       // ---- Leg 3: sea (film) ----
       if (p >= P_ROAD - 0.01) {
-        // the footage keeps running through the last screen, under the next section rising over it
-        wanted = Math.round(seg(p, P_ROAD, 1) * (FRAME_COUNT - 1));
+        playSea(true);
         // opens close on the containers, then pulls back to the ship in open water
-        seaZoom = lerp(2.6, 1, ease(seg(p, P_ROAD - 0.02, P_ROAD + (P_SEA - P_ROAD) * 0.6)));
-        draw();
+        const seaZoom = lerp(2.6, 1, ease(seg(p, P_ROAD - 0.02, P_ROAD + (P_SEA - P_ROAD) * 0.6)));
+        set(video, { transform: `scale(${seaZoom.toFixed(4)})` });
         // the glare is strongest as the cloud clears, then burns off while the camera pulls back
         const sg = 1 - ease(seg(p, P_ROAD + 0.03, P_ROAD + (P_SEA - P_ROAD) * 0.32));
         set(seaGlareRef.current, { opacity: sg.toFixed(3), transform: `translate3d(${(-(1 - sg) * 3).toFixed(2)}%,${(-(1 - sg) * 4).toFixed(2)}%,0)` });
       } else {
+        playSea(false);
         set(seaGlareRef.current, { opacity: '0' });
       }
       let dip = 0;
@@ -462,7 +422,7 @@ function StoryFilm() {
 
     size();
     const ro = new ResizeObserver(size);
-    ro.observe(canvas);
+    ro.observe(section);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
@@ -479,7 +439,16 @@ function StoryFilm() {
     <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[470vh] scroll-mt-24 md:h-[710vh] bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
-        <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+        <video
+          ref={videoRef}
+          aria-hidden="true"
+          muted
+          loop
+          playsInline
+          preload="none"
+          poster={SEA_SRC.poster}
+          className="absolute inset-0 h-full w-full origin-[50%_47%] object-cover will-change-transform"
+        />
         {/* dimmed into the page's navy so the film sits in the background */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(75%_65%_at_50%_50%,rgba(7,11,28,0.15)_30%,rgba(7,11,28,0.85))]" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,20,52,0.38)]" />
