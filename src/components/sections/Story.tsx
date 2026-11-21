@@ -47,6 +47,33 @@ const window01 = (p: number, a: number, b: number, edge = 0.25) => {
   return ease(Math.min(clamp(t / edge), clamp((1 - t) / edge)));
 };
 
+/** Paints a tileable asphalt texture once (fine grain, a few light chips). */
+function paintAsphalt(size = 256) {
+  const c = document.createElement('canvas');
+  c.width = size;
+  c.height = size;
+  const g = c.getContext('2d');
+  if (!g) return '';
+  const img = g.createImageData(size, size);
+  let x = 1337;
+  const rnd = () => {
+    x = (x * 16807) % 2147483647;
+    return x / 2147483647;
+  };
+  for (let i = 0; i < size * size; i++) {
+    const r = rnd();
+    let v = 54 + (r - 0.5) * 26;
+    if (r > 0.985) v = 92 + rnd() * 40; // light aggregate chips
+    else if (r < 0.02) v = 30;
+    img.data[i * 4] = v;
+    img.data[i * 4 + 1] = v + 1;
+    img.data[i * 4 + 2] = v + 3;
+    img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c.toDataURL('image/png');
+}
+
 /**
  * Paints soft clouds once into a small bitmap. Moving a pre-drawn image is cheap; blurring a
  * tall layer on every frame is what made the cloud transition stutter.
@@ -115,6 +142,8 @@ function StoryFilm() {
   const roadSvgRef = useRef<SVGSVGElement>(null);
   const roadPathRef = useRef<SVGPathElement>(null);
   const lanePathRef = useRef<SVGPathElement>(null);
+  const roadLayers = useRef<(SVGPathElement | null)[]>([]);
+  const asphaltImgRef = useRef<SVGImageElement>(null);
   const topTruckRef = useRef<HTMLImageElement>(null);
   const mistRef = useRef<HTMLDivElement>(null);
   // leg 4
@@ -187,6 +216,7 @@ function StoryFilm() {
     let vh = 900;
     let Wr = 200; // road width
     let road = { Y0: 0, R: 0, cx: 0, LA: 0, LArc: 0, tw: 0, tl: 0, len: 0 };
+    let asphalt = '';
     const size = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       canvas.width = Math.round(canvas.clientWidth * dpr);
@@ -213,6 +243,12 @@ function StoryFilm() {
       roadPathRef.current?.setAttribute('d', d);
       lanePathRef.current?.setAttribute('d', d);
       roadPathRef.current?.setAttribute('stroke-width', String(Wr));
+      const widths = [Wr * 1.22, Wr * 1.14, Wr * 0.9, Wr * 0.875];
+      roadLayers.current.forEach((el, k) => {
+        if (!el) return;
+        el.setAttribute('d', d);
+        el.setAttribute('stroke-width', String(widths[k]));
+      });
       if (roadSvgRef.current) {
         roadSvgRef.current.setAttribute('width', String(vw));
         roadSvgRef.current.setAttribute('height', String(Y0 + R + len + Wr));
@@ -222,6 +258,11 @@ function StoryFilm() {
         topTruckRef.current.style.height = `${tl}px`;
       }
       road = { Y0, R, cx, LA: cx - R + Wr * 2, LArc: (Math.PI * R) / 2, tw, tl, len };
+
+      // Asphalt, painted once
+      if (!asphalt) asphalt = paintAsphalt();
+      if (laneRef.current) laneRef.current.style.backgroundImage = `url(${asphalt})`;
+      asphaltImgRef.current?.setAttribute('href', asphalt);
 
       // Clouds, painted once for this screen shape
       const aspect = (2.2 * vh) / vw;
@@ -388,16 +429,14 @@ function StoryFilm() {
 
         {/* ---------- Leg 1: loading, on white ---------- */}
         <div ref={loadRef} className="absolute inset-0 bg-paper text-ink" style={{ ['--h' as string]: '200px' }}>
-          <div ref={groundRef} className="absolute inset-x-0 bottom-0 bg-ink" style={{ height: '22%' }}>
-            <div
-              ref={laneRef}
-              aria-hidden="true"
-              className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2"
-              style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.55) 0 50%, transparent 50% 100%)', backgroundSize: '54px 3px' }}
-            />
+          <div ref={groundRef} className="absolute inset-x-0 bottom-0 overflow-hidden bg-[#3a3b3e]" style={{ height: '22%' }}>
+            <div ref={laneRef} aria-hidden="true" className="absolute inset-0" style={{ backgroundSize: '180px 180px' }} />
+            {/* light falls off toward the front edge, with a soft line where the road meets the wall */}
+            <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.35)_0%,rgba(255,255,255,0.05)_10%,transparent_35%,rgba(0,0,0,0.35)_100%)]" />
           </div>
           <div aria-hidden="true" className="absolute inset-x-0" style={{ bottom: '22%' }}>
-            <div ref={forkRef} className="absolute bottom-0 left-0" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
+            <div ref={forkRef} className="absolute bottom-0 left-0 [filter:drop-shadow(0_10px_8px_rgba(0,0,0,0.35))]" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
+              <div aria-hidden="true" className="absolute -bottom-[3%] left-[2%] right-[8%] h-[7%] rounded-[50%] bg-black/60 blur-[6px]" />
               <img src={PART('forklift')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
               <img
                 ref={carriageRef}
@@ -408,8 +447,9 @@ function StoryFilm() {
                 style={{ left: unit(CARRIAGE.left), top: unit(CARRIAGE.top), width: unit(CARRIAGE.w), height: unit(CARRIAGE.h) }}
               />
             </div>
-            <img ref={crateRef} src={PART('crate')} alt="" draggable={false} className="absolute bottom-0 left-0" style={{ width: unit(CRATE_W), height: unit(CRATE_H) }} />
-            <div ref={truckRef} className="absolute bottom-0 left-0" style={{ width: unit(TRUCK_W), height: unit(1) }}>
+            <img ref={crateRef} src={PART('crate')} alt="" draggable={false} className="absolute bottom-0 left-0 [filter:drop-shadow(0_8px_6px_rgba(0,0,0,0.3))]" style={{ width: unit(CRATE_W), height: unit(CRATE_H) }} />
+            <div ref={truckRef} className="absolute bottom-0 left-0 [filter:drop-shadow(0_12px_10px_rgba(0,0,0,0.35))]" style={{ width: unit(TRUCK_W), height: unit(1) }}>
+              <div aria-hidden="true" className="absolute -bottom-[2.5%] left-[1%] right-[1%] h-[6%] rounded-[50%] bg-black/60 blur-[6px]" />
               <img src={PART('truck')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
             </div>
           </div>
@@ -419,10 +459,22 @@ function StoryFilm() {
         <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-paper" style={{ visibility: 'hidden' }}>
           <div ref={worldRef} className="absolute inset-x-0 top-0 will-change-transform">
             <svg ref={roadSvgRef} className="absolute left-0 top-0 overflow-visible" fill="none">
-              <path ref={roadPathRef} stroke="#1B1E24" strokeLinejoin="round" />
-              <path ref={lanePathRef} stroke="rgba(255,255,255,0.55)" strokeWidth={3} strokeDasharray="28 26" />
+              <defs>
+                <pattern id="story-asphalt" patternUnits="userSpaceOnUse" width="180" height="180">
+                  <image ref={asphaltImgRef} width="180" height="180" />
+                </pattern>
+                <filter id="story-road-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                  <feGaussianBlur stdDeviation="10" />
+                </filter>
+              </defs>
+              <path ref={(el) => { roadLayers.current[0] = el; }} stroke="rgba(15,20,35,0.22)" filter="url(#story-road-shadow)" />
+              <path ref={(el) => { roadLayers.current[1] = el; }} stroke="#D7DAE1" />
+              <path ref={roadPathRef} stroke="url(#story-asphalt)" />
+              <path ref={(el) => { roadLayers.current[2] = el; }} stroke="rgba(255,255,255,0.75)" />
+              <path ref={(el) => { roadLayers.current[3] = el; }} stroke="url(#story-asphalt)" />
+              <path ref={lanePathRef} stroke="rgba(255,255,255,0.7)" strokeWidth={3} strokeDasharray="30 28" />
             </svg>
-            <img ref={topTruckRef} src={PART('truck-top')} alt="" draggable={false} className="absolute left-0 top-0 max-w-none origin-center will-change-transform" />
+            <img ref={topTruckRef} src={PART('truck-top')} alt="" draggable={false} className="absolute left-0 top-0 max-w-none origin-center will-change-transform [filter:drop-shadow(6px_10px_8px_rgba(0,0,0,0.35))]" />
           </div>
         </div>
 
