@@ -112,6 +112,7 @@ export default function Story() {
 function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const seaGlareRef = useRef<HTMLDivElement>(null);
   const dipRef = useRef<HTMLDivElement>(null);
   // leg 1
   const loadRef = useRef<HTMLDivElement>(null);
@@ -402,11 +403,17 @@ function StoryFilm() {
       });
 
       // ---- Leg 3: sea (film) ----
-      if (p >= P_ROAD - 0.01 && p < P_SEA + 0.02) {
-        wanted = Math.round(seg(p, P_ROAD, P_SEA) * (FRAME_COUNT - 1));
+      if (p >= P_ROAD - 0.01) {
+        // the footage keeps running through the last screen, under the next section rising over it
+        wanted = Math.round(seg(p, P_ROAD, 1) * (FRAME_COUNT - 1));
         // opens close on the containers, then pulls back to the ship in open water
         seaZoom = lerp(2.6, 1, ease(seg(p, P_ROAD - 0.02, P_ROAD + (P_SEA - P_ROAD) * 0.6)));
         draw();
+        // the glare is strongest as the cloud clears, then burns off while the camera pulls back
+        const sg = 1 - ease(seg(p, P_ROAD + 0.03, P_ROAD + (P_SEA - P_ROAD) * 0.32));
+        set(seaGlareRef.current, { opacity: sg.toFixed(3), transform: `translate3d(${(-(1 - sg) * 3).toFixed(2)}%,${(-(1 - sg) * 4).toFixed(2)}%,0)` });
+      } else {
+        set(seaGlareRef.current, { opacity: '0' });
       }
       let dip = 0;
       for (const b of [] as number[]) dip = Math.max(dip, 1 - Math.abs(p - b) / 0.02);
@@ -475,6 +482,12 @@ function StoryFilm() {
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_50%,transparent_40%,rgba(5,7,15,0.7))]" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
+        {/* sun glare over the first close-up frames: the cloud's white burns off into sunlight on the water */}
+        <div ref={seaGlareRef} aria-hidden="true" className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
+          <div className="absolute inset-0 bg-[radial-gradient(45%_40%_at_62%_22%,rgba(255,246,226,0.95)_0%,rgba(255,226,180,0.55)_30%,rgba(255,206,150,0)_70%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(90%_80%_at_62%_22%,rgba(255,236,210,0.35)_0%,rgba(255,236,210,0)_70%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(255,240,220,0.22)_0%,rgba(255,240,220,0)_55%)]" />
+        </div>
 
         {/* ---------- Leg 1: loading, on white ---------- */}
         <div ref={loadRef} className="absolute inset-0 z-[1] text-ink" style={{ ['--h' as string]: '200px' }}>
