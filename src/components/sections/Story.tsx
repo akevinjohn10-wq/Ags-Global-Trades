@@ -157,6 +157,8 @@ function StoryFilm() {
     const loaded = new Array(FRAME_COUNT).fill(false);
     let current = -1;
     let wanted = 0;
+    let seaZoom = 1; // camera pull-back: starts tight on the container deck, ends on the whole ship
+    let drawnZoom = 0;
     let started = false;
     const load = (i: number) => {
       if (images[i]) return;
@@ -191,15 +193,18 @@ function StoryFilm() {
     }
     function draw(force = false) {
       const i = nearestLoaded(wanted);
-      if (i < 0 || (i === current && !force)) return;
+      if (i < 0 || (i === current && Math.abs(seaZoom - drawnZoom) < 0.0005 && !force)) return;
       current = i;
+      drawnZoom = seaZoom;
       const img = images[i]!;
       const cw = canvas!.width;
       const ch = canvas!.height;
       const iw = img.naturalWidth;
       const ih = img.naturalHeight;
-      const cover = Math.max(cw / iw, ch / ih);
-      ctx!.drawImage(img, (cw - iw * cover) / 2, (ch - ih * cover) / 2, iw * cover, ih * cover);
+      const s = Math.max(cw / iw, ch / ih) * seaZoom;
+      // zoom about the ship's deck (where it sits in the clip), easing to a plain centred cover at 1x
+      const fx = 0.5, fy = lerp(0.5, 0.47, (seaZoom - 1) / 1.6);
+      ctx!.drawImage(img, cw / 2 - fx * iw * s, ch / 2 - fy * ih * s, iw * s, ih * s);
     }
 
     // ---------- road ----------
@@ -390,6 +395,8 @@ function StoryFilm() {
       // ---- Leg 3: sea (film) ----
       if (p >= P_ROAD - 0.01 && p < P_SEA + 0.02) {
         wanted = Math.round(seg(p, P_ROAD, P_SEA) * (FRAME_COUNT - 1));
+        // opens close on the containers, then pulls back to the ship in open water
+        seaZoom = lerp(2.6, 1, ease(seg(p, P_ROAD - 0.02, P_ROAD + (P_SEA - P_ROAD) * 0.6)));
         draw();
       }
       let dip = 0;
@@ -410,7 +417,7 @@ function StoryFilm() {
       const ranges: [number, number][] = [
         [-1, P_LOAD - 0.06],
         [P_LOAD + 0.02, P_LOAD + (P_ROAD - P_LOAD) * 0.72],
-        [P_ROAD + 0.05, P_SEA - 0.02],
+        [P_ROAD + (P_SEA - P_ROAD) * 0.45, P_SEA - 0.02], // after the pull-back, like the reference
       ];
       ranges.forEach(([a, b], k) => {
         const el = copyRefs[k].current;
