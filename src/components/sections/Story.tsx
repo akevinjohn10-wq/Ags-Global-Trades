@@ -456,42 +456,28 @@ function StoryFilm() {
           </p>
         </div>
 
-        <div ref={copyRefs[1]} className="container-x absolute inset-0 text-white" style={{ opacity: 0 }}>
-          <div className="absolute right-[var(--gx,1.25rem)] top-24 max-w-[19rem] sm:top-32 lg:right-12 lg:top-[30%] lg:max-w-[26rem] xl:right-16">
-            <p className="eyebrow eyebrow-light">What we do</p>
-            <p className="mt-4 font-display text-[22px] font-medium leading-[1.12] tracking-[-0.01em] sm:text-[30px] lg:text-[38px]">
-              One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.
-            </p>
+        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-ink lg:text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
+          <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
+            <p className="eyebrow lg:text-white/80">What we do</p>
+            <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
+            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-muted lg:text-white/75">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
           </div>
-          <ul className="absolute left-[var(--gx,1.25rem)] top-24 grid gap-3 sm:top-32 lg:left-12 lg:top-[22%] lg:gap-4 xl:left-16">
+          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
             {services.map((sv, i) => (
               <li
                 key={sv.title}
                 ref={(el) => {
                   serviceRefs.current[i] = el;
                 }}
-                className="flex items-baseline gap-3 max-lg:hidden"
+                className="border-l border-ink/15 pl-4 lg:border-white/25"
                 style={{ opacity: 0 }}
               >
-                <span className="mono-caps w-6 text-white/55">{String(i + 1).padStart(2, '0')}</span>
-                <span>
-                  <span className="block font-display text-[20px] leading-tight">{sv.title}</span>
-                  <span className="block text-[14px] text-white/75">{sv.short}</span>
-                </span>
+                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-accent lg:text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
+                <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
+                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-muted lg:text-white/70 sm:block">{sv.short}</p>
               </li>
             ))}
           </ul>
-          <ul className="absolute inset-x-[var(--gx,1.25rem)] bottom-[10rem] grid grid-cols-2 gap-x-5 gap-y-2 lg:hidden">
-            {services.map((sv, i) => (
-              <li key={sv.title} className="flex items-baseline gap-2 text-[14px] leading-tight">
-                <span className="mono-caps text-white/55">{String(i + 1).padStart(2, '0')}</span>
-                <span>{sv.title}</span>
-              </li>
-            ))}
-          </ul>
-          <h3 className="absolute bottom-20 left-[var(--gx,1.25rem)] font-display text-[17.5vw] font-semibold uppercase leading-[0.8] tracking-[-0.03em] sm:bottom-8 sm:text-[15vw] lg:bottom-10 lg:left-12 lg:text-[11.5vw] xl:left-16">
-            Services
-          </h3>
         </div>
 
         <div ref={copyRefs[2]} className="container-x absolute inset-0 flex flex-col justify-between py-28 sm:py-24" style={{ opacity: 0 }}>
