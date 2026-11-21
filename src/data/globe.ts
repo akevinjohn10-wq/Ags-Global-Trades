@@ -67,5 +67,5 @@ export const globeRegions: Hub[] = [
   { name: 'Asia', lat: 31.23, lon: 121.47, country: 'China, Japan, Southeast Asia and the Gulf', note: 'Electronics, consumer goods, machinery and raw materials from verified factories across Asia.' },
   { name: 'Europe', lat: 50.5, lon: 7.5, country: 'Italy, Germany, the Netherlands and the UK', note: 'Industrial machinery, engineering parts and specialist products, with deliveries across Europe.' },
   { name: 'Africa', lat: 2.0, lon: 22.0, country: 'Kenya, Nigeria, South Africa and Egypt', note: 'Produce, minerals and commodities, and door-to-door deliveries across the continent.' },
-  { name: 'Americas', lat: 39.0, lon: -95.0, country: 'United States, Canada, Mexico and Brazil', note: 'Deliveries to North and South America, with freight, customs and documents handled.' },
+  { name: 'America', lat: 39.0, lon: -95.0, country: 'United States, Canada, Mexico and Brazil', note: 'Deliveries to North and South America, with freight, customs and documents handled.' },
 ];

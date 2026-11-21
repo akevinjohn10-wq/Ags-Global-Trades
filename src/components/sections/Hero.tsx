@@ -96,7 +96,7 @@ export default function Hero() {
                 centerX={0.66}
                 controlsRef={controls}
                 onSelect={(h) => setPinned(h as Hub | null)}
-                label="Interactive globe with routes from New Delhi to Asia, Europe, Africa and the Americas"
+                label="Interactive globe with routes from New Delhi to Asia, Europe, Africa and America"
               />
             )}
           </div>
