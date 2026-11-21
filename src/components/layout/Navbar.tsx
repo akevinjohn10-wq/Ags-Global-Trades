@@ -10,6 +10,7 @@ import { contactDetails, navLinks } from '@/data/siteContent';
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [past, setPast] = useState(false);
 
   useEffect(() => {
     // Hide on scroll down, show on scroll up. Direction must hold for a few
@@ -23,6 +24,8 @@ export default function Navbar() {
       const y = Math.max(0, window.scrollY);
       const dy = y - lastY;
       lastY = y;
+      // over the hero the bar is see-through; past it, light sections need a backing to stay readable
+      setPast(y > window.innerHeight * 0.85);
       if (y < 80) {
         travel = 0;
         setHidden(false);
@@ -70,7 +73,7 @@ export default function Navbar() {
       >
         {/* Apple's global nav (awesome-design-md/apple, global-nav): a 44px translucent bar, 12px links
             spread evenly across a 1024px row, logo at the left end, two icons at the right end */}
-        <div className="bg-[rgba(22,22,23,0.8)] backdrop-blur-[20px] backdrop-saturate-[180%]">
+        <div className={`transition-colors duration-500 ${past || open ? 'bg-[rgba(22,22,23,0.8)] backdrop-blur-[20px] backdrop-saturate-[180%]' : 'bg-transparent'}`}>
           <nav
             aria-label="Primary"
             className="mx-auto flex h-11 max-w-[1024px] items-center justify-between px-4 text-[12px] leading-none tracking-[-0.01em] text-[#e8e8ed] antialiased sm:px-[22px]"
