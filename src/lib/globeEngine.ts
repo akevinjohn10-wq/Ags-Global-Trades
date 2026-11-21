@@ -7,7 +7,7 @@
 import { PACKED } from '@/lib/landMask';
 
 export interface GlobeHub { name: string; lat: number; lon: number; country?: string; note?: string; region?: string }
-export interface GlobeHandle { setDive(d: number): void; getDive(): number; flyTo(hub: GlobeHub): void; reset(): void; setRunning(on: boolean): void; destroy(): void }
+export interface GlobeHandle { setDive(d: number): void; flyTo(hub: GlobeHub): void; reset(): void; setRunning(on: boolean): void; destroy(): void }
 export interface GlobeOptions {
   home: GlobeHub;
   hubs: GlobeHub[];
@@ -494,8 +494,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   S.time += dt;
   // the dive glides toward where the scroll is instead of jumping with each wheel notch
-  // slow on purpose: the turn and zoom play out over a few seconds so the move reads clearly
-  dive += (diveTarget - dive) * (1 - Math.exp(-dt * 1.1));
+  dive += (diveTarget - dive) * (1 - Math.exp(-dt * 2.6));
   if (Math.abs(diveTarget - dive) < 1e-4) dive = diveTarget;
   // keep it smooth: drop render resolution a step if frames run long, raise it again when there is headroom
   if (dt > 0.024) slow++; else slow = Math.max(0, slow - 1);
@@ -663,7 +662,6 @@ let running = true, raf = requestAnimationFrame(frame);
 return {
   flyTo(hub) { S.selected = hub; S.idle = 0; flyTo(hub); },
   reset() { S.selected = null; S.idle = 0; S.flying = { yaw: HOME_YAW, pitch: homePitch() }; },
-  getDive() { return dive; },
   setDive(d) { diveTarget = clamp(d, 0, 1); if (diveTarget > 0) S.idle = 0; if (reduce) dive = diveTarget; },
   setRunning(on) { if (on === running) return; running = on; if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else if (raf) { cancelAnimationFrame(raf); raf = 0; } },
   destroy() { running = false; if (raf) cancelAnimationFrame(raf); ro.disconnect(); const lose = gl.getExtension('WEBGL_lose_context'); lose && lose.loseContext(); root.removeChild(glCanvas); root.removeChild(fx); },
