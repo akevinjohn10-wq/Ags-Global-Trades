@@ -293,9 +293,9 @@ function StoryFilm() {
       const c1x = T + vw * 0.06 + (TRUCK_W * H) / 2;
       const bandY = vh - Wr / 2;
       set(loadRef.current, { visibility: p < P_LOAD + 0.06 ? 'visible' : 'hidden' });
-      // the treeline drifts at three depths as the scene plays
+      // the mist drifts at three depths as the scene plays
       const drift = l + lt * 0.6;
-      [40, 100, 200].forEach((d, i) => set(treeLayerRefs[i].current, { backgroundPositionX: `${(-drift * d).toFixed(1)}px` }));
+      [60, 140, 260].forEach((d, i) => set(treeLayerRefs[i].current, { backgroundPositionX: `${(-drift * d).toFixed(1)}px` }));
       const fogIn = ease(seg(lt, 0, 0.45));
       const clear = ease(seg(lt, 0.5, 1));
       if (clear > 0 && clear < 1) {
@@ -460,12 +460,14 @@ function StoryFilm() {
 
         {/* ---------- Leg 1: loading, on white ---------- */}
         <div ref={loadRef} className="absolute inset-0 z-[1] text-ink" style={{ ['--h' as string]: '200px' }}>
-          {/* a misty treeline behind the yard */}
-          <div ref={bayRef} aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,#D9E0DF_0%,#E9EDEB_45%,#F1F2F0_100%)]">
+          {/* a foggy morning behind the yard */}
+          <div ref={bayRef} aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(to_bottom,#C9D0D2_0%,#DCE1E2_40%,#EDEFEE_80%,#F4F5F4_100%)]">
+            {/* drifting morning mist, thickest along the horizon */}
             <div ref={treesRef} className="absolute inset-x-0 top-0" style={{ bottom: '22%' }}>
-            <div ref={treeLayerRefs[0]} className="absolute inset-x-0 bottom-0 bg-repeat-x" style={{ height: '34vh', backgroundImage: `url(${PART('tree-far')})`, backgroundSize: 'auto 100%', backgroundPosition: '0 100%', maskImage: 'linear-gradient(to top, #000 45%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, #000 45%, transparent 100%)' }} />
-            <div ref={treeLayerRefs[1]} className="absolute inset-x-0 bottom-0 bg-repeat-x" style={{ height: '40vh', backgroundImage: `url(${PART('tree-mid')})`, backgroundSize: 'auto 100%', backgroundPosition: '0 100%', maskImage: 'linear-gradient(to top, #000 45%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, #000 45%, transparent 100%)' }} />
-            <div ref={treeLayerRefs[2]} className="absolute inset-x-0 bottom-0 bg-repeat-x" style={{ height: '46vh', backgroundImage: `url(${PART('tree-near')})`, backgroundSize: 'auto 100%', backgroundPosition: '0 100%', maskImage: 'linear-gradient(to top, #000 45%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, #000 45%, transparent 100%)' }} />
+              <div ref={treeLayerRefs[0]} className="absolute -inset-x-[30%] inset-y-0 opacity-50" style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '1400px 1400px' }} />
+              <div ref={treeLayerRefs[1]} className="absolute -inset-x-[30%] inset-y-0 opacity-40" style={{ backgroundImage: `url(${PART('fog-b')})`, backgroundSize: '900px 900px', backgroundPosition: '300px 200px' }} />
+              <div ref={treeLayerRefs[2]} className="absolute -inset-x-[30%] bottom-0 h-[45%] opacity-70" style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '700px 700px', backgroundPosition: '0 100%', maskImage: 'linear-gradient(to top, #000 30%, transparent)', WebkitMaskImage: 'linear-gradient(to top, #000 30%, transparent)' }} />
+              <div className="absolute inset-x-0 bottom-0 h-[30%] bg-[linear-gradient(to_top,rgba(246,247,246,0.95),rgba(246,247,246,0))]" />
             </div>
           </div>
           <div ref={groundRef} className="absolute inset-x-0 bottom-0 bg-[#2a2c2f] bg-repeat-x" style={{ height: '22%', backgroundImage: `url(${PART('ground-side')})`, backgroundSize: 'auto 100%' }}>
@@ -478,6 +480,7 @@ function StoryFilm() {
           </div>
           <div aria-hidden="true" className="absolute inset-x-0" style={{ bottom: '22%' }}>
             <div ref={forkRef} className="absolute bottom-0 left-0" style={{ width: unit(FORK_W), height: unit(FORK_H) }}>
+              <div aria-hidden="true" className="absolute -bottom-[5%] left-[2%] right-[10%] h-[11%] rounded-[50%] bg-black/40 blur-[5px]" />
               <img src={PART('forklift')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
               <img
                 ref={carriageRef}
@@ -490,6 +493,7 @@ function StoryFilm() {
             </div>
             <img ref={crateRef} src={PART('crate')} alt="" draggable={false} className="absolute bottom-0 left-0" style={{ width: unit(CRATE_W), height: unit(CRATE_H) }} />
             <div ref={truckRef} className="absolute bottom-0 left-0" style={{ width: unit(TRUCK_W), height: unit(1) }}>
+              <div aria-hidden="true" className="absolute -bottom-[4%] left-[1%] right-[3%] h-[9%] rounded-[50%] bg-black/45 blur-[6px]" />
               <img src={PART('truck')} alt="" className="absolute inset-0 h-full w-full" draggable={false} />
             </div>
           </div>
