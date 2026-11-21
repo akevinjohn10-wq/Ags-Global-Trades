@@ -142,6 +142,7 @@ function StoryFilm() {
   const bankTopRef = useRef<HTMLDivElement>(null);
   const copyRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
   const serviceRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const statementRef = useRef<HTMLParagraphElement>(null);
   const valueRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [scene, setScene] = useState(0);
 
@@ -420,6 +421,11 @@ function StoryFilm() {
         el.style.transform = `translate3d(0, ${((1 - o) * 30).toFixed(1)}px, 0)`;
         el.style.visibility = o < 0.01 ? 'hidden' : 'visible';
       });
+      // the statement fills in white word by word as the truck drives, like the reference
+      if (statementRef.current) {
+        const fill = (seg(p, P_LOAD + 0.03, P_LOAD + (P_ROAD - P_LOAD) * 0.6) * 100).toFixed(1);
+        statementRef.current.style.backgroundImage = `linear-gradient(180deg, #fff 0%, #fff ${fill}%, rgba(255,255,255,0.32) ${fill}%)`;
+      }
       serviceRefs.current.forEach((li, k) => {
         if (!li) return;
         const t = ease(seg(p, P_LOAD + 0.04 + k * 0.022, P_LOAD + 0.07 + k * 0.022));
@@ -567,28 +573,37 @@ function StoryFilm() {
           </p>
         </div>
 
-        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 z-[2] grid gap-6 pt-24 text-white lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
-          <div className="lg:col-span-4">
-            <p className="eyebrow text-white/80">What we do</p>
-            <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-white/75">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+        {/* United Carriers–style hero over the forest: a huge squared uppercase word low on the left,
+            one big statement on the right that fills in white as you scroll, small mono labels */}
+        <div ref={copyRefs[1]} className="absolute inset-0 z-[2] text-white" style={{ opacity: 0 }}>
+          <div className="absolute right-5 top-24 w-[min(88vw,560px)] sm:top-28 lg:right-[3.2vw] lg:top-[24%] lg:w-[29vw]">
+            <p className="font-['Share_Tech_Mono',ui-monospace,monospace] text-[12px] uppercase tracking-[0.08em] text-white/70 sm:text-[13px]">What we do · Six services</p>
+            <p
+              ref={statementRef}
+              className="mt-3 bg-clip-text font-['Helvetica_Neue',Helvetica,Arial,sans-serif] text-[26px] font-medium leading-[1.04] tracking-[-0.02em] text-transparent sm:text-[34px] lg:text-[2.3vw]"
+              style={{ backgroundImage: 'linear-gradient(180deg, #fff 0%, #fff 0%, rgba(255,255,255,0.32) 0%)', WebkitBackgroundClip: 'text' }}
+            >
+              One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.
+            </p>
+            <ul className="mt-6 grid grid-cols-2 gap-x-5 gap-y-2.5 sm:mt-8">
+              {services.map((sv, i) => (
+                <li
+                  key={sv.title}
+                  ref={(el) => {
+                    serviceRefs.current[i] = el;
+                  }}
+                  className="flex items-baseline gap-2 border-t border-white/20 pt-2"
+                  style={{ opacity: 0 }}
+                >
+                  <span className="font-['Share_Tech_Mono',ui-monospace,monospace] text-[11px] text-white/55 sm:text-[12px]">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="font-['Share_Tech_Mono',ui-monospace,monospace] text-[12px] uppercase leading-tight tracking-[0.04em] sm:text-[13px]">{sv.title}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
-            {services.map((sv, i) => (
-              <li
-                key={sv.title}
-                ref={(el) => {
-                  serviceRefs.current[i] = el;
-                }}
-                className="border-l border-white/25 pl-4"
-                style={{ opacity: 0 }}
-              >
-                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-sky sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
-                <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-white/70 sm:block">{sv.short}</p>
-              </li>
-            ))}
-          </ul>
+          <h3 className="absolute bottom-24 left-5 font-['Russo_One',sans-serif] text-[17vw] uppercase leading-[0.86] tracking-[-0.01em] sm:bottom-20 lg:bottom-[9vh] lg:left-[2.6vw] lg:text-[7vw]">
+            Services
+          </h3>
         </div>
 
         <div ref={copyRefs[2]} className="container-x absolute inset-0 z-[2] flex flex-col justify-between py-28 sm:py-24" style={{ opacity: 0 }}>
