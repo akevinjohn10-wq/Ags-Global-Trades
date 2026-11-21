@@ -76,12 +76,9 @@ export default function Navbar() {
         <div className={`transition-colors duration-500 ${past || open ? 'bg-[rgba(22,22,23,0.8)] backdrop-blur-[20px] backdrop-saturate-[180%]' : 'bg-transparent'}`}>
           <nav
             aria-label="Primary"
-            className="mx-auto flex h-11 max-w-[1024px] items-center justify-between px-4 text-[12px] leading-none tracking-[-0.01em] text-[#e8e8ed] antialiased sm:px-[22px]"
+            className="mx-auto flex h-11 max-w-[1024px] items-center justify-end px-4 md:justify-between md:pl-[max(22px,calc(170px_-_(100vw_-_1024px)/2))] text-[14px] leading-none tracking-[-0.01em] text-[#e8e8ed] antialiased sm:px-[22px]"
             style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, system-ui, sans-serif' }}
           >
-            <a href="#home" aria-label="AGS Global Trade home" className="flex h-11 shrink-0 items-center opacity-90 transition-opacity hover:opacity-100">
-              <LogoMark height={15} />
-            </a>
             {navLinks.slice(1).map((link) => (
               <a key={link.href} href={link.href} className="hidden h-11 items-center whitespace-nowrap px-2 opacity-80 transition-opacity hover:opacity-100 md:flex">
                 {link.label}
@@ -89,7 +86,7 @@ export default function Navbar() {
             ))}
             <div className="flex items-center gap-1 md:contents">
               <a href={tel} aria-label={`Call ${contactDetails.phone}`} className="flex h-11 w-9 items-center justify-center opacity-80 transition-opacity hover:opacity-100 md:w-auto md:px-2">
-                <Phone size={15} strokeWidth={1.4} aria-hidden="true" />
+                <Phone size={17} strokeWidth={1.4} aria-hidden="true" />
               </a>
               <button
                 type="button"
@@ -97,15 +94,23 @@ export default function Navbar() {
                 aria-expanded={open}
                 aria-controls="site-menu"
                 aria-label={open ? 'Close menu' : 'Open menu'}
-                className="flex h-11 w-9 items-center justify-center opacity-80 transition-opacity hover:opacity-100 md:w-auto md:px-2"
+                className="flex h-11 items-center gap-2 pl-2 opacity-80 transition-opacity hover:opacity-100 md:px-2"
               >
-                <span aria-hidden="true" className="relative block h-[9px] w-[15px]">
+                <span>{open ? 'Close' : 'Menu'}</span>
+                <span aria-hidden="true" className="relative block h-[12px] w-[18px]">
                   <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 rotate-45' : 'top-0'}`} />
+                  <span className={`absolute left-0 top-1/2 h-[1.2px] w-full -translate-y-1/2 bg-current transition-opacity duration-300 ${open ? 'opacity-0' : 'opacity-100'}`} />
                   <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 -rotate-45' : 'bottom-0'}`} />
                 </span>
               </button>
             </div>
           </nav>
+        </div>
+        {/* the logo stands on its own at the top left, lined up with the page content */}
+        <div className="container-x pointer-events-none absolute inset-x-0 top-0 flex h-11 items-center">
+          <a href="#home" aria-label="AGS Global Trade home" className="pointer-events-auto mt-2 opacity-95 transition-opacity hover:opacity-100">
+            <LogoMark height={32} />
+          </a>
         </div>
       </header>
 
