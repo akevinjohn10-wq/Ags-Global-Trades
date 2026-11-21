@@ -9,9 +9,9 @@ const VALUES = [
   { title: 'Shipping handled', text: 'Booked with trusted shipping and courier partners.', icon: Truck },
 ];
 
-// The sea leg plays from the brand film (public/story/001-097.webp, frames interpolated for a longer, smooth shot)
+// The sea leg scrubs 97 frames (1920x1080, 8 fps) of an overhead container-ship clip: public/story/sea/001-097.webp
 const FRAME_COUNT = 97;
-const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
+const frameSrc = (i: number) => `/story/sea/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
 // World (public/story/parts/world.webp) is 2600 x 3800 world px: the road runs in from the left at
