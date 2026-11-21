@@ -13,18 +13,38 @@ export default function Navbar() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    // Hide on scroll down, show on scroll up. Direction must hold for a few
+    // pixels before the header moves, so small scroll jitter (trackpads,
+    // smooth scrolling, the scroll-linked globe) can't make it flicker.
     let lastY = window.scrollY;
-    const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 24);
-      // Tuck the header away when scrolling down, bring it back when scrolling up
-      setHidden(y > 500 && y > lastY + 2);
-      if (y < lastY - 2 || y <= 500) setHidden(false);
+    let travel = 0;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const y = Math.max(0, window.scrollY);
+      const dy = y - lastY;
       lastY = y;
+      setScrolled(y > 24);
+      if (y < 80) {
+        travel = 0;
+        setHidden(false);
+        return;
+      }
+      if (dy === 0) return;
+      if (Math.sign(dy) !== Math.sign(travel)) travel = 0;
+      travel += dy;
+      if (travel > 14) setHidden(true);
+      else if (travel < -14) setHidden(false);
     };
-    onScroll();
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   useEffect(() => {
@@ -46,7 +66,7 @@ export default function Navbar() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-transform duration-500 ease-expo ${
+        className={`fixed inset-x-0 top-0 z-50 transition-transform duration-[600ms] ease-expo will-change-transform ${
           hidden && !open ? '-translate-y-full' : 'translate-y-0'
         }`}
       >
