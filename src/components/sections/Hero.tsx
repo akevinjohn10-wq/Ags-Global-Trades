@@ -50,7 +50,7 @@ export default function Hero() {
       setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
       const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
       // 1) the globe turns and flies in to New Delhi (inside the WebGL scene, so it stays sharp)
-      const z = Math.min(1, d / 0.7);
+      const z = Math.min(1, d / 0.85);
       controls.current?.setDive(z * z * (3 - 2 * z));
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
@@ -59,7 +59,7 @@ export default function Hero() {
       }
       // 2) after the zoom settles, a glow opens out from Delhi into the white page below
       if (skyRef.current) {
-        const g = Math.min(1, Math.max(0, (d - 0.66) / 0.34));
+        const g = Math.min(1, Math.max(0, (d - 0.74) / 0.26));
         const k = g * g * (3 - 2 * g);
         skyRef.current.style.opacity = String(Math.min(1, k * 1.6));
         skyRef.current.style.transform = `translate(-50%, -50%) scale(${(0.02 + k * 1.2).toFixed(4)})`;

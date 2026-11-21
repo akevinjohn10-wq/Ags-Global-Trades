@@ -298,7 +298,7 @@ const S = {
 const SUN0 = norm([-0.18, 0.60, -0.78]);
 const SUN1 = norm([-0.45, 0.80, -0.10]);
 
-let quality = 1, slow = 0, fast = 0, dive = 0, introSpin = 0;
+let quality = 1, slow = 0, fast = 0, dive = 0, diveTarget = 0, introSpin = 0;
 const SPIN = 0.11;   // radians per second
 let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
 function resize() {
@@ -493,6 +493,9 @@ const INTRO_MS = 4200;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   S.time += dt;
+  // the dive glides toward where the scroll is instead of jumping with each wheel notch
+  dive += (diveTarget - dive) * (1 - Math.exp(-dt * 2.6));
+  if (Math.abs(diveTarget - dive) < 1e-4) dive = diveTarget;
   // keep it smooth: drop render resolution a step if frames run long, raise it again when there is headroom
   if (dt > 0.024) slow++; else slow = Math.max(0, slow - 1);
   if (dt < 0.012) fast++; else fast = 0;
@@ -528,7 +531,9 @@ function frame(now) {
   if (C.dz > 0) {
     const ty = -HOME.lon * D2R, tp = HOME.lat * D2R;
     let d = ty - S.yaw; d = Math.atan2(Math.sin(d), Math.cos(d));
-    const w = Math.min(1, C.dz * 1.35);
+    // the turn is spread over the whole zoom, eased at both ends, so Delhi swings round slowly
+    const t = clamp(C.dz / 0.9, 0, 1);
+    const w = t * t * (3 - 2 * t);
     ry = S.yaw + d * w; rp = lerp(S.pitch, tp, w);
   }
   const M = rotMat(ry, rp);
@@ -657,7 +662,7 @@ let running = true, raf = requestAnimationFrame(frame);
 return {
   flyTo(hub) { S.selected = hub; S.idle = 0; flyTo(hub); },
   reset() { S.selected = null; S.idle = 0; S.flying = { yaw: HOME_YAW, pitch: homePitch() }; },
-  setDive(d) { dive = clamp(d, 0, 1); if (dive > 0) S.idle = 0; },
+  setDive(d) { diveTarget = clamp(d, 0, 1); if (diveTarget > 0) S.idle = 0; if (reduce) dive = diveTarget; },
   setRunning(on) { if (on === running) return; running = on; if (on) { last = performance.now(); raf = requestAnimationFrame(frame); } else if (raf) { cancelAnimationFrame(raf); raf = 0; } },
   destroy() { running = false; if (raf) cancelAnimationFrame(raf); ro.disconnect(); const lose = gl.getExtension('WEBGL_lose_context'); lose && lose.loseContext(); root.removeChild(glCanvas); root.removeChild(fx); },
 };
