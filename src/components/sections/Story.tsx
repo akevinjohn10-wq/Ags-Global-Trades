@@ -14,27 +14,19 @@ const VALUES = [
 const SEA_SRC = { desk: '/story/sea-1080.mp4', phone: '/story/sea-720.mp4', poster: '/story/sea-poster.jpg' };
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
-// World (public/story/parts/world.webp) is 2600 x 3800 world px: the road runs in from the left at
-// y = W_YH, turns a corner of radius W_R round (W_CX - W_R, W_YH + W_R) and runs down at x = W_CX.
-const W_W = 2600;
-const W_H = 3800;
-const W_YH = 1500;
-const W_R = 300;
-const W_CX = 1800;
-const W_ROAD = 200;
-const LANE = W_ROAD / 4; // traffic keeps left: the truck holds the outer lane through the turn
-const A_TRUCK_W = W_ROAD * 0.42;
-const A_TRUCK_L = A_TRUCK_W * (686 / 336);
-
-// Scroll share of each leg. The loading and road legs keep their original lengths (in screens);
-// the section grew to give the ship shot ~2.5 s more footage, so their shares are set from the span
+// Scroll length of each leg, in screens (vh): loading, then the ship at sea, then the port at night.
+// The last screen of scrolling belongs to the next section rising through the clouds.
 const LOAD_VH = { desk: 171.7, phone: 106.6 };
-const ROAD_VH = { desk: 342.8, phone: 212.8 };
-let P_LOAD = 0.296;
-let P_ROAD = 0.591;
-// Where the ship leg ends: the last screen of scrolling belongs to the next section rising over the sea
-let P_SEA = 0.84;
-const LABELS = ['Loaded', 'On the road', 'At sea', 'Delivered'];
+const SEA_END_VH = { desk: 390, phone: 245 };
+let P_LOAD = 0.26;
+let P_PORT = 0.58;
+let P_SEA = 0.85; // where the port leg ends and the clouds take over
+// Night port, arriving: an overhead ship at the quay, then the container yard
+const PORT_SRC = {
+  ship: { desk: '/story/port-ship-1080.mp4', phone: '/story/port-ship-720.mp4', poster: '/story/port-ship-poster.jpg' },
+  yard: { desk: '/story/port-yard-1080.mp4', phone: '/story/port-yard-720.mp4', poster: '/story/port-yard-poster.jpg' },
+};
+const LABELS = ['Loaded', 'At sea', 'In port', 'Delivered'];
 
 // Side-view sprite geometry, in units of the truck's height (H), measured from the cut-outs
 const TRUCK_W = 1188 / 556;
@@ -122,21 +114,17 @@ function StoryFilm() {
   const forkRef = useRef<HTMLDivElement>(null);
   const carriageRef = useRef<HTMLImageElement>(null);
   const crateRef = useRef<HTMLImageElement>(null);
-  // leg 2
-  const roadRef = useRef<HTMLDivElement>(null);
-  const liftRef = useRef<HTMLDivElement>(null);
+  // fog from the loading bay onto the sea
   const bayRef = useRef<HTMLDivElement>(null);
   const bayFogRef = useRef<HTMLDivElement>(null);
   const bayFogTexRef = useRef<HTMLDivElement>(null);
   const treesRef = useRef<HTMLDivElement>(null);
   const treeLayerRefs = [useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null), useRef<HTMLDivElement>(null)];
-  const forestRef = useRef<HTMLDivElement>(null);
-  const aerialTruckRef = useRef<HTMLDivElement>(null);
-  const fogARef = useRef<HTMLDivElement>(null);
-  const fogBRef = useRef<HTMLDivElement>(null);
-  const driveVeilRef = useRef<HTMLDivElement>(null);
-  const sunRef = useRef<HTMLDivElement>(null);
-  const mistRef = useRef<HTMLDivElement>(null);
+  // leg 3: dusk falls, the port at night
+  const duskRef = useRef<HTMLDivElement>(null);
+  const portRef = useRef<HTMLDivElement>(null);
+  const portShipRef = useRef<HTMLVideoElement>(null);
+  const portYardRef = useRef<HTMLVideoElement>(null);
   // leg 4
   const skyRef = useRef<HTMLDivElement>(null);
   const skyLightRef = useRef<HTMLDivElement>(null);
@@ -162,8 +150,15 @@ function StoryFilm() {
       ([e]) => {
         if (!e.isIntersecting || started) return;
         started = true;
-        video.src = window.innerWidth < 768 ? SEA_SRC.phone : SEA_SRC.desk;
+        const small = window.innerWidth < 768;
+        video.src = small ? SEA_SRC.phone : SEA_SRC.desk;
         video.load();
+        for (const [el, src] of [[portShipRef.current, PORT_SRC.ship], [portYardRef.current, PORT_SRC.yard]] as const) {
+          if (!el) continue;
+          el.muted = true;
+          el.src = small ? src.phone : src.desk;
+          el.load();
+        }
       },
       { rootMargin: '120% 0px' },
     );
@@ -175,9 +170,14 @@ function StoryFilm() {
       if (on) video.play().catch(() => {});
       else video.pause();
     };
+    const playing = new Map<HTMLVideoElement, boolean>();
+    const playIf = (el: HTMLVideoElement | null, on: boolean) => {
+      if (!el || playing.get(el) === on) return;
+      playing.set(el, on);
+      if (on) el.play().catch(() => {});
+      else el.pause();
+    };
 
-    // ---------- road ----------
-    let z = 1; // screen px per world px
 
     // ---------- layout ----------
     let H = 200; // side-view truck height
@@ -196,17 +196,6 @@ function StoryFilm() {
       if (groundRef.current) groundRef.current.style.height = `${Wr}px`;
       if (treesRef.current) treesRef.current.style.bottom = `${Wr - 2}px`;
       if (truckRef.current?.parentElement) truckRef.current.parentElement.style.bottom = `${Wr}px`;
-
-      z = mobile ? 0.6 : Math.max(vw / W_W, 0.9);
-      if (forestRef.current) {
-        forestRef.current.style.width = `${W_W * z}px`;
-        forestRef.current.style.height = `${W_H * z}px`;
-        forestRef.current.style.backgroundImage = `url(${PART(mobile ? 'world-m-v4' : 'world-v4')})`;
-      }
-      if (aerialTruckRef.current) {
-        aerialTruckRef.current.style.width = `${A_TRUCK_W * z}px`;
-        aerialTruckRef.current.style.height = `${A_TRUCK_L * z}px`;
-      }
 
       // Clouds, painted once for this screen shape
       const aspect = (2.2 * vh) / vw;
@@ -233,9 +222,9 @@ function StoryFilm() {
         const spanVh = (span / window.innerHeight) * 100;
         const desk = window.innerWidth >= 768; // the section's md: height
         P_LOAD = (desk ? LOAD_VH.desk : LOAD_VH.phone) / spanVh;
-        P_ROAD = (desk ? ROAD_VH.desk : ROAD_VH.phone) / spanVh;
+        P_PORT = (desk ? SEA_END_VH.desk : SEA_END_VH.phone) / spanVh;
       }
-      const sc = p < P_LOAD ? 0 : p < P_ROAD ? 1 : p < P_SEA ? 2 : 3;
+      const sc = p < P_LOAD ? 0 : p < P_PORT ? 1 : p < P_SEA ? 2 : 3;
       if (sc !== lastScene) {
         lastScene = sc;
         setScene(sc);
@@ -250,7 +239,7 @@ function StoryFilm() {
       forkX = lerp(forkX, pushedX, ease(seg(l, 0.45, 0.62)));
       forkX = lerp(forkX, startX, easeIn(seg(l, 0.68, 0.88)));
       const lift = (ease(seg(l, 0.3, 0.44)) - ease(seg(l, 0.63, 0.72))) * LIFT * H;
-      // the truck only starts to roll: the drone lift takes it from here into the aerial view
+      // the truck only starts to roll as the fog comes in
       const truckX = T + easeIn(seg(l, 0.8, 1)) * vw * 0.06;
       set(forkRef.current, { transform: `translate3d(${forkX.toFixed(1)}px,0,0)` });
       set(carriageRef.current, { transform: `translate3d(0,${(-lift).toFixed(1)}px,0)` });
@@ -261,9 +250,8 @@ function StoryFilm() {
       set(truckRef.current, { transform: `translate3d(${truckX.toFixed(1)}px,0,0)` });
       set(laneRef.current, { backgroundPositionX: `${(-easeIn(seg(l, 0.8, 1)) * vw * 0.06).toFixed(0)}px` });
 
-      // ---- Into the forest: mist rolls in over the yard until it is all fog, then the fog clears
-      // from the edges inward onto the forest from above. The road strip sits where the forest road
-      // will be, and the truck swaps to the view from above while the fog is thickest.
+      // ---- Out to sea: mist rolls in over the yard until it is all fog, then the fog clears from the
+      // edges inward onto the ship at sea, seen close from above
       const lt = seg(p, P_LOAD - 0.06, P_LOAD + 0.06);
       const c1x = T + vw * 0.06 + (TRUCK_W * H) / 2;
       const bandY = vh - Wr / 2;
@@ -286,95 +274,32 @@ function StoryFilm() {
       set(groundRef.current, { opacity: String(1 - seg(lt, 0.4, 0.5)) });
       set(truckRef.current?.parentElement ?? null, { opacity: String(1 - seg(lt, 0.4, 0.5)) });
 
-      // ---- Leg 2: the road from the air, through forest and fog ----
-      const r = seg(p, P_LOAD, P_ROAD);
-      set(roadRef.current, {
-        visibility: p >= P_LOAD - 0.05 && p < P_ROAD + 0.02 ? 'visible' : 'hidden',
-      });
-      if (p >= P_LOAD - 0.06 && p < P_ROAD + 0.02) {
-        const mobile = vw < 768;
-        // horizontal: where the camera keeps the corner on screen (phones see little of the straight)
-        const ax = W_CX - W_R;
-        const ay = W_YH + W_R;
-        const RL = W_R + LANE;
-        // the top-view truck takes over exactly where the side-view truck stood
-        const c1 = c1x;
-        const anchor0 = (c1 + (mobile ? 150 : 260) + W_R * z) / vw;
-        const camX0 = W_CX * z - anchor0 * vw;
-        // where the road sits on screen as the drone levels out: high enough to see the truck clearly
-        const roadY0 = vh - Wr / 2; // exactly where the loading bay's road strip was
-        const startX = (c1 + camX0) / z;
-        const LA = ax - startX;
-        const LArc = (Math.PI * RL) / 2;
-        const LV = Math.min((vh * 1.3) / z, 1300);
-        const u = lerp(0, LA + LArc + LV, ease(r) * 0.25 + r * 0.75);
-        let x: number;
-        let y: number;
-        let rot: number;
-        if (u <= LA) {
-          x = startX + u;
-          y = W_YH - LANE;
-          rot = -90;
-        } else if (u <= LA + LArc) {
-          const th = (u - LA) / RL;
-          x = ax + RL * Math.sin(th);
-          y = ay - RL * Math.cos(th);
-          rot = -90 + (th * 180) / Math.PI;
-        } else {
-          x = W_CX + LANE;
-          y = ay + (u - LA - LArc);
-          rot = 0;
-        }
-        // camera: road along the bottom of the screen (where the loading bay's road was), then it
-        // follows the truck down the page once it has turned
-        const k = ease(seg(u, LA - 120, LA + LArc + vh * 0.4 / z));
-        const screenY = lerp(roadY0, vh * (mobile ? 0.74 : 0.55), k);
-        const camY = Math.max(W_YH * z - (roadY0), y * z - screenY);
-        // the camera holds the truck where the side-view truck stood until the corner pans into view
-        const camX = Math.max(W_CX * z - lerp(anchor0, 0.5, k) * vw, x * z - c1);
-        set(forestRef.current, { transform: `translate3d(${(-camX).toFixed(1)}px,${(-camY).toFixed(1)}px,0)` });
-        set(aerialTruckRef.current, {
-          opacity: String(seg(lt, 0.46, 0.52)),
-          transform: `translate3d(${((x - A_TRUCK_W / 2) * z).toFixed(1)}px,${((y - A_TRUCK_L / 2) * z).toFixed(1)}px,0)`,
-        });
-        const [shadow, img] = Array.from(aerialTruckRef.current?.children ?? []) as HTMLElement[];
-        if (img) img.style.transform = `rotate(${rot.toFixed(2)}deg)`;
-        // the sun is fixed, so the shadow keeps falling the same way as the truck turns
-        if (shadow) shadow.style.transform = `translate(${(9 * z).toFixed(1)}px,${(10 * z).toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
-        // fog drifts across faster than the ground: it hangs between the camera and the trees
-        set(fogARef.current, { transform: `translate3d(${(-r * 18).toFixed(2)}%,${(-r * 55).toFixed(2)}%,0)` });
-        set(fogBRef.current, { transform: `translate3d(${(r * 12).toFixed(2)}%,${(-r * 70).toFixed(2)}%,0)` });
-        set(driveVeilRef.current, { opacity: '0' });
-        // the climb: the forest starts close and falls away beneath the camera
-        set(liftRef.current, {
-          transformOrigin: `${c1.toFixed(0)}px ${(roadY0).toFixed(0)}px`,
-          transform: `scale(${lerp(1.15, 1, clear).toFixed(4)})`,
-        });
-        // low sun breaks through as the truck takes the corner, then softens
-        const glare = 0.6 + 0.4 * window01(u, LA - 300, LA + LArc + 500, 0.4);
-        set(sunRef.current, { opacity: glare.toFixed(3), transform: `translate3d(${(-r * 4).toFixed(2)}%,${(r * 3).toFixed(2)}%,0)` });
-      }
-
-      // ---- Road → sea: a bank of cloud rolls over the screen and lifts off the ship ----
-      const m = seg(p, P_ROAD - 0.07, P_ROAD + 0.07);
-      set(mistRef.current, {
-        visibility: m > 0 && m < 1 ? 'visible' : 'hidden',
-        transform: `translate3d(0,${lerp(100, -300, m).toFixed(2)}vh,0)`,
-      });
-
-      // ---- Leg 3: sea (film) ----
-      if (p >= P_ROAD - 0.01) {
+      // ---- Leg 2: sea (film) ----
+      if (p >= P_LOAD - 0.01 && p < P_PORT + 0.03) {
         playSea(true);
         // opens close on the containers, then pulls back to the ship in open water
-        const seaZoom = lerp(2.6, 1, ease(seg(p, P_ROAD - 0.02, P_ROAD + (P_SEA - P_ROAD) * 0.6)));
+        const seaZoom = lerp(2.6, 1, ease(seg(p, P_LOAD, P_LOAD + (P_PORT - P_LOAD) * 0.45)));
         set(video, { transform: `scale(${seaZoom.toFixed(4)})` });
         // the glare is strongest as the cloud clears, then burns off while the camera pulls back
-        const sg = 1 - ease(seg(p, P_ROAD + 0.03, P_ROAD + (P_SEA - P_ROAD) * 0.32));
+        const sg = 1 - ease(seg(p, P_LOAD + 0.03, P_LOAD + (P_PORT - P_LOAD) * 0.3));
         set(seaGlareRef.current, { opacity: sg.toFixed(3), transform: `translate3d(${(-(1 - sg) * 3).toFixed(2)}%,${(-(1 - sg) * 4).toFixed(2)}%,0)` });
       } else {
         playSea(false);
         set(seaGlareRef.current, { opacity: '0' });
       }
+
+      // ---- Leg 3: dusk falls over the sea, and the ship comes into port at night ----
+      const dusk = ease(seg(p, P_LOAD + (P_PORT - P_LOAD) * 0.72, P_PORT + 0.01));
+      set(duskRef.current, { opacity: dusk.toFixed(3) });
+      const inPort = p > P_PORT - 0.04 && p < P_SEA + 0.02;
+      set(portRef.current, { visibility: inPort ? 'visible' : 'hidden', opacity: ease(seg(p, P_PORT - 0.03, P_PORT + 0.02)).toFixed(3) });
+      const q = seg(p, P_PORT, P_SEA);
+      const yard = ease(seg(q, 0.48, 0.6));
+      set(portShipRef.current, { transform: `scale(${lerp(1.14, 1.02, ease(seg(q, 0, 0.6))).toFixed(4)})`, opacity: (1 - yard).toFixed(3) });
+      set(portYardRef.current, { transform: `scale(${lerp(1.0, 1.1, q).toFixed(4)})`, opacity: yard.toFixed(3) });
+      playIf(portShipRef.current, inPort && yard < 1);
+      playIf(portYardRef.current, inPort && yard > 0);
+
       let dip = 0;
       for (const b of [] as number[]) dip = Math.max(dip, 1 - Math.abs(p - b) / 0.02);
       set(dipRef.current, { opacity: String(clamp(dip) * 0.9) });
@@ -392,8 +317,8 @@ function StoryFilm() {
       // ---- Copy ----
       const ranges: [number, number][] = [
         [-1, P_LOAD - 0.06],
-        [P_LOAD + 0.02, P_LOAD + (P_ROAD - P_LOAD) * 0.72],
-        [P_ROAD + (P_SEA - P_ROAD) * 0.45, P_SEA - 0.02], // after the pull-back, like the reference
+        [P_LOAD + (P_PORT - P_LOAD) * 0.38, P_PORT - 0.02], // after the pull-back, like the reference
+        [P_PORT + (P_SEA - P_PORT) * 0.12, P_SEA - 0.02],
       ];
       ranges.forEach(([a, b], k) => {
         const el = copyRefs[k].current;
@@ -405,13 +330,13 @@ function StoryFilm() {
       });
       serviceRefs.current.forEach((li, k) => {
         if (!li) return;
-        const t = ease(seg(p, P_LOAD + 0.04 + k * 0.022, P_LOAD + 0.07 + k * 0.022));
+        const t = ease(seg(p, P_LOAD + (P_PORT - P_LOAD) * 0.42 + k * 0.018, P_LOAD + (P_PORT - P_LOAD) * 0.42 + 0.03 + k * 0.018));
         li.style.opacity = String(t);
         li.style.transform = `translate3d(0, ${((1 - t) * 18).toFixed(1)}px, 0)`;
       });
       valueRefs.current.forEach((li, k) => {
         if (!li) return;
-        const t = ease(seg(p, P_ROAD + 0.05 + k * 0.03, P_ROAD + 0.09 + k * 0.03));
+        const t = ease(seg(p, P_PORT + (P_SEA - P_PORT) * 0.16 + k * 0.025, P_PORT + (P_SEA - P_PORT) * 0.16 + 0.04 + k * 0.025));
         li.style.opacity = String(t);
         li.style.transform = `translate3d(${((1 - t) * (k % 2 ? 24 : -24)).toFixed(1)}px, 0, 0)`;
       });
@@ -436,7 +361,7 @@ function StoryFilm() {
   const unit = (n: number) => `calc(var(--h) * ${n.toFixed(4)})`;
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[470vh] scroll-mt-24 md:h-[710vh] bg-space text-white">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[565vh] scroll-mt-24 md:h-[750vh] bg-space text-white">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* ---------- Sea film ---------- */}
         <video
@@ -457,6 +382,22 @@ function StoryFilm() {
           <div className="absolute inset-0 bg-[radial-gradient(45%_40%_at_62%_22%,rgba(255,246,226,0.95)_0%,rgba(255,226,180,0.55)_30%,rgba(255,206,150,0)_70%)]" />
           <div className="absolute inset-0 bg-[radial-gradient(90%_80%_at_62%_22%,rgba(255,236,210,0.35)_0%,rgba(255,236,210,0)_70%)]" />
           <div className="absolute inset-0 bg-[linear-gradient(160deg,rgba(255,240,220,0.22)_0%,rgba(255,240,220,0)_55%)]" />
+        </div>
+
+        {/* dusk: the light goes down over the sea before the ship reaches port */}
+        <div ref={duskRef} aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ opacity: 0 }}>
+          <div className="absolute inset-0 bg-[rgba(6,10,30,0.55)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,150,80,0.16),rgba(255,150,80,0)_45%)] mix-blend-screen" />
+        </div>
+
+        {/* ---------- Leg 3: the port at night ---------- */}
+        <div ref={portRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#05070f]" style={{ visibility: 'hidden', opacity: 0 }}>
+          <video ref={portShipRef} muted loop playsInline preload="none" poster={PORT_SRC.ship.poster} className="absolute inset-0 h-full w-full object-cover will-change-transform" />
+          <video ref={portYardRef} muted loop playsInline preload="none" poster={PORT_SRC.yard.poster} className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ opacity: 0 }} />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(80%_70%_at_50%_50%,rgba(5,8,22,0)_45%,rgba(5,8,22,0.7))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[rgba(8,14,40,0.14)]" />
+          {/* keeps the copy readable over the lit container yard */}
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(6,10,28,0.7)_0%,rgba(6,10,28,0.15)_32%,rgba(6,10,28,0.15)_55%,rgba(6,10,28,0.65)_100%)]" />
         </div>
 
         {/* ---------- Leg 1: loading, on white ---------- */}
@@ -502,46 +443,6 @@ function StoryFilm() {
             <div className="absolute inset-0 bg-[#E4E9E7]" />
             <div ref={bayFogTexRef} className="absolute -inset-[20%] will-change-transform" style={{ backgroundImage: `url(${PART('fog-a')}), url(${PART('fog-b')})`, backgroundSize: '1000px 1000px, 700px 700px' }} />
           </div>
-        </div>
-
-        {/* ---------- Leg 2: the road from the air ---------- */}
-        <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#16201a]" style={{ visibility: 'hidden' }}>
-          <div ref={liftRef} className="absolute inset-0 will-change-transform">
-          <div ref={forestRef} className="absolute left-0 top-0 will-change-transform" style={{ backgroundSize: '100% 100%' }}>
-            <div ref={aerialTruckRef} className="absolute left-0 top-0 will-change-transform">
-              <div className="absolute inset-[4%] rounded-[12%] bg-black/55 blur-[5px] will-change-transform" />
-              <img src={PART('truck-aerial-v2')} alt="" draggable={false} className="relative h-full w-full max-w-none origin-center will-change-transform" />
-            </div>
-          </div>
-          </div>
-          {/* sun glare, from the upper left where the light falls from */}
-          <div ref={sunRef} className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-[radial-gradient(38%_34%_at_14%_10%,rgba(214,226,255,0.95)_0%,rgba(176,196,245,0.45)_35%,rgba(150,175,235,0)_70%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(70%_60%_at_14%_10%,rgba(190,206,250,0.3)_0%,rgba(190,206,250,0)_70%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(205,218,252,0.16)_0%,rgba(205,218,252,0)_34%,rgba(205,218,252,0)_100%)]" />
-            <div className="absolute left-[34%] top-[30%] h-16 w-16 rounded-full bg-[radial-gradient(circle,rgba(220,230,255,0.35),rgba(220,230,255,0)_70%)]" />
-            <div className="absolute left-[52%] top-[52%] h-28 w-28 rounded-full border border-[rgba(205,218,252,0.12)] bg-[radial-gradient(circle,rgba(205,218,252,0)_55%,rgba(205,218,252,0.10)_70%,rgba(205,218,252,0)_72%)]" />
-          </div>
-          {/* fog */}
-          <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)', WebkitMaskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)' }}>
-            <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-70" ref={fogARef} style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '1100px 1100px' }} />
-            <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-45" ref={fogBRef} style={{ backgroundImage: `url(${PART('fog-b')})`, backgroundSize: '760px 760px' }} />
-          </div>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(214,224,242,0.55)_0%,rgba(214,224,242,0.12)_28%,rgba(214,224,242,0)_50%)]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(206,218,240,0.45)_0%,rgba(206,218,240,0)_22%,rgba(206,218,240,0)_78%,rgba(206,218,240,0.45)_100%)]" />
-          {/* brand grade: pulls the forest toward the site's blue without losing the photo's light */}
-          <div className="pointer-events-none absolute inset-0 bg-[#23408E] opacity-[0.2] mix-blend-color" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(10,22,64,0.18),rgba(10,22,64,0.04)_45%,rgba(10,22,64,0.22))] mix-blend-multiply" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(10,22,64,0.45))]" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(10,22,64,0.55),rgba(10,22,64,0))]" />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-[75%] bg-[linear-gradient(to_bottom,rgba(10,22,64,0.6),rgba(10,22,64,0.35)_55%,rgba(10,22,64,0))] lg:hidden" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(10,22,64,0.45)_0%,rgba(10,22,64,0)_30%,rgba(10,22,64,0)_70%,rgba(10,22,64,0.3)_100%)]" />
-          <div ref={driveVeilRef} className="pointer-events-none absolute inset-0 bg-paper" />
-        </div>
-
-        {/* ---------- Cloud bank between the road and the sea ---------- */}
-        <div ref={mistRef} aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[300vh] will-change-transform" style={{ visibility: 'hidden' }}>
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(255,255,255,0.35)_8%,rgba(255,255,255,0.85)_18%,#FFFFFF_28%,#F4F6FB_50%,#FFFFFF_66%,rgba(255,255,255,0.8)_78%,rgba(255,255,255,0.3)_90%,rgba(255,255,255,0)_100%)]" />
         </div>
 
         {/* ---------- Leg 4: sky ---------- */}
