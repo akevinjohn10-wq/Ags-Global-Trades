@@ -13,6 +13,11 @@ const VALUES = [
 const FRAME_COUNT = 97;
 const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
+// Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
+const FOREST_W = 1600;
+const FOREST_H = 2400;
+const ROAD_HALF = 75; // road half-width in tile pixels
+const TRUCK_RATIO = 686 / 336;
 
 // Scroll share of each leg
 const P_LOAD = 0.296;
@@ -33,9 +38,6 @@ const CRATE_H = CRATE_W * (498 / 900);
 const CRATE_OFFSET = 690 * SF;
 const TRUCK_FLOOR = 0.28;
 const LIFT = TRUCK_FLOOR - FORK_TOP + 0.012;
-// Top-view truck (width / length)
-const TOP_RATIO = 336 / 686;
-
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const seg = (p: number, a: number, b: number) => clamp((p - a) / (b - a));
 const ease = (t: number) => t * t * (3 - 2 * t);
@@ -88,7 +90,7 @@ function paintClouds(seed: number, count: number, alpha: number, minW: number, m
 
 /**
  * The scroll story. On a white page the forklift loads the crate into the truck, which drives off
- * and reappears from above on a road that turns down the page; the sea leg plays from the brand
+ * and the road leg is an aerial film of it driving through the forest; the sea leg plays from the brand
  * film; then the sky clears and the clouds close over the screen into the product section below.
  */
 export default function Story() {
@@ -111,11 +113,12 @@ function StoryFilm() {
   const crateRef = useRef<HTMLImageElement>(null);
   // leg 2
   const roadRef = useRef<HTMLDivElement>(null);
-  const worldRef = useRef<HTMLDivElement>(null);
-  const roadSvgRef = useRef<SVGSVGElement>(null);
-  const roadPathRef = useRef<SVGPathElement>(null);
-  const lanePathRef = useRef<SVGPathElement>(null);
-  const topTruckRef = useRef<HTMLImageElement>(null);
+  const driveCamRef = useRef<HTMLDivElement>(null);
+  const forestRef = useRef<HTMLDivElement>(null);
+  const aerialTruckRef = useRef<HTMLImageElement>(null);
+  const fogARef = useRef<HTMLDivElement>(null);
+  const fogBRef = useRef<HTMLDivElement>(null);
+  const driveVeilRef = useRef<HTMLDivElement>(null);
   const mistRef = useRef<HTMLDivElement>(null);
   // leg 4
   const skyRef = useRef<HTMLDivElement>(null);
@@ -158,7 +161,13 @@ function StoryFilm() {
       started = true;
       for (const step of [10, 5, 2, 1]) for (let i = 0; i < FRAME_COUNT; i += step) load(i);
     };
-    const io = new IntersectionObserver(([e]) => e.isIntersecting && loadAll(), { rootMargin: '120% 0px' });
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        loadAll();
+      },
+      { rootMargin: '120% 0px' },
+    );
     io.observe(section);
     function nearestLoaded(i: number) {
       for (let d = 0; d < FRAME_COUNT; d++) {
@@ -180,13 +189,16 @@ function StoryFilm() {
       ctx!.drawImage(img, (cw - iw * cover) / 2, (ch - ih * cover) / 2, iw * cover, ih * cover);
     }
 
+    // ---------- road ----------
+    let tileS = 1; // forest tile scale
+    let truckW = 50;
+
     // ---------- layout ----------
     let H = 200; // side-view truck height
     let T = 600; // side-view truck rear x
     let vw = 1440;
     let vh = 900;
     let Wr = 200; // road width
-    let road = { Y0: 0, R: 0, cx: 0, LA: 0, LArc: 0, tw: 0, tl: 0, len: 0 };
     const size = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       canvas.width = Math.round(canvas.clientWidth * dpr);
@@ -202,26 +214,17 @@ function StoryFilm() {
       if (groundRef.current) groundRef.current.style.height = `${Wr}px`;
       if (truckRef.current?.parentElement) truckRef.current.parentElement.style.bottom = `${Wr}px`;
 
-      // Road: along the bottom, round a corner, then straight down the middle
-      const Y0 = vh - Wr / 2;
-      const R = Wr * 1.1;
-      const cx = vw * 0.5;
-      const tw = Wr * 0.48;
-      const tl = tw / TOP_RATIO;
-      const len = vh * 4;
-      const d = `M ${-Wr * 2} ${Y0} H ${cx - R} A ${R} ${R} 0 0 1 ${cx} ${Y0 + R} V ${Y0 + R + len}`;
-      roadPathRef.current?.setAttribute('d', d);
-      lanePathRef.current?.setAttribute('d', d);
-      roadPathRef.current?.setAttribute('stroke-width', String(Wr));
-      if (roadSvgRef.current) {
-        roadSvgRef.current.setAttribute('width', String(vw));
-        roadSvgRef.current.setAttribute('height', String(Y0 + R + len + Wr));
+      tileS = mobile ? 0.72 : Math.max(vw / FOREST_W, 0.85) * 1.35;
+      truckW = 70 * tileS;
+      if (forestRef.current) {
+        forestRef.current.style.backgroundImage = `url(/story/parts/${mobile ? 'forest-m' : 'forest'}.webp)`;
+        forestRef.current.style.backgroundSize = `${FOREST_W * tileS}px ${FOREST_H * tileS}px`;
+        forestRef.current.style.height = `${vh * 1.3 + FOREST_H * tileS}px`;
       }
-      if (topTruckRef.current) {
-        topTruckRef.current.style.width = `${tw}px`;
-        topTruckRef.current.style.height = `${tl}px`;
+      if (aerialTruckRef.current) {
+        aerialTruckRef.current.style.width = `${truckW}px`;
+        aerialTruckRef.current.style.height = `${truckW * TRUCK_RATIO}px`;
       }
-      road = { Y0, R, cx, LA: cx - R + Wr * 2, LArc: (Math.PI * R) / 2, tw, tl, len };
 
       // Clouds, painted once for this screen shape
       const aspect = (2.2 * vh) / vw;
@@ -271,39 +274,25 @@ function StoryFilm() {
       set(laneRef.current, { backgroundPositionX: `${(-easeIn(seg(l, 0.72, 1)) * 600).toFixed(0)}px` });
       set(loadRef.current, { visibility: p < P_LOAD ? 'visible' : 'hidden' });
 
-      // ---- Leg 2: the road, seen from above ----
-      const r = seg(p, P_LOAD, P_ROAD);
+      // ---- Leg 2: the road from the air, through forest and fog ----
+      const r = seg(p, P_LOAD, P_ROAD + 0.07);
       set(roadRef.current, {
-        visibility: p >= P_LOAD && p < P_ROAD ? 'visible' : 'hidden',
+        visibility: p >= P_LOAD && p < P_ROAD + 0.02 ? 'visible' : 'hidden',
       });
       if (p >= P_LOAD - 0.01 && p < P_ROAD + 0.02) {
-        const { Y0, R, cx, LA, LArc, tw, tl } = road;
-        const sEnd = LA + LArc + vh * 1.3;
-        const s = lerp(-tl, sEnd, ease(r) * 0.25 + r * 0.75);
-        let x: number;
-        let y: number;
-        let rot: number;
-        if (s <= LA) {
-          x = -Wr * 2 + s;
-          y = Y0;
-          rot = 90;
-        } else if (s <= LA + LArc) {
-          const th = -Math.PI / 2 + (s - LA) / R;
-          x = cx - R + R * Math.cos(th);
-          y = Y0 + R + R * Math.sin(th);
-          rot = (th * 180) / Math.PI + 180;
-        } else {
-          x = cx;
-          y = Y0 + R + (s - LA - LArc);
-          rot = 180;
-        }
-        // Camera follows the truck down the page once it has turned
-        const screenY = lerp(Y0, vh * 0.55, ease(seg(s, LA, LA + LArc + vh * 0.5)));
-        const cam = Math.max(0, y - screenY);
-        set(worldRef.current, { transform: `translate3d(0,${(-cam).toFixed(1)}px,0)` });
-        set(topTruckRef.current, {
-          transform: `translate3d(${(x - tw / 2).toFixed(1)}px,${(y - tl / 2).toFixed(1)}px,0) rotate(${rot.toFixed(2)}deg)`,
-        });
+        const tileH = FOREST_H * tileS;
+        // the truck drives down the page, so the forest slides up beneath it
+        const travel = r * tileH * 1.6;
+        set(forestRef.current, { transform: `translate3d(0,${(-(travel % tileH) - vh * 0.15).toFixed(1)}px,0)` });
+        // the camera starts low and pulls up as the truck settles into frame
+        set(driveCamRef.current, { transform: `scale(${lerp(1.22, 1, easeOut(seg(r, 0, 0.7))).toFixed(4)})` });
+        const tx = vw / 2 + (ROAD_HALF / 2) * tileS - truckW / 2;
+        const ty = lerp(vh * 0.16, vh * 0.42, easeOut(seg(r, 0, 0.55))) + Math.sin(r * 9) * 4;
+        set(aerialTruckRef.current, { transform: `translate3d(${tx.toFixed(1)}px,${ty.toFixed(1)}px,0)` });
+        // fog drifts across faster than the ground: it hangs between the camera and the trees
+        set(fogARef.current, { transform: `translate3d(${(-r * 18).toFixed(2)}%,${(-r * 55).toFixed(2)}%,0)` });
+        set(fogBRef.current, { transform: `translate3d(${(r * 12).toFixed(2)}%,${(-r * 70).toFixed(2)}%,0)` });
+        set(driveVeilRef.current, { opacity: String(1 - ease(seg(r, 0, 0.1))) });
       }
 
       // ---- Road → sea: a bank of cloud rolls over the screen and lifts off the ship ----
@@ -415,15 +404,29 @@ function StoryFilm() {
           </div>
         </div>
 
-        {/* ---------- Leg 2: road from above, on white ---------- */}
-        <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-paper" style={{ visibility: 'hidden' }}>
-          <div ref={worldRef} className="absolute inset-x-0 top-0 will-change-transform">
-            <svg ref={roadSvgRef} className="absolute left-0 top-0 overflow-visible" fill="none">
-              <path ref={roadPathRef} stroke="#1B1E24" strokeLinejoin="round" />
-              <path ref={lanePathRef} stroke="rgba(255,255,255,0.55)" strokeWidth={3} strokeDasharray="28 26" />
-            </svg>
-            <img ref={topTruckRef} src={PART('truck-top')} alt="" draggable={false} className="absolute left-0 top-0 max-w-none origin-center will-change-transform" />
+        {/* ---------- Leg 2: the road from the air ---------- */}
+        <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#16201a]" style={{ visibility: 'hidden' }}>
+          <div ref={driveCamRef} className="absolute inset-0 origin-[50%_45%] will-change-transform">
+            <div ref={forestRef} className="absolute inset-x-0 top-0 bg-center bg-repeat-y will-change-transform" style={{ backgroundPositionY: '0px' }} />
+            <img
+              ref={aerialTruckRef}
+              src={PART('truck-aerial')}
+              alt=""
+              draggable={false}
+              className="absolute left-0 top-0 max-w-none will-change-transform [filter:drop-shadow(9px_10px_5px_rgba(0,0,0,0.55))]"
+            />
           </div>
+          {/* fog */}
+          <div className="pointer-events-none absolute inset-0" style={{ maskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)', WebkitMaskImage: 'linear-gradient(to right, #000 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.25) 70%, #000 100%)' }}>
+            <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-70" ref={fogARef} style={{ backgroundImage: `url(${PART('fog-a')})`, backgroundSize: '1100px 1100px' }} />
+            <div className="absolute -inset-x-[20%] top-0 h-[400%] opacity-45" ref={fogBRef} style={{ backgroundImage: `url(${PART('fog-b')})`, backgroundSize: '760px 760px' }} />
+          </div>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(225,230,228,0.55)_0%,rgba(225,230,228,0.12)_28%,rgba(225,230,228,0)_50%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(220,226,224,0.45)_0%,rgba(220,226,224,0)_22%,rgba(220,226,224,0)_78%,rgba(220,226,224,0.45)_100%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(90%_80%_at_50%_45%,transparent_55%,rgba(6,10,8,0.45))]" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(6,10,8,0.55),rgba(6,10,8,0))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(6,10,8,0.45)_0%,rgba(6,10,8,0)_30%,rgba(6,10,8,0)_70%,rgba(6,10,8,0.3)_100%)]" />
+          <div ref={driveVeilRef} className="pointer-events-none absolute inset-0 bg-paper" />
         </div>
 
         {/* ---------- Cloud bank between the road and the sea ---------- */}
@@ -453,28 +456,42 @@ function StoryFilm() {
           </p>
         </div>
 
-        <div ref={copyRefs[1]} className="container-x absolute inset-x-0 top-0 grid gap-6 pt-24 text-ink lg:grid-cols-12 lg:items-start lg:pt-36" style={{ opacity: 0 }}>
-          <div className="max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-4">
-            <p className="eyebrow">What we do</p>
-            <h3 className="mt-4 font-display text-[28px] font-medium leading-[1.05] sm:text-[44px]">Six services. One team.</h3>
-            <p className="mt-4 max-w-sm text-[16px] lg:text-[17px] leading-[1.65] text-muted">One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.</p>
+        <div ref={copyRefs[1]} className="container-x absolute inset-0 text-white" style={{ opacity: 0 }}>
+          <div className="absolute right-[var(--gx,1.25rem)] top-24 max-w-[19rem] sm:top-32 lg:right-12 lg:top-[30%] lg:max-w-[26rem] xl:right-16">
+            <p className="eyebrow eyebrow-light">What we do</p>
+            <p className="mt-4 font-display text-[22px] font-medium leading-[1.12] tracking-[-0.01em] sm:text-[30px] lg:text-[38px]">
+              One partner for the whole journey, so nothing gets lost between suppliers, inspectors and carriers.
+            </p>
           </div>
-          <ul className="grid grid-cols-2 gap-x-6 gap-y-4 max-lg:rounded-lg max-lg:bg-paper/95 max-lg:p-4 lg:col-span-3 lg:col-start-10 lg:grid-cols-1">
+          <ul className="absolute left-[var(--gx,1.25rem)] top-24 grid gap-3 sm:top-32 lg:left-12 lg:top-[22%] lg:gap-4 xl:left-16">
             {services.map((sv, i) => (
               <li
                 key={sv.title}
                 ref={(el) => {
                   serviceRefs.current[i] = el;
                 }}
-                className="border-l border-ink/15 pl-4"
+                className="flex items-baseline gap-3 max-lg:hidden"
                 style={{ opacity: 0 }}
               >
-                <p className="font-display text-[24px] font-medium leading-none tracking-[-0.02em] text-accent sm:text-[30px]">{String(i + 1).padStart(2, '0')}</p>
-                <p className="mt-1.5 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-0.5 hidden text-[14px] lg:text-[15px] text-muted sm:block">{sv.short}</p>
+                <span className="mono-caps w-6 text-white/55">{String(i + 1).padStart(2, '0')}</span>
+                <span>
+                  <span className="block font-display text-[20px] leading-tight">{sv.title}</span>
+                  <span className="block text-[14px] text-white/75">{sv.short}</span>
+                </span>
               </li>
             ))}
           </ul>
+          <ul className="absolute inset-x-[var(--gx,1.25rem)] bottom-[10rem] grid grid-cols-2 gap-x-5 gap-y-2 lg:hidden">
+            {services.map((sv, i) => (
+              <li key={sv.title} className="flex items-baseline gap-2 text-[14px] leading-tight">
+                <span className="mono-caps text-white/55">{String(i + 1).padStart(2, '0')}</span>
+                <span>{sv.title}</span>
+              </li>
+            ))}
+          </ul>
+          <h3 className="absolute bottom-20 left-[var(--gx,1.25rem)] font-display text-[17.5vw] font-semibold uppercase leading-[0.8] tracking-[-0.03em] sm:bottom-8 sm:text-[15vw] lg:bottom-10 lg:left-12 lg:text-[11.5vw] xl:left-16">
+            Services
+          </h3>
         </div>
 
         <div ref={copyRefs[2]} className="container-x absolute inset-0 flex flex-col justify-between py-28 sm:py-24" style={{ opacity: 0 }}>
