@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Linkedin, Mail, Phone } from 'lucide-react';
-import Logo from '@/components/ui/Logo';
+import { LogoMark } from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
 import { allHubs } from '@/data/globe';
 import { contactDetails, navLinks } from '@/data/siteContent';
 
-/** Header: logo bar and a full-screen "Menu" overlay (unitedcarriers.com style). */
+/** Header: Apple-style global nav bar, and a full-screen "Menu" overlay. */
 export default function Navbar() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -24,7 +23,6 @@ export default function Navbar() {
       const y = Math.max(0, window.scrollY);
       const dy = y - lastY;
       lastY = y;
-      setScrolled(y > 24);
       if (y < 80) {
         travel = 0;
         setHidden(false);
@@ -70,44 +68,37 @@ export default function Navbar() {
           hidden && !open ? '-translate-y-full' : 'translate-y-0'
         }`}
       >
-        {/* Main bar */}
-        <div className={`border-b transition-colors duration-500 ${scrolled ? 'border-white/10 bg-ink/[0.97]' : 'border-transparent bg-transparent'}`}>
-          <nav aria-label="Primary" className="mx-auto flex h-[72px] max-w-content items-center justify-between gap-6 px-5 sm:px-8 lg:px-12">
-            <a href="#home" aria-label="AGS Global Trade home" className="shrink-0">
-              <Logo height={40} />
+        {/* Apple's global nav (awesome-design-md/apple, global-nav): a 44px translucent bar, 12px links
+            spread evenly across a 1024px row, logo at the left end, two icons at the right end */}
+        <div className="bg-[rgba(22,22,23,0.8)] backdrop-blur-[20px] backdrop-saturate-[180%]">
+          <nav
+            aria-label="Primary"
+            className="mx-auto flex h-11 max-w-[1024px] items-center justify-between px-4 text-[12px] leading-none tracking-[-0.01em] text-[#e8e8ed] antialiased sm:px-[22px]"
+            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Inter, system-ui, sans-serif' }}
+          >
+            <a href="#home" aria-label="AGS Global Trade home" className="flex h-11 shrink-0 items-center opacity-90 transition-opacity hover:opacity-100">
+              <LogoMark height={15} />
             </a>
-
-            <ul className="hidden items-center gap-6 xl:flex 2xl:gap-8">
-              {navLinks.slice(1).map((link) => (
-                <li key={link.href}>
-                  <a href={link.href} className="group relative whitespace-nowrap py-2 font-mono text-[13px] uppercase tracking-eyebrow text-white/80 2xl:text-[14px] transition-colors hover:text-white">
-                    <span className="roll">
-                      <span data-text={link.label}>{link.label}</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="hidden sm:block">
-                <Button href="#contact" variant="accent" className="h-11">
-                  Work with us
-                </Button>
-              </span>
+            {navLinks.slice(1).map((link) => (
+              <a key={link.href} href={link.href} className="hidden h-11 items-center whitespace-nowrap px-2 opacity-80 transition-opacity hover:opacity-100 md:flex">
+                {link.label}
+              </a>
+            ))}
+            <div className="flex items-center gap-1 md:contents">
+              <a href={tel} aria-label={`Call ${contactDetails.phone}`} className="flex h-11 w-9 items-center justify-center opacity-80 transition-opacity hover:opacity-100 md:w-auto md:px-2">
+                <Phone size={15} strokeWidth={1.4} aria-hidden="true" />
+              </a>
               <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 aria-expanded={open}
                 aria-controls="site-menu"
-                className="group flex h-11 items-center gap-3 rounded-md border border-white/20 px-4 font-mono text-[13px] lg:text-[14px] uppercase tracking-eyebrow text-white transition-colors hover:border-white hover:bg-white hover:text-ink"
+                aria-label={open ? 'Close menu' : 'Open menu'}
+                className="flex h-11 w-9 items-center justify-center opacity-80 transition-opacity hover:opacity-100 md:w-auto md:px-2"
               >
-                <span className="roll">
-                  <span data-text={open ? 'Close' : 'Menu'}>{open ? 'Close' : 'Menu'}</span>
-                </span>
-                <span aria-hidden="true" className="relative block h-3 w-4">
-                  <span className={`absolute left-0 h-[1.5px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 rotate-45' : 'top-0.5'}`} />
-                  <span className={`absolute left-0 h-[1.5px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 -rotate-45' : 'bottom-0.5'}`} />
+                <span aria-hidden="true" className="relative block h-[9px] w-[15px]">
+                  <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 rotate-45' : 'top-0'}`} />
+                  <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 -rotate-45' : 'bottom-0'}`} />
                 </span>
               </button>
             </div>
