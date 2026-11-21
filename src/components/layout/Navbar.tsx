@@ -94,14 +94,9 @@ export default function Navbar() {
                 aria-expanded={open}
                 aria-controls="site-menu"
                 aria-label={open ? 'Close menu' : 'Open menu'}
-                className="flex h-11 items-center gap-2 pl-2 opacity-80 transition-opacity hover:opacity-100 md:px-2"
+                className="flex h-11 items-center pl-2 opacity-80 transition-opacity hover:opacity-100 md:px-2"
               >
                 <span>{open ? 'Close' : 'Menu'}</span>
-                <span aria-hidden="true" className="relative block h-[12px] w-[18px]">
-                  <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 rotate-45' : 'top-0'}`} />
-                  <span className={`absolute left-0 top-1/2 h-[1.2px] w-full -translate-y-1/2 bg-current transition-opacity duration-300 ${open ? 'opacity-0' : 'opacity-100'}`} />
-                  <span className={`absolute left-0 h-[1.2px] w-full bg-current transition-all duration-500 ease-expo ${open ? 'top-1/2 -rotate-45' : 'bottom-0'}`} />
-                </span>
               </button>
             </div>
           </nav>
