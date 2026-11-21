@@ -14,13 +14,13 @@ const FRAME_COUNT = 97;
 const frameSrc = (i: number) => `/story/${String(i + 1).padStart(3, '0')}.webp`;
 const PART = (n: string) => `/story/parts/${n}.webp`;
 // Road leg: an aerial forest tile (1600 x 2400, road down the middle) that scrolls under the truck
-// World (public/story/parts/world.webp) is 1600 x 3800 world px: the road runs in from the left at
+// World (public/story/parts/world.webp) is 2600 x 3800 world px: the road runs in from the left at
 // y = W_YH, turns a corner of radius W_R round (W_CX - W_R, W_YH + W_R) and runs down at x = W_CX.
-const W_W = 1600;
+const W_W = 2600;
 const W_H = 3800;
 const W_YH = 1500;
 const W_R = 300;
-const W_CX = 800;
+const W_CX = 1800;
 const W_ROAD = 200;
 const LANE = W_ROAD / 4; // traffic keeps left: the truck holds the outer lane through the turn
 const A_TRUCK_W = W_ROAD * 0.42;
@@ -120,6 +120,9 @@ function StoryFilm() {
   const crateRef = useRef<HTMLImageElement>(null);
   // leg 2
   const roadRef = useRef<HTMLDivElement>(null);
+  const liftRef = useRef<HTMLDivElement>(null);
+  const bayRef = useRef<HTMLDivElement>(null);
+  const bayFogRef = useRef<HTMLDivElement>(null);
   const forestRef = useRef<HTMLDivElement>(null);
   const aerialTruckRef = useRef<HTMLDivElement>(null);
   const fogARef = useRef<HTMLDivElement>(null);
@@ -224,6 +227,7 @@ function StoryFilm() {
       if (forestRef.current) {
         forestRef.current.style.width = `${W_W * z}px`;
         forestRef.current.style.height = `${W_H * z}px`;
+        forestRef.current.style.backgroundImage = `url(${PART(mobile ? 'world-m' : 'world')})`;
       }
       if (aerialTruckRef.current) {
         aerialTruckRef.current.style.width = `${A_TRUCK_W * z}px`;
@@ -267,7 +271,8 @@ function StoryFilm() {
       forkX = lerp(forkX, pushedX, ease(seg(l, 0.45, 0.62)));
       forkX = lerp(forkX, startX, easeIn(seg(l, 0.68, 0.88)));
       const lift = (ease(seg(l, 0.3, 0.44)) - ease(seg(l, 0.63, 0.72))) * LIFT * H;
-      const truckX = T + easeIn(seg(l, 0.72, 1)) * (vw - T + 40);
+      // the truck only starts to roll: the drone lift takes it from here into the aerial view
+      const truckX = T + easeIn(seg(l, 0.8, 1)) * vw * 0.06;
       set(forkRef.current, { transform: `translate3d(${forkX.toFixed(1)}px,0,0)` });
       set(carriageRef.current, { transform: `translate3d(0,${(-lift).toFixed(1)}px,0)` });
       set(crateRef.current, {
@@ -275,23 +280,46 @@ function StoryFilm() {
         opacity: l > 0.63 ? '0' : '1',
       });
       set(truckRef.current, { transform: `translate3d(${truckX.toFixed(1)}px,0,0)` });
-      set(laneRef.current, { backgroundPositionX: `${(-easeIn(seg(l, 0.72, 1)) * 600).toFixed(0)}px` });
-      set(loadRef.current, { visibility: p < P_LOAD ? 'visible' : 'hidden' });
+      set(laneRef.current, { backgroundPositionX: `${(-easeIn(seg(l, 0.8, 1)) * vw * 0.06).toFixed(0)}px` });
+
+      // ---- Into the forest: the white bay thickens into fog, then clears from the edges inward ----
+      // The dark road strip stays put and becomes the forest road; the truck swaps to the view from
+      // above inside the thickest fog.
+      const lt = seg(p, P_LOAD - 0.05, P_LOAD + 0.06);
+      const c1x = T + vw * 0.06 + (TRUCK_W * H) / 2;
+      const bandY = vh - Wr / 2;
+      set(loadRef.current, { visibility: p < P_LOAD + 0.06 ? 'visible' : 'hidden' });
+      if (lt > 0 && lt < 1) {
+        // a hole opens in the white around the edges first, closing in on the truck last
+        const hole = ease(seg(lt, 0.25, 1));
+        const rx = lerp(230, 0, hole);
+        const m = `radial-gradient(ellipse ${rx.toFixed(1)}% ${(rx * 0.85).toFixed(1)}% at ${c1x.toFixed(0)}px ${bandY.toFixed(0)}px, #000 0%, #000 45%, transparent 100%)`;
+        set(bayRef.current, { maskImage: m, webkitMaskImage: m, opacity: String(1 - ease(seg(lt, 0.75, 1))) } as Partial<CSSStyleDeclaration>);
+      } else {
+        set(bayRef.current, { maskImage: 'none', webkitMaskImage: 'none', opacity: lt >= 1 ? '0' : '1' } as Partial<CSSStyleDeclaration>);
+      }
+      set(bayFogRef.current, { opacity: String(window01(lt, 0.05, 0.95, 0.45)), transform: `translate3d(${(-lt * 6).toFixed(2)}%,${(-lt * 10).toFixed(2)}%,0)` });
+      set(groundRef.current, { opacity: String(1 - ease(seg(lt, 0.2, 0.6))) });
+      set(truckRef.current?.parentElement ?? null, { opacity: String(1 - ease(seg(lt, 0.3, 0.5))) });
 
       // ---- Leg 2: the road from the air, through forest and fog ----
       const r = seg(p, P_LOAD, P_ROAD);
       set(roadRef.current, {
-        visibility: p >= P_LOAD && p < P_ROAD + 0.02 ? 'visible' : 'hidden',
+        visibility: p >= P_LOAD - 0.05 && p < P_ROAD + 0.02 ? 'visible' : 'hidden',
       });
-      if (p >= P_LOAD - 0.01 && p < P_ROAD + 0.02) {
+      if (p >= P_LOAD - 0.06 && p < P_ROAD + 0.02) {
         const mobile = vw < 768;
         // horizontal: where the camera keeps the corner on screen (phones see little of the straight)
         const ax = W_CX - W_R;
         const ay = W_YH + W_R;
         const RL = W_R + LANE;
-        const anchor0 = mobile ? 0.8 : 0.5;
-        const left0 = W_CX - (anchor0 * vw) / z; // world x at the screen's left edge to begin with
-        const startX = left0 - A_TRUCK_L;
+        // the top-view truck takes over exactly where the side-view truck stood
+        const c1 = c1x;
+        const anchor0 = (c1 + (mobile ? 150 : 260) + W_R * z) / vw;
+        const camX0 = W_CX * z - anchor0 * vw;
+        // where the road sits on screen as the drone levels out: high enough to see the truck clearly
+        const roadY0 = vh - Wr / 2; // exactly where the loading bay's road strip was
+        const startX = (c1 + camX0) / z;
         const LA = ax - startX;
         const LArc = (Math.PI * RL) / 2;
         const LV = Math.min((vh * 1.3) / z, 1300);
@@ -316,11 +344,13 @@ function StoryFilm() {
         // camera: road along the bottom of the screen (where the loading bay's road was), then it
         // follows the truck down the page once it has turned
         const k = ease(seg(u, LA - 120, LA + LArc + vh * 0.4 / z));
-        const screenY = lerp(vh - W_ROAD * z * 0.6, vh * (mobile ? 0.74 : 0.55), k);
-        const camY = Math.max(W_YH * z - (vh - W_ROAD * z * 0.6), y * z - screenY);
-        const camX = W_CX * z - lerp(anchor0, 0.5, k) * vw;
+        const screenY = lerp(roadY0, vh * (mobile ? 0.74 : 0.55), k);
+        const camY = Math.max(W_YH * z - (roadY0), y * z - screenY);
+        // the camera holds the truck where the side-view truck stood until the corner pans into view
+        const camX = Math.max(W_CX * z - lerp(anchor0, 0.5, k) * vw, x * z - c1);
         set(forestRef.current, { transform: `translate3d(${(-camX).toFixed(1)}px,${(-camY).toFixed(1)}px,0)` });
         set(aerialTruckRef.current, {
+          opacity: String(ease(seg(lt, 0.42, 0.6))),
           transform: `translate3d(${((x - A_TRUCK_W / 2) * z).toFixed(1)}px,${((y - A_TRUCK_L / 2) * z).toFixed(1)}px,0)`,
         });
         const img = aerialTruckRef.current?.firstElementChild as HTMLElement | null;
@@ -328,7 +358,12 @@ function StoryFilm() {
         // fog drifts across faster than the ground: it hangs between the camera and the trees
         set(fogARef.current, { transform: `translate3d(${(-r * 18).toFixed(2)}%,${(-r * 55).toFixed(2)}%,0)` });
         set(fogBRef.current, { transform: `translate3d(${(r * 12).toFixed(2)}%,${(-r * 70).toFixed(2)}%,0)` });
-        set(driveVeilRef.current, { opacity: String(1 - ease(seg(r, 0, 0.08))) });
+        set(driveVeilRef.current, { opacity: '0' });
+        // the climb: the forest starts close and falls away beneath the camera
+        set(liftRef.current, {
+          transformOrigin: `${c1.toFixed(0)}px ${(roadY0).toFixed(0)}px`,
+          transform: `scale(${lerp(1.15, 1, ease(lt)).toFixed(4)})`,
+        });
         // low sun breaks through as the truck takes the corner, then softens
         const glare = 0.6 + 0.4 * window01(u, LA - 300, LA + LArc + 500, 0.4);
         set(sunRef.current, { opacity: glare.toFixed(3), transform: `translate3d(${(-r * 4).toFixed(2)}%,${(r * 3).toFixed(2)}%,0)` });
@@ -415,7 +450,9 @@ function StoryFilm() {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[rgba(10,22,64,0.14)]" />
 
         {/* ---------- Leg 1: loading, on white ---------- */}
-        <div ref={loadRef} className="absolute inset-0 bg-paper text-ink" style={{ ['--h' as string]: '200px' }}>
+        <div ref={loadRef} className="absolute inset-0 z-[1] text-ink" style={{ ['--h' as string]: '200px' }}>
+          <div ref={bayRef} aria-hidden="true" className="absolute inset-0 bg-paper" />
+          <div ref={bayFogRef} aria-hidden="true" className="pointer-events-none absolute -inset-[20%] will-change-transform" style={{ opacity: 0, backgroundImage: `url(${PART('fog-a')}), url(${PART('fog-b')})`, backgroundSize: '1000px 1000px, 700px 700px' }} />
           <div ref={groundRef} className="absolute inset-x-0 bottom-0 bg-ink" style={{ height: '22%' }}>
             <div
               ref={laneRef}
@@ -445,10 +482,12 @@ function StoryFilm() {
 
         {/* ---------- Leg 2: the road from the air ---------- */}
         <div ref={roadRef} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#16201a]" style={{ visibility: 'hidden' }}>
-          <div ref={forestRef} className="absolute left-0 top-0 will-change-transform" style={{ backgroundImage: `url(${PART('world')})`, backgroundSize: '100% 100%' }}>
+          <div ref={liftRef} className="absolute inset-0 will-change-transform">
+          <div ref={forestRef} className="absolute left-0 top-0 will-change-transform" style={{ backgroundSize: '100% 100%' }}>
             <div ref={aerialTruckRef} className="absolute left-0 top-0 will-change-transform [filter:drop-shadow(9px_10px_5px_rgba(0,0,0,0.55))]">
               <img src={PART('truck-aerial')} alt="" draggable={false} className="h-full w-full max-w-none origin-center" />
             </div>
+          </div>
           </div>
           {/* sun glare, from the upper left where the light falls from */}
           <div ref={sunRef} className="pointer-events-none absolute -inset-[10%] mix-blend-screen will-change-transform" style={{ opacity: 0 }}>
