@@ -22,6 +22,10 @@ export default function Hero() {
   const skyRef = useRef<HTMLDivElement>(null);
   const [entered, setEntered] = useState(false);
   const [stage, setStage] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setStage((s) => (s + 1) % STAGES.length), 3200);
+    return () => window.clearInterval(id);
+  }, []);
   const [pinned, setPinned] = useState<Hub | null>(null);
   const controls = useRef<GlobeHandle | null>(null);
   const pinnedRegion = pinned ? (pinned.name === homeHub.name ? 'Home base' : 'Sourcing & delivery') : '';
@@ -46,11 +50,10 @@ export default function Hero() {
       const rect = el.getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? Math.min(1, Math.max(0, -rect.top / span)) : 0;
-      // first 60%: step through the route stages; last 40%: dive into the page
-      setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
-      const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
+      // the dive starts on the first scroll (the route stages play on their own, below)
+      const d = p;
       // 1) the globe turns and flies in to New Delhi (inside the WebGL scene, so it stays sharp)
-      const z = Math.min(1, d / 0.85);
+      const z = Math.min(1, d / 0.8);
       controls.current?.setDive(z * z * (3 - 2 * z));
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
@@ -80,7 +83,7 @@ export default function Hero() {
 
 
   return (
-    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[200vh] md:h-[280vh]'}`}>
+    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[150vh] md:h-[155vh]'}`}>
       <div className={`${reduce ? 'relative' : 'sticky top-0'} isolate h-[100svh] min-h-[640px] overflow-hidden`}>
         {/* Interactive globe */}
         <div
@@ -148,7 +151,7 @@ export default function Hero() {
                   </span>
                 ))}
               </span>
-              <span key={stage} className="mono-caps animate-panelin text-white/60" aria-live="polite">
+              <span key={stage} className="mono-caps animate-panelin text-white/60">
                 {STAGE_LABELS[stage]}
               </span>
             </div>
