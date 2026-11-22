@@ -153,7 +153,7 @@ function StoryFilm() {
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
       const dOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < DRIVE; i += s) if (!dOrder.includes(i)) dOrder.push(i);
-      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
+      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker4${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
       order.forEach((i, k) =>
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
