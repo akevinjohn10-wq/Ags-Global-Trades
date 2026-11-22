@@ -92,8 +92,6 @@ function path(s: number): [number, number, number] {
   return [XS, R + (s - A - ARC), Math.PI / 2];
 }
 
-const TRAIL_MASK = 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.75) 30%, transparent 100%)';
-const WAKE_MASK = 'linear-gradient(to bottom, transparent 0%, #000 12%)';
 const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
 
 export default function StoryV3() {
@@ -105,7 +103,6 @@ function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const seaRef = useRef<HTMLVideoElement>(null);
-  const wakeRef = useRef<HTMLVideoElement>(null);
   const q = useRef<Record<string, HTMLElement | null>>({});
   const r = (k: string) => (el: HTMLElement | null) => {
     q.current[k] = el;
@@ -185,55 +182,21 @@ function StoryFilm() {
       update();
     };
 
-    // ---------- sea and wake play only while the ship is on screen ----------
+    // ---------- the ship video plays only while it is on screen ----------
     let seaOn = false;
-    let trailRaf = 0;
-    const trail = $('trail') as HTMLCanvasElement | null;
-    const tg = trail?.getContext('2d');
-    const drawTrail = () => {
-      const wv = wakeRef.current;
-      if (tg && trail && wv && wv.readyState >= 2) {
-        // the spreading part of the wake, repeated upward at its true proportions: each copy a little
-        // wider and fainter, every other one mirrored so the joins match, like a wake widening and fading
-        const W = trail.width;
-        const H = trail.height;
-        const sh = wv.videoHeight * 0.4;
-        tg.clearRect(0, 0, W, H);
-        tg.filter = 'blur(1px)';
-        let y = H;
-        for (let k = 0; y > 0 && k < 24; k++) {
-          const w = W * (0.78 + 0.07 * k);
-          const h = (w * sh) / wv.videoWidth;
-          tg.globalAlpha = Math.pow(0.86, k);
-          tg.save();
-          tg.translate(W / 2, y - h / 2);
-          if (k % 2) tg.scale(1, -1);
-          tg.drawImage(wv, 0, 0, wv.videoWidth, sh, -w / 2, -h / 2, w, h);
-          tg.restore();
-          y -= h - 1;
-        }
-        tg.globalAlpha = 1;
-        tg.filter = 'none';
-      }
-      trailRaf = seaOn ? requestAnimationFrame(drawTrail) : 0;
-    };
     const setSea = (on: boolean) => {
       if (on === seaOn) return;
       seaOn = on;
-      if (on && !trailRaf) trailRaf = requestAnimationFrame(drawTrail);
-      for (const [el, src] of [
-        [seaRef.current, V('sea.mp4')],
-        [wakeRef.current, V('wake.mp4')],
-      ] as const) {
-        if (!el) continue;
-        if (on) {
-          if (!el.src) {
-            el.muted = true;
-            el.src = src;
-          }
-          el.play().catch(() => {});
-        } else el.pause();
-      }
+      const el = seaRef.current;
+      if (!el) return;
+      if (on) {
+        if (!el.src) {
+          el.muted = true;
+          el.src = V(mobile ? 'ship-sea-m.mp4' : 'ship-sea.mp4');
+          el.playbackRate = 0.8;
+        }
+        el.play().catch(() => {});
+      } else el.pause();
     };
 
     function drawImg(im: HTMLImageElement | null | undefined, x: number, y: number, w: number, h: number, alpha = 1) {
@@ -485,30 +448,10 @@ function StoryFilm() {
       set(canvas, { visibility: shipOn ? 'hidden' : 'visible' });
       setSea(shipOn);
       if (shipOn) {
-        // the ship drifts slowly down the screen while you scroll, on top of its own bobbing
-        // starts close on the ship and pulls back as you scroll
+        // the ship sails down the page; the camera pulls back as you scroll
         const sp = seg(p, T.ship);
-        // sails in at a normal distance, then pulls further back as you scroll
-        const zo = easeIO(clamp(sp / 0.92));
-        const H = lerp(mobile ? 60 : 72, mobile ? 30 : 34, zo); // ship length in vh
-        const top = lerp(16, mobile ? 27 : 36, zo) + sp * 2;
-        const w = (H * 760) / 2643;
-        const ww = w * 2.95;
-        const wh = (ww * 9) / 16;
-        set($('shipBox'), { height: `${H.toFixed(2)}vh`, top: `${top.toFixed(2)}vh` });
-        const wTop = top - wh * 0.89;
-        if (wakeRef.current) set(wakeRef.current, { width: `${ww.toFixed(2)}vh`, height: `${wh.toFixed(2)}vh`, marginLeft: `${(-ww / 2).toFixed(2)}vh`, top: `${wTop.toFixed(2)}vh` });
-        // the foam trail carries on from the top of the wake clip to beyond the top of the screen
-        const tw = ww * 1.04;
-        const tb = wTop + wh * 0.1;
-        const th = tb + 12;
-        set($('trail'), { width: `${tw.toFixed(2)}vh`, marginLeft: `${(-tw / 2).toFixed(2)}vh`, top: '-12vh', height: `${th.toFixed(2)}vh` });
-        const tc = $('trail') as HTMLCanvasElement | null;
-        const ch = Math.max(16, Math.round((320 * th) / tw));
-        if (tc && tc.height !== ch) {
-          tc.width = 320;
-          tc.height = ch;
-        }
+        const z = lerp(mobile ? 1.35 : 1.3, 1, easeIO(clamp(sp / 0.92)));
+        if (seaRef.current) seaRef.current.style.transform = `scale(${z.toFixed(4)})`;
       }
 
       // ===================== 8. sky: clouds and a plane =====================
@@ -581,7 +524,6 @@ function StoryFilm() {
     window.addEventListener('resize', size);
     return () => {
       cancelAnimationFrame(raf);
-      cancelAnimationFrame(trailRaf);
       setSea(false);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
@@ -592,59 +534,16 @@ function StoryFilm() {
 
   return (
     <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1350vh] scroll-mt-24 bg-[#fbfbfb] md:h-[1650vh]">
-      <style>{`
-        @keyframes ags-bob { 0%,100% { transform: translate3d(0,0,0) rotate(-0.35deg); } 50% { transform: translate3d(0,0.7%,0) rotate(0.35deg); } }
-        @keyframes ags-hum { 0%,100% { transform: translate3d(0,0,0); } 25% { transform: translate3d(0.4px,-0.3px,0); } 50% { transform: translate3d(-0.3px,0.4px,0); } 75% { transform: translate3d(0.3px,0.2px,0); } }
-      `}</style>
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
 
         {/* 7. the ship at sea */}
         <div ref={r('shipScene')} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#0b2a45]" style={{ display: 'none' }}>
-          <video ref={seaRef} muted loop playsInline preload="none" className="absolute inset-0 h-full w-full object-cover" />
-          <div ref={r('shipMove')} className="absolute inset-0">
-            {/* wake behind the stern (kept outside any transform so it blends with the sea) */}
-            <canvas
-              ref={r('trail')}
-              width={320}
-              height={640}
-              className="absolute left-1/2 mix-blend-screen"
-              style={{ opacity: 0.85, WebkitMaskImage: TRAIL_MASK, maskImage: TRAIL_MASK }}
-            />
-            <video ref={wakeRef} muted loop playsInline preload="none" className="absolute left-1/2 object-cover mix-blend-screen" style={{ opacity: 0.9, WebkitMaskImage: WAKE_MASK, maskImage: WAKE_MASK }} />
-            <div ref={r('shipBox')} className="absolute left-1/2 -translate-x-1/2" style={{ aspectRatio: '760 / 2643' }}>
-              {/* shadow in the water: a wide soft one thrown down-right, and a tight dark one at the hull */}
-              <div className="absolute inset-[2%] translate-x-[9%] translate-y-[2.5%] rounded-[45%] bg-[#020a14]/55 blur-[26px]" />
-              <div className="absolute inset-[1%] rounded-[46%] bg-[#020a14]/50 blur-[8px]" />
-              <div className="relative h-full w-full" style={{ animation: 'ags-bob 7s ease-in-out infinite' }}>
-                <div className="relative h-full w-full" style={{ animation: 'ags-hum 0.9s linear infinite' }}>
-                  <picture>
-                    <source media="(max-width: 767px)" srcSet={V('ship-full-m.webp')} />
-                    <img
-                      src={V('ship-full.webp')}
-                      alt=""
-                      draggable={false}
-                      className="h-full w-full"
-                      style={{ filter: 'brightness(0.8) contrast(1.06) saturate(0.78) drop-shadow(0 0 2px rgba(2,10,20,0.7))' }}
-                    />
-                  </picture>
-                  {/* sea-coloured tint and sunlight from the upper left, clipped to the ship's own outline */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: 'linear-gradient(160deg, rgba(190,215,235,0.16) 0%, rgba(11,42,69,0.22) 45%, rgba(2,12,24,0.42) 100%)',
-                      WebkitMaskImage: `url(${V('ship-full.webp')})`,
-                      maskImage: `url(${V('ship-full.webp')})`,
-                      WebkitMaskSize: '100% 100%',
-                      maskSize: '100% 100%',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <video ref={seaRef} muted loop playsInline preload="none" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ transformOrigin: '50% 45%' }} />
           {/* darken the whole scene a little, plus a vignette */}
-          <div className="absolute inset-0 bg-[#020a14]/25" />
+          <div className="absolute inset-0 bg-[#020a14]/10" />
+          {/* phones: the ship fills the width, so shade behind the heading and the points */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,20,0.7)_0%,rgba(2,10,20,0.15)_32%,rgba(2,10,20,0.15)_52%,rgba(2,10,20,0.75)_75%)] sm:hidden" />
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(2,12,24,0.55))]" />
         </div>
 
@@ -707,30 +606,38 @@ function StoryFilm() {
         </div>
 
         {/* 7. at sea: Why AGS Trade */}
-        <div ref={r('copy2')} className="container-x absolute inset-0 z-[2] flex flex-col justify-between py-24 text-white sm:py-20" style={{ opacity: 0, visibility: 'hidden' }}>
-          <div className="text-center">
-            <p className="eyebrow eyebrow-light justify-center">Why AGS Trade</p>
-            <h3 className="mx-auto mt-4 max-w-3xl font-display text-[30px] font-medium leading-[1.02] [text-shadow:0_2px_24px_rgba(0,0,0,0.45)] sm:text-[52px]">Sourcing that works as hard as you do.</h3>
+        <div ref={r('copy2')} className="container-x absolute inset-0 z-[2] text-white" style={{ opacity: 0, visibility: 'hidden' }}>
+          {/* phones: heading on top, points below; wider screens: text either side of the ship, like a spread */}
+          <div className="flex h-full flex-col justify-between py-24 sm:grid sm:grid-cols-[1fr_minmax(220px,24vw)_1fr] sm:content-center sm:gap-y-14 sm:py-20">
+            <div className="text-center sm:col-start-1 sm:row-start-1 sm:text-right">
+              <p className="eyebrow eyebrow-light justify-center sm:justify-end">Why AGS Trade</p>
+              <h3 className="mt-4 font-display text-[30px] font-medium leading-[1.04] [text-shadow:0_2px_24px_rgba(0,0,0,0.5)] sm:ml-auto sm:max-w-[420px] sm:text-[40px] lg:text-[46px]">
+                Sourcing that works as hard as you do.
+              </h3>
+            </div>
+            <ul className="grid grid-cols-2 gap-x-6 gap-y-6 sm:contents">
+              {VALUES.map((v, i) => {
+                const Icon = v.icon;
+                const left = i % 2 === 0;
+                return (
+                  <li
+                    key={v.title}
+                    ref={(el) => {
+                      valueRefs.current[i] = el;
+                    }}
+                    className={`[text-shadow:0_1px_12px_rgba(0,0,0,0.55)] ${
+                      left ? 'text-left sm:col-start-1 sm:ml-auto sm:max-w-[340px] sm:text-right' : 'text-left sm:col-start-3 sm:max-w-[340px]'
+                    } ${i < 2 ? 'sm:row-start-2' : 'sm:row-start-3'}`}
+                    style={{ opacity: 0 }}
+                  >
+                    <Icon size={20} strokeWidth={1.5} aria-hidden="true" className={`text-sky ${left ? 'sm:ml-auto' : ''}`} />
+                    <p className="mt-2.5 font-display text-[16px] leading-tight sm:text-[20px]">{v.title}</p>
+                    <p className="mt-1 text-[13px] leading-[1.55] text-white/80 sm:text-[14px]">{v.text}</p>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
-          <ul className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-x-6 gap-y-6 sm:gap-x-[300px] lg:gap-x-[420px]">
-            {VALUES.map((v, i) => {
-              const Icon = v.icon;
-              return (
-                <li
-                  key={v.title}
-                  ref={(el) => {
-                    valueRefs.current[i] = el;
-                  }}
-                  className={`[text-shadow:0_1px_12px_rgba(0,0,0,0.5)] ${i % 2 ? 'text-left' : 'text-left sm:text-right'}`}
-                  style={{ opacity: 0 }}
-                >
-                  <Icon size={20} strokeWidth={1.5} aria-hidden="true" className={`text-sky ${i % 2 ? '' : 'sm:ml-auto'}`} />
-                  <p className="mt-2.5 font-display text-[16px] leading-tight sm:text-[19px]">{v.title}</p>
-                  <p className="mt-1 text-[13px] leading-[1.55] text-white/80 sm:text-[14px]">{v.text}</p>
-                </li>
-              );
-            })}
-          </ul>
         </div>
 
         {/* fog between the road and the sea */}
