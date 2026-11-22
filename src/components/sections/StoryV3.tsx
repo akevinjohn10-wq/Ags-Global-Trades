@@ -192,7 +192,29 @@ function StoryFilm() {
     const tg = trail?.getContext('2d');
     const drawTrail = () => {
       const wv = wakeRef.current;
-      if (tg && trail && wv && wv.readyState >= 2) tg.drawImage(wv, 0, 0, wv.videoWidth, wv.videoHeight * 0.05, 0, 0, trail.width, trail.height);
+      if (tg && trail && wv && wv.readyState >= 2) {
+        // the spreading part of the wake, repeated upward at its true proportions: each copy a little
+        // wider and fainter, every other one mirrored so the joins match, like a wake widening and fading
+        const W = trail.width;
+        const H = trail.height;
+        const sh = wv.videoHeight * 0.4;
+        tg.clearRect(0, 0, W, H);
+        tg.filter = 'blur(1px)';
+        let y = H;
+        for (let k = 0; y > 0 && k < 24; k++) {
+          const w = W * (0.78 + 0.07 * k);
+          const h = (w * sh) / wv.videoWidth;
+          tg.globalAlpha = Math.pow(0.86, k);
+          tg.save();
+          tg.translate(W / 2, y - h / 2);
+          if (k % 2) tg.scale(1, -1);
+          tg.drawImage(wv, 0, 0, wv.videoWidth, sh, -w / 2, -h / 2, w, h);
+          tg.restore();
+          y -= h - 1;
+        }
+        tg.globalAlpha = 1;
+        tg.filter = 'none';
+      }
       trailRaf = seaOn ? requestAnimationFrame(drawTrail) : 0;
     };
     const setSea = (on: boolean) => {
@@ -479,7 +501,14 @@ function StoryFilm() {
         // the foam trail carries on from the top of the wake clip to beyond the top of the screen
         const tw = ww * 1.04;
         const tb = wTop + wh * 0.1;
-        set($('trail'), { width: `${tw.toFixed(2)}vh`, marginLeft: `${(-tw / 2).toFixed(2)}vh`, top: '-12vh', height: `${(tb + 12).toFixed(2)}vh` });
+        const th = tb + 12;
+        set($('trail'), { width: `${tw.toFixed(2)}vh`, marginLeft: `${(-tw / 2).toFixed(2)}vh`, top: '-12vh', height: `${th.toFixed(2)}vh` });
+        const tc = $('trail') as HTMLCanvasElement | null;
+        const ch = Math.max(16, Math.round((320 * th) / tw));
+        if (tc && tc.height !== ch) {
+          tc.width = 320;
+          tc.height = ch;
+        }
       }
 
       // ===================== 8. sky: clouds and a plane =====================
@@ -491,9 +520,12 @@ function StoryFilm() {
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       set($('sky'), { display: skyOn ? '' : 'none' });
       if (skyOn) {
+        // the white wall only covers this section: the next section shows through under the plane
+        set($('bankClip'), { height: `${clamp(rect.bottom, 0, vh).toFixed(1)}px` });
         set($('bank'), { transform: `translate3d(0,${(vh - 5 * vh * u).toFixed(1)}px,0)` });
-        set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6)) });
-        set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)` });
+        const after = clamp((vh - rect.bottom) / vh);
+        set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6) * (1 - 0.85 * after)) });
+        set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)`, opacity: String(1 - 0.85 * after) });
         // the whole aircraft crosses the page, lingering through the middle
         const t = clamp((u - 0.06) / 0.9);
         const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
@@ -574,8 +606,8 @@ function StoryFilm() {
             {/* wake behind the stern (kept outside any transform so it blends with the sea) */}
             <canvas
               ref={r('trail')}
-              width={256}
-              height={512}
+              width={320}
+              height={640}
               className="absolute left-1/2 mix-blend-screen"
               style={{ opacity: 0.85, WebkitMaskImage: TRAIL_MASK, maskImage: TRAIL_MASK }}
             />
@@ -718,8 +750,10 @@ function StoryFilm() {
       </div>
       {/* 8. sky: a fixed layer, so the clouds and plane carry on over the next section */}
       <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[30] overflow-hidden" style={{ display: 'none' }}>
-        <div ref={r('bank')} className="absolute inset-x-0 top-0 h-[400vh] will-change-transform" style={{ transform: 'translate3d(0,100vh,0)' }}>
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(240,244,250,0.6)_7%,#FFFFFF_15%,#FFFFFF_85%,rgba(240,244,250,0.6)_93%,rgba(255,255,255,0)_100%)]" />
+        <div ref={r('bankClip')} className="absolute inset-x-0 top-0 h-full overflow-hidden">
+          <div ref={r('bank')} className="absolute inset-x-0 top-0 h-[400vh] will-change-transform" style={{ transform: 'translate3d(0,100vh,0)' }}>
+            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(240,244,250,0.6)_7%,#FFFFFF_15%,#FFFFFF_85%,rgba(240,244,250,0.6)_93%,rgba(255,255,255,0)_100%)]" />
+          </div>
         </div>
         <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
