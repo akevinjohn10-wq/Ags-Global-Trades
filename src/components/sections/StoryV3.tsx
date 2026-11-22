@@ -404,9 +404,9 @@ function StoryFilm() {
         // the ship drifts slowly down the screen while you scroll, on top of its own bobbing
         // starts close on the ship and pulls back as you scroll
         const sp = seg(p, T.ship);
-        const zo = easeOut(clamp(sp / 0.75));
-        const H = lerp(mobile ? 150 : 175, mobile ? 64 : 80, zo); // ship length in vh
-        const top = lerp(mobile ? 6 : -10, mobile ? 18 : 11, zo) + sp * 3;
+        const zo = easeIO(clamp(sp / 0.92));
+        const H = lerp(mobile ? 150 : 175, mobile ? 34 : 44, zo); // ship length in vh
+        const top = lerp(mobile ? 6 : -10, mobile ? 25 : 32, zo) + sp * 2;
         const w = (H * 760) / 2643;
         const ww = w * 2.95;
         const wh = (ww * 9) / 16;
@@ -506,17 +506,39 @@ function StoryFilm() {
             {/* wake behind the stern (kept outside any transform so it blends with the sea) */}
             <video ref={wakeRef} muted loop playsInline preload="none" className="absolute left-1/2 object-cover mix-blend-screen" style={{ opacity: 0.9 }} />
             <div ref={r('shipBox')} className="absolute left-1/2 -translate-x-1/2" style={{ aspectRatio: '760 / 2643' }}>
-              {/* soft shadow in the water */}
-              <div className="absolute inset-[3%] rounded-[40%] bg-black/45 blur-[18px]" />
-              <div className="h-full w-full" style={{ animation: 'ags-bob 7s ease-in-out infinite' }}>
-                <picture>
-                  <source media="(max-width: 767px)" srcSet={V('ship-full-m.webp')} />
-                  <img src={V('ship-full.webp')} alt="" draggable={false} className="h-full w-full" style={{ animation: 'ags-hum 0.9s linear infinite' }} />
-                </picture>
+              {/* shadow in the water: a wide soft one thrown down-right, and a tight dark one at the hull */}
+              <div className="absolute inset-[2%] translate-x-[9%] translate-y-[2.5%] rounded-[45%] bg-[#020a14]/55 blur-[26px]" />
+              <div className="absolute inset-[1%] rounded-[46%] bg-[#020a14]/50 blur-[8px]" />
+              <div className="relative h-full w-full" style={{ animation: 'ags-bob 7s ease-in-out infinite' }}>
+                <div className="relative h-full w-full" style={{ animation: 'ags-hum 0.9s linear infinite' }}>
+                  <picture>
+                    <source media="(max-width: 767px)" srcSet={V('ship-full-m.webp')} />
+                    <img
+                      src={V('ship-full.webp')}
+                      alt=""
+                      draggable={false}
+                      className="h-full w-full"
+                      style={{ filter: 'brightness(0.8) contrast(1.06) saturate(0.78) drop-shadow(0 0 2px rgba(2,10,20,0.7))' }}
+                    />
+                  </picture>
+                  {/* sea-coloured tint and sunlight from the upper left, clipped to the ship's own outline */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: 'linear-gradient(160deg, rgba(190,215,235,0.16) 0%, rgba(11,42,69,0.22) 45%, rgba(2,12,24,0.42) 100%)',
+                      WebkitMaskImage: `url(${V('ship-full.webp')})`,
+                      maskImage: `url(${V('ship-full.webp')})`,
+                      WebkitMaskSize: '100% 100%',
+                      maskSize: '100% 100%',
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </div>
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_55%,rgba(2,12,24,0.45))]" />
+          {/* darken the whole scene a little, plus a vignette */}
+          <div className="absolute inset-0 bg-[#020a14]/25" />
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(2,12,24,0.55))]" />
         </div>
 
         {/* 1. intro */}
