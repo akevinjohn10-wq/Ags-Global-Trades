@@ -11,7 +11,7 @@ import Faq from '@/components/sections/Faq';
 import GlobalReach from '@/components/sections/GlobalReach';
 import Hero from '@/components/sections/Hero';
 import Statement from '@/components/sections/Statement';
-import Story from '@/components/sections/StoryUC';
+import Story from '@/components/sections/StoryV3';
 import ChatAssistant from '@/components/ui/ChatAssistant';
 import BackToTop from '@/components/ui/BackToTop';
 import BrandCursor from '@/components/ui/BrandCursor';
