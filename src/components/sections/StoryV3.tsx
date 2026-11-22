@@ -156,7 +156,7 @@ function StoryFilm() {
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
       const dOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < DRIVE; i += s) if (!dOrder.includes(i)) dOrder.push(i);
-      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`drive${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
+      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
       order.forEach((i, k) =>
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
@@ -318,9 +318,38 @@ function StoryFilm() {
         };
 
         if (p < T.turn[0]) {
-          // 1. the stacker drives in and picks up the grey box (video frames)
-          const fr = frame(drive, Math.round(seg(p, T.driveIn) * (DRIVE - 1)), 0, DRIVE - 1) ?? frame(turn, 0);
-          if (fr) clipTop(() => g!.drawImage(fr, ...R_(fr.naturalWidth > fr.naturalHeight * 2 ? { x: -DRIVE_EXT, y: 0, w: 1280 + DRIVE_EXT, h: 720 } : FULL)));
+          // 1. the stacker drives in from behind the heading (half off the page) to the stack and picks
+          //    up the grey box. The stack stays put; for the first part the stacker half of each video
+          //    frame is slid further left, so it covers the whole width of the page
+          const dT = seg(p, T.driveIn);
+          const SPLIT = 0.55;
+          const slide = easeIO(clamp(dT / SPLIT));
+          const fi = dT < SPLIT ? (12 * dT) / SPLIT : 12 + (DRIVE - 13) * ((dT - SPLIT) / (1 - SPLIT));
+          const fr = frame(drive, Math.round(fi), 0, DRIVE - 1) ?? frame(turn, 0);
+          if (fr) {
+            const wide = fr.naturalWidth > fr.naturalHeight * 2;
+            const D = R_(wide ? { x: -DRIVE_EXT, y: 0, w: 1280 + DRIVE_EXT, h: 720 } : FULL);
+            const off = wide ? Math.max(0, 19 + OX / K) * (1 - slide) * K : 0; // px
+            const cut = OX + 830 * K; // where the stacker half ends and the stack begins
+            clipTop(() => {
+              if (off < 0.5) {
+                g!.drawImage(fr, ...D);
+                return;
+              }
+              g!.save();
+              g!.beginPath();
+              g!.rect(cut, 0, vw - cut, vh);
+              g!.clip();
+              g!.drawImage(fr, ...D);
+              g!.restore();
+              g!.save();
+              g!.beginPath();
+              g!.rect(0, 0, cut - off, vh);
+              g!.clip();
+              g!.drawImage(fr, D[0] - off, D[1], D[2], D[3]);
+              g!.restore();
+            });
+          }
         } else if (p < T.truckIn[0]) {
           // 2. lift and turn, frame by frame
           const ti = Math.round(seg(p, T.turn) * (FRAMES - 1));
