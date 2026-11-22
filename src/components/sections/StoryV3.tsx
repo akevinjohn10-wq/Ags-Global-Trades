@@ -39,7 +39,7 @@ const SPLIT_SPREAD = 300;
 const SPLIT_BOX = 567;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const LIFT = 23; // grey box rests this much lower on the stack before it is locked on
+const DRIVE = 96; // drive-in video frames, ending on the first turn frame
 
 // ---------- world (top view) ----------
 const TL = 1155 * TS;
@@ -55,9 +55,8 @@ const BOX = { x: (56 - 639.5) * TS, y: (234 - 360) * TS, w: 856 * TS, h: 262 * T
 // ---------- timeline ----------
 const T = {
   intro: [0, 0.04],
-  driveIn: [0.004, 0.055],
-  lock: [0.055, 0.068],
-  turn: [0.068, 0.23],
+  driveIn: [0.004, 0.1],
+  turn: [0.1, 0.23],
   truckIn: [0.23, 0.27],
   lower: [0.27, 0.295],
   swap: [0.292, 0.3],
@@ -92,6 +91,8 @@ function path(s: number): [number, number, number] {
   return [XS, R + (s - A - ARC), Math.PI / 2];
 }
 
+const TRAIL_MASK = 'linear-gradient(to top, #000 0%, rgba(0,0,0,0.75) 30%, transparent 100%)';
+const WAKE_MASK = 'linear-gradient(to bottom, transparent 0%, #000 12%)';
 const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
 
 export default function StoryV3() {
@@ -142,21 +143,25 @@ function StoryFilm() {
     const ready = (im?: HTMLImageElement | null) => !!im && im.complete && im.naturalWidth > 0;
     const one: Record<string, HTMLImageElement> = {};
     const turn: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
+    const drive: (HTMLImageElement | null)[] = new Array(DRIVE).fill(null);
     const riseCut: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
     let loading = false;
     const startLoading = () => {
       if (loading) return;
       loading = true;
       const dir = mobile ? '-m' : '';
-      for (const n of ['f0-machine', 'f0-grey', 'f0-stack', 'f118', 'truck-empty', 'truck-loaded', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
+      for (const n of ['f118', 'truck-empty', 'truck-loaded', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
       const order: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
+      const dOrder: number[] = [];
+      for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < DRIVE; i += s) if (!dOrder.includes(i)) dOrder.push(i);
+      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`drive${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
       order.forEach((i, k) =>
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
           turn[i] = img(V(`turn${dir}/${n}.webp`));
           riseCut[i] = img(V(`risecut${dir}/${n}.webp`));
-        }, k * 12),
+        }, 400 + k * 12),
       );
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
@@ -181,9 +186,18 @@ function StoryFilm() {
 
     // ---------- sea and wake play only while the ship is on screen ----------
     let seaOn = false;
+    let trailRaf = 0;
+    const trail = $('trail') as HTMLCanvasElement | null;
+    const tg = trail?.getContext('2d');
+    const drawTrail = () => {
+      const wv = wakeRef.current;
+      if (tg && trail && wv && wv.readyState >= 2) tg.drawImage(wv, 0, 0, wv.videoWidth, wv.videoHeight * 0.05, 0, 0, trail.width, trail.height);
+      trailRaf = seaOn ? requestAnimationFrame(drawTrail) : 0;
+    };
     const setSea = (on: boolean) => {
       if (on === seaOn) return;
       seaOn = on;
+      if (on && !trailRaf) trailRaf = requestAnimationFrame(drawTrail);
       for (const [el, src] of [
         [seaRef.current, V('sea.mp4')],
         [wakeRef.current, V('wake.mp4')],
@@ -238,7 +252,9 @@ function StoryFilm() {
       const K3 = mobile ? (vw * 0.92) / 1302 : K1 * 0.55;
       const shrink = easeIO(seg(p, T.shrink));
       const K = lerp(K1, K3, shrink);
-      const startX = mobile ? 640 : lerp(540, 640, ease(seg(p, [T.turn[0] + 0.04, T.turn[1]])));
+      // during the drive-in the clip's left edge sits on the screen edge, so the stacker comes in from off-screen
+      const edgeX = Math.max(540, vw / (2 * K1) + 4);
+      const startX = mobile ? 640 : lerp(lerp(edgeX, 540, easeIO(seg(p, [T.driveIn[0] + 0.03, T.turn[0] + 0.02]))), 640, ease(seg(p, [T.turn[0] + 0.04, T.turn[1]])));
       const sx0 = lerp(startX, TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
       const ay = lerp(vh * (mobile ? 0.66 : 0.8), vh * (mobile ? 0.2 : 0.25), shrink);
@@ -295,15 +311,9 @@ function StoryFilm() {
         };
 
         if (p < T.turn[0]) {
-          // 1. drive in from the left, lock onto the grey box
-          const drive = easeOut(seg(p, T.driveIn));
-          const lock = ease(seg(p, T.lock));
-          const [fx, fy, fw, fh] = R_(FULL);
-          clipTop(() => {
-            drawImg(one['f0-stack'], fx, fy, fw, fh);
-            drawImg(one['f0-grey'], fx, fy + LIFT * (1 - lock) * K, fw, fh);
-            drawImg(one['f0-machine'], fx - (1 - drive) * 1700 * K, fy, fw, fh);
-          });
+          // 1. the stacker drives in and picks up the grey box (video frames)
+          const fr = frame(drive, Math.round(seg(p, T.driveIn) * (DRIVE - 1)), 0, DRIVE - 1) ?? frame(turn, 0);
+          if (fr) clipTop(() => g!.drawImage(fr, ...R_(FULL)));
         } else if (p < T.truckIn[0]) {
           // 2. lift and turn, frame by frame
           const fr = frame(turn, Math.round(seg(p, T.turn) * (FRAMES - 1)));
@@ -404,15 +414,20 @@ function StoryFilm() {
         // the ship drifts slowly down the screen while you scroll, on top of its own bobbing
         // starts close on the ship and pulls back as you scroll
         const sp = seg(p, T.ship);
+        // sails in at a normal distance, then pulls further back as you scroll
         const zo = easeIO(clamp(sp / 0.92));
-        const H = lerp(mobile ? 150 : 175, mobile ? 34 : 44, zo); // ship length in vh
-        const top = lerp(mobile ? 6 : -10, mobile ? 25 : 32, zo) + sp * 2;
+        const H = lerp(mobile ? 60 : 72, mobile ? 30 : 34, zo); // ship length in vh
+        const top = lerp(16, mobile ? 27 : 36, zo) + sp * 2;
         const w = (H * 760) / 2643;
         const ww = w * 2.95;
         const wh = (ww * 9) / 16;
         set($('shipBox'), { height: `${H.toFixed(2)}vh`, top: `${top.toFixed(2)}vh` });
-        if (wakeRef.current)
-          set(wakeRef.current, { width: `${ww.toFixed(2)}vh`, height: `${wh.toFixed(2)}vh`, marginLeft: `${(-ww / 2).toFixed(2)}vh`, top: `${(top - wh * 0.89).toFixed(2)}vh` });
+        const wTop = top - wh * 0.89;
+        if (wakeRef.current) set(wakeRef.current, { width: `${ww.toFixed(2)}vh`, height: `${wh.toFixed(2)}vh`, marginLeft: `${(-ww / 2).toFixed(2)}vh`, top: `${wTop.toFixed(2)}vh` });
+        // the foam trail carries on from the top of the wake clip to beyond the top of the screen
+        const tw = ww * 1.04;
+        const tb = wTop + wh * 0.1;
+        set($('trail'), { width: `${tw.toFixed(2)}vh`, marginLeft: `${(-tw / 2).toFixed(2)}vh`, top: '-12vh', height: `${(tb + 12).toFixed(2)}vh` });
       }
 
       // ===================== 8. sky: clouds and a plane =====================
@@ -482,6 +497,7 @@ function StoryFilm() {
     window.addEventListener('resize', size);
     return () => {
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(trailRaf);
       setSea(false);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
@@ -504,7 +520,14 @@ function StoryFilm() {
           <video ref={seaRef} muted loop playsInline preload="none" className="absolute inset-0 h-full w-full object-cover" />
           <div ref={r('shipMove')} className="absolute inset-0">
             {/* wake behind the stern (kept outside any transform so it blends with the sea) */}
-            <video ref={wakeRef} muted loop playsInline preload="none" className="absolute left-1/2 object-cover mix-blend-screen" style={{ opacity: 0.9 }} />
+            <canvas
+              ref={r('trail')}
+              width={256}
+              height={512}
+              className="absolute left-1/2 mix-blend-screen"
+              style={{ opacity: 0.85, WebkitMaskImage: TRAIL_MASK, maskImage: TRAIL_MASK }}
+            />
+            <video ref={wakeRef} muted loop playsInline preload="none" className="absolute left-1/2 object-cover mix-blend-screen" style={{ opacity: 0.9, WebkitMaskImage: WAKE_MASK, maskImage: WAKE_MASK }} />
             <div ref={r('shipBox')} className="absolute left-1/2 -translate-x-1/2" style={{ aspectRatio: '760 / 2643' }}>
               {/* shadow in the water: a wide soft one thrown down-right, and a tight dark one at the hull */}
               <div className="absolute inset-[2%] translate-x-[9%] translate-y-[2.5%] rounded-[45%] bg-[#020a14]/55 blur-[26px]" />
