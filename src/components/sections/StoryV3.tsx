@@ -40,6 +40,8 @@ const SPLIT_BOX = 567;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
 const SHIP = 96; // ship pull-back video frames
+// hull width (out to where the foam starts) in each pull-back frame, in 1280-wide frame pixels
+const SHIP_HULL = [456,456,456,456,456,456,456,456,456,455,454,453,451,449,447,445,442,439,435,431,428,424,420,415,411,406,401,395,390,385,379,373,367,362,357,351,345,339,333,327,320,314,307,301,295,289,282,276,270,264,258,252,247,242,236,231,226,221,217,212,207,203,199,195,191,187,183,180,177,174,171,168,165,163,160,158,155,153,151,149,147,146,145,143,142,141,141,140,139,139,139,138,138,138,138,138];
 const SHIP_K = 0.0144; // the ship shrinks by about this much (log scale) per frame of the pull-back
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
@@ -72,8 +74,8 @@ const T = {
   road: [0.55, 0.69],
   hand: [0.69, 0.75], // the truck reaches the bottom of the page, which slides up onto the ship
   ship: [0.75, 0.84], // camera pulls back from the deck to the whole ship (video frames)
-  hold: [0.84, 0.9], // live footage: the sea keeps moving while the camera pulls back further
-  sky: [0.9, 1],
+  hold: [0.84, 0.89], // live footage: the sea keeps moving while the camera pulls back further
+  sky: [0.89, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -543,7 +545,7 @@ function StoryFilm() {
           // drifting back and forth, scaled up by exactly as much as the camera pulled back meanwhile,
           // so the ship holds its size and only the sea and foam move
           const i0 = Math.round(seg(p, T.ship) * (SHIP - 1));
-          const dd = 5 * (0.5 - 0.5 * Math.cos((performance.now() / 1000) * ((2 * Math.PI) / 3.2)));
+          const dd = 7 * (0.5 - 0.5 * Math.cos((performance.now() / 1000) * ((2 * Math.PI) / 2.6)));
           const want = Math.min(SHIP - 1, Math.round(i0 + dd));
           let got = -1;
           for (let d = 0; d < SHIP && got < 0; d++) {
@@ -556,6 +558,18 @@ function StoryFilm() {
             const w = sDW * k;
             const h = sDH * k;
             g!.drawImage(fr, (vw - w) / 2, edge + (vh - h) / 2, w, h);
+            // the ship itself stays put: redraw the hull from the current frame over the moving water
+            const base = got !== i0 ? frame(ship, i0, 0, SHIP - 1) : null;
+            if (base && base !== fr) {
+              const srcW = mobile ? 720 : 2560;
+              const hullW = ((SHIP_HULL[i0] * 2) / srcW) * sDW;
+              g!.save();
+              g!.beginPath();
+              g!.rect(vw / 2 - hullW / 2, edge, hullW, vh - edge);
+              g!.clip();
+              g!.drawImage(base, (vw - sDW) / 2, edge + (vh - sDH) / 2, sDW, sDH);
+              g!.restore();
+            }
           }
         }
         // then the live shot takes over and keeps moving; scrolling pulls the camera back further
@@ -578,7 +592,8 @@ function StoryFilm() {
       const u = clamp((-rect.top - skyA) / (skyB - skyA));
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       set($('sky'), { display: skyOn ? '' : 'none' });
-      set($('planeLayer'), { display: skyOn ? '' : 'none' });
+      // solid over the sea and clouds; multiplied only once the next section is under it, so its text shows through
+      set($('planeLayer'), { display: skyOn ? '' : 'none', mixBlendMode: rect.bottom - vh < vh * 0.95 ? 'multiply' : 'normal' });
       if (skyOn) {
         // the white wall only covers this section: the next section shows through under the plane
         // (the next section starts a full screen before this one ends, so its top is rect.bottom - vh)
@@ -589,7 +604,7 @@ function StoryFilm() {
         set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6) * (1 - 0.85 * after)) });
         set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)`, opacity: String(1 - 0.85 * after) });
         // the whole aircraft crosses the page, lingering through the middle
-        const t = clamp((u - 0.06) / 0.9);
+        const t = clamp(u / 0.92);
         const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
         const pw = Math.min(vw * (mobile ? 0.98 : 0.9), vh * 1.18 * (1369 / 1087));
         set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${lerp(-pw - 40, vw + 40, glide).toFixed(1)}px,-50%,0)` });
@@ -787,7 +802,7 @@ function StoryFilm() {
       </div>
       {/* the plane is its own layer, multiplied onto the page: the next section's text shows through it,
           so the text reads as lying on top of the plane */}
-      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden mix-blend-multiply" style={{ display: 'none' }}>
+      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
           src={V('plane-xl.webp')}
