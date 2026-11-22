@@ -192,7 +192,7 @@ function StoryFilm() {
       if (on) {
         if (!el.src) {
           el.muted = true;
-          el.src = V(mobile ? 'ship-sea-m.mp4' : 'ship-sea.mp4');
+          el.src = V(mobile ? 'ship-sail-m.mp4' : 'ship-sail.mp4');
           el.playbackRate = 0.8;
         }
         el.play().catch(() => {});
@@ -462,11 +462,14 @@ function StoryFilm() {
       const u = clamp((-rect.top - skyA) / (skyB - skyA));
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       set($('sky'), { display: skyOn ? '' : 'none' });
+      set($('planeLayer'), { display: skyOn ? '' : 'none' });
       if (skyOn) {
         // the white wall only covers this section: the next section shows through under the plane
-        set($('bankClip'), { height: `${clamp(rect.bottom, 0, vh).toFixed(1)}px` });
+        // (the next section starts a full screen before this one ends, so its top is rect.bottom - vh)
+        const nextTop = rect.bottom - vh;
+        set($('bankClip'), { height: `${clamp(nextTop, 0, vh).toFixed(1)}px` });
         set($('bank'), { transform: `translate3d(0,${(vh - 5 * vh * u).toFixed(1)}px,0)` });
-        const after = clamp((vh - rect.bottom) / vh);
+        const after = clamp((vh - nextTop) / vh);
         set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6) * (1 - 0.85 * after)) });
         set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)`, opacity: String(1 - 0.85 * after) });
         // the whole aircraft crosses the page, lingering through the middle
@@ -664,6 +667,10 @@ function StoryFilm() {
         </div>
         <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
+      </div>
+      {/* the plane is its own layer, multiplied onto the page: the next section's text shows through it,
+          so the text reads as lying on top of the plane */}
+      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden mix-blend-multiply" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
           src={V('plane-xl.webp')}
