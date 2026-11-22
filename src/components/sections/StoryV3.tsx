@@ -68,8 +68,8 @@ const T = {
   rise: [0.47, 0.55],
   road: [0.55, 0.72],
   fog: [0.69, 0.775],
-  ship: [0.725, 0.905],
-  sky: [0.885, 1],
+  ship: [0.725, 0.88],
+  sky: [0.86, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -415,8 +415,17 @@ function StoryFilm() {
       setSea(shipOn);
       if (shipOn) {
         // the ship drifts slowly down the screen while you scroll, on top of its own bobbing
+        // starts close on the ship and pulls back as you scroll
         const sp = seg(p, T.ship);
-        set($('shipMove'), { top: `${lerp(-3, 5, sp).toFixed(2)}vh` });
+        const zo = easeOut(clamp(sp / 0.75));
+        const H = lerp(mobile ? 150 : 175, mobile ? 64 : 80, zo); // ship length in vh
+        const top = lerp(mobile ? 6 : -10, mobile ? 18 : 11, zo) + sp * 3;
+        const w = (H * 760) / 2643;
+        const ww = w * 2.95;
+        const wh = (ww * 9) / 16;
+        set($('shipBox'), { height: `${H.toFixed(2)}vh`, top: `${top.toFixed(2)}vh` });
+        if (wakeRef.current)
+          set(wakeRef.current, { width: `${ww.toFixed(2)}vh`, height: `${wh.toFixed(2)}vh`, marginLeft: `${(-ww / 2).toFixed(2)}vh`, top: `${(top - wh * 0.89).toFixed(2)}vh` });
       }
 
       // ===================== 8. sky: clouds and a plane =====================
@@ -425,9 +434,12 @@ function StoryFilm() {
       if (p > T.sky[0] - 0.005) {
         set($('cloudA'), { transform: `translate3d(0,${lerp(110, -130, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 4)) });
         set($('cloudB'), { transform: `translate3d(0,${lerp(140, -170, u).toFixed(2)}%,0) scale(1.9)` });
-        set($('bank'), { transform: `translate3d(0,${(((1.25 - u) / 1.5) * 100).toFixed(2)}%,0)` });
-        const pu = easeIO(clamp((u - 0.12) / 0.8));
-        set($('plane'), { transform: `translate3d(${lerp(-185, 105, pu).toFixed(2)}vw,-50%,0)` });
+        set($('bank'), { transform: `translate3d(0,${(((1.18 - u) / 1.5) * 100).toFixed(2)}%,0)` });
+        // the whole aircraft crosses the page, lingering through the middle
+        const t = clamp((u - 0.04) / 0.9);
+        const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
+        const pw = Math.min(vw * (mobile ? 0.98 : 0.9), vh * 1.18 * (1369 / 1087));
+        set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${lerp(-pw - 40, vw + 40, glide).toFixed(1)}px,-50%,0)` });
       }
 
       // ===================== copy =====================
@@ -448,10 +460,10 @@ function StoryFilm() {
         li.style.transform = `translate3d(0,${((1 - t) * 20).toFixed(1)}px,0)`;
       });
       const shipT = seg(p, T.ship);
-      show('copy2', win(shipT, 0.12, 1.04, 0.14));
+      show('copy2', win(shipT, 0.3, 1.04, 0.14));
       valueRefs.current.forEach((li, i) => {
         if (!li) return;
-        const t = ease(clamp((shipT - 0.3 - i * 0.07) / 0.12));
+        const t = ease(clamp((shipT - 0.45 - i * 0.07) / 0.12));
         li.style.opacity = String(t);
         li.style.transform = `translate3d(${((1 - t) * (i % 2 ? 24 : -24)).toFixed(1)}px,0,0)`;
       });
@@ -487,7 +499,7 @@ function StoryFilm() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1250vh] scroll-mt-24 bg-[#fbfbfb] md:h-[1500vh]">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1350vh] scroll-mt-24 bg-[#fbfbfb] md:h-[1650vh]">
       <style>{`
         @keyframes ags-bob { 0%,100% { transform: translate3d(0,0,0) rotate(-0.35deg); } 50% { transform: translate3d(0,0.7%,0) rotate(0.35deg); } }
         @keyframes ags-hum { 0%,100% { transform: translate3d(0,0,0); } 25% { transform: translate3d(0.4px,-0.3px,0); } 50% { transform: translate3d(-0.3px,0.4px,0); } 75% { transform: translate3d(0.3px,0.2px,0); } }
@@ -498,18 +510,10 @@ function StoryFilm() {
         {/* 7. the ship at sea */}
         <div ref={r('shipScene')} aria-hidden="true" className="absolute inset-0 overflow-hidden bg-[#0b2a45]" style={{ display: 'none' }}>
           <video ref={seaRef} muted loop playsInline preload="none" className="absolute inset-0 h-full w-full object-cover" />
-          <div ref={r('shipMove')} className="absolute inset-x-0 h-full" style={{ top: '0vh' }}>
+          <div ref={r('shipMove')} className="absolute inset-0">
             {/* wake behind the stern (kept outside any transform so it blends with the sea) */}
-            <video
-              ref={wakeRef}
-              muted
-              loop
-              playsInline
-              preload="none"
-              className="absolute left-1/2 top-[calc(9vh-36vh)] ml-[-34.5vh] h-[38.8vh] w-[69vh] object-cover mix-blend-screen md:top-[calc(8vh-37.5vh)] md:ml-[-36vh] md:h-[40.5vh] md:w-[72vh]"
-              style={{ opacity: 0.9 }}
-            />
-            <div className="absolute left-1/2 top-[9vh] h-[80vh] -translate-x-1/2 md:top-[8vh] md:h-[84vh]" style={{ aspectRatio: '760 / 2643' }}>
+            <video ref={wakeRef} muted loop playsInline preload="none" className="absolute left-1/2 object-cover mix-blend-screen" style={{ opacity: 0.9 }} />
+            <div ref={r('shipBox')} className="absolute left-1/2 -translate-x-1/2" style={{ aspectRatio: '760 / 2643' }}>
               {/* soft shadow in the water */}
               <div className="absolute inset-[3%] rounded-[40%] bg-black/45 blur-[18px]" />
               <div className="h-full w-full" style={{ animation: 'ags-bob 7s ease-in-out infinite' }}>
@@ -626,8 +630,8 @@ function StoryFilm() {
             ref={r('plane')}
             src={V('plane-xl.webp')}
             alt=""
-            className="absolute left-0 top-1/2 w-[320vw] max-w-none will-change-transform md:w-[175vw]"
-            style={{ transform: 'translate3d(-185vw,-50%,0)', filter: 'drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
+            className="absolute left-0 top-1/2 max-w-none will-change-transform"
+            style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
           />
         </div>
 
