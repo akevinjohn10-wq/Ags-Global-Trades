@@ -855,7 +855,7 @@ function StoryFilm() {
         </div>
 
         {/* speed, while the truck is moving */}
-        <div ref={r('speed')} aria-hidden="true" className="container-x pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center pb-6 lg:justify-start lg:pb-16" style={{ opacity: 0, visibility: 'hidden' }}>
+        <div ref={r('speed')} aria-hidden="true" className="container-x pointer-events-none absolute inset-x-0 bottom-0 z-[2] flex justify-center pb-6 lg:justify-start lg:pb-24" style={{ opacity: 0, visibility: 'hidden' }}>
           <div>
             <span ref={r('kmh')} className="font-display text-[40px] font-medium tabular-nums leading-none sm:text-[56px]">
               00
