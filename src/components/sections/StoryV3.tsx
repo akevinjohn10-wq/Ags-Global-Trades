@@ -160,7 +160,7 @@ function StoryFilm() {
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
           turn[i] = img(V(`turn${dir}/${n}.webp`));
-          riseCut[i] = img(V(`risecut${dir}/${n}.webp`));
+          riseCut[i] = img(V(`truck${dir}/${n}.webp`));
         }, 400 + k * 12),
       );
     };
@@ -251,10 +251,15 @@ function StoryFilm() {
       const K1 = mobile ? (vw * 1.3) / 1280 : Math.min((vw * 0.85) / 1280, (vh * 0.68) / 720);
       const K3 = mobile ? (vw * 0.92) / 1302 : K1 * 0.55;
       const shrink = easeIO(seg(p, T.shrink));
-      const K = lerp(K1, K3, shrink);
-      // during the drive-in the clip's left edge sits on the screen edge, so the stacker comes in from off-screen
-      const edgeX = Math.max(540, vw / (2 * K1) + 4);
-      const startX = mobile ? 640 : lerp(lerp(edgeX, 540, easeIO(seg(p, [T.driveIn[0] + 0.03, T.turn[0] + 0.02]))), 640, ease(seg(p, [T.turn[0] + 0.04, T.turn[1]])));
+      // drive-in: the camera holds still with the clip's left edge on the screen edge (slightly closer on
+      // wide screens), so the stacker comes in from off-screen and the stack stays put on the right;
+      // it eases to the normal framing during the turn
+      const settle = ease(seg(p, [T.turn[0] + 0.04, T.turn[1]]));
+      const Kd = mobile ? K1 : Math.min(Math.max(K1, vw / 1280), K1 * 1.25);
+      const K0 = lerp(Kd, K1, settle);
+      const K = lerp(K0, K3, shrink);
+      const edgeX = Math.max(540, vw / (2 * Kd) + 4);
+      const startX = mobile ? 640 : lerp(edgeX, 640, settle);
       const sx0 = lerp(startX, TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
       const ay = lerp(vh * (mobile ? 0.66 : 0.8), vh * (mobile ? 0.2 : 0.25), shrink);
