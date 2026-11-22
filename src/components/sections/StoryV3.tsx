@@ -19,7 +19,6 @@ import { services } from '@/data/siteContent';
 
 const V = (n: string) => `/story/v3/${n}`;
 const FRAMES = 119;
-const CUT_FROM = 88; // rise frames from here on have their background removed
 
 const VALUES = [
   { title: 'Verified suppliers', text: 'Every maker is checked before we place your order.', icon: BadgeCheck },
@@ -143,7 +142,6 @@ function StoryFilm() {
     const ready = (im?: HTMLImageElement | null) => !!im && im.complete && im.naturalWidth > 0;
     const one: Record<string, HTMLImageElement> = {};
     const turn: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
-    const rise: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
     const riseCut: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
     let loading = false;
     const startLoading = () => {
@@ -157,8 +155,7 @@ function StoryFilm() {
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
           turn[i] = img(V(`turn${dir}/${n}.webp`));
-          if (i < CUT_FROM) rise[i] = img(V(`rise${dir}/${n}.webp`));
-          else riseCut[i] = img(V(`risecut${dir}/${n}.webp`));
+          riseCut[i] = img(V(`risecut${dir}/${n}.webp`));
         }, k * 12),
       );
     };
@@ -255,8 +252,8 @@ function StoryFilm() {
       const groundStage = lerp(GROUND1, GROUND2, truckIn);
       const riseT = seg(p, T.rise);
       const riseI = Math.round(riseT * (FRAMES - 1));
-      // the road slides in under the truck as the camera reaches top-down
-      const toRoad = easeIO(clamp((riseI - CUT_FROM) / (FRAMES - 1 - CUT_FROM - 6)));
+      // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
+      const toRoad = easeIO(clamp(riseT / 0.95));
       const travelled = (p - T.release[1]) * vw * 9;
 
       // ===================== stage scenes (1-5) =====================
@@ -279,12 +276,8 @@ function StoryFilm() {
         let top = toY(groundStage + 2);
         let bottom = vh;
         if (p > T.rise[0]) {
-          const below = OY + (RISE.y + RISE.h) * K + 4;
-          top = lerp(top, below, ease(clamp(riseT / 0.2)));
-          if (toRoad > 0) {
-            top = lerp(below, toY(TRUCK_C.y - WR / 2), toRoad);
-            bottom = lerp(vh, toY(TRUCK_C.y + WR / 2), toRoad);
-          }
+          top = lerp(top, toY(TRUCK_C.y - WR / 2), toRoad);
+          bottom = lerp(vh, toY(TRUCK_C.y + WR / 2), toRoad);
         }
         g!.fillStyle = ROAD;
         g!.fillRect(0, top, vw, Math.max(0, bottom - top));
@@ -329,15 +322,9 @@ function StoryFilm() {
           drawRows(one.f118, L2, SPLIT_SPREAD, SPLIT_BOX, lower * K, 1 - swap);
           drawRows(one.f118, L2, 0, SPLIT_SPREAD, (lower - release * 420) * K, 1 - release);
         } else {
-          // 5. the camera rises; the last frames are cut out so the road shows under them
-          const [rx, ry, rw, rh] = R_(RISE);
-          if (riseI < CUT_FROM) {
-            const fr = frame(rise, riseI, 0, CUT_FROM - 1);
-            if (fr) clipTop(() => g!.drawImage(fr, rx, ry, rw, rh));
-          } else {
-            const fr = frame(riseCut, riseI, CUT_FROM, FRAMES - 1) ?? frame(rise, CUT_FROM - 1, 0, CUT_FROM - 1);
-            if (fr) g!.drawImage(fr, rx, ry, rw, rh);
-          }
+          // 5. the camera rises over the truck, which stays on the road (frames are cut out)
+          const fr = frame(riseCut, riseI);
+          if (fr) g!.drawImage(fr, ...R_(RISE));
         }
       }
 
@@ -409,7 +396,7 @@ function StoryFilm() {
         set($('fogB'), { transform: `translate3d(0,${lerp(150, -170, fog).toFixed(2)}%,0) scale(2)` });
         set($('fogWash'), { opacity: win(fog, 0.18, 0.82, 0.35).toFixed(3) });
       }
-      const shipOn = p > (T.fog[0] + T.fog[1]) / 2 && p < T.sky[1];
+      const shipOn = p > (T.fog[0] + T.fog[1]) / 2 && rect.bottom > 0;
       set($('shipScene'), { display: shipOn ? '' : 'none' });
       set(canvas, { visibility: shipOn ? 'hidden' : 'visible' });
       setSea(shipOn);
@@ -429,14 +416,19 @@ function StoryFilm() {
       }
 
       // ===================== 8. sky: clouds and a plane =====================
-      const u = seg(p, T.sky);
-      set($('sky'), { display: p > T.sky[0] - 0.005 ? '' : 'none' });
-      if (p > T.sky[0] - 0.005) {
-        set($('cloudA'), { transform: `translate3d(0,${lerp(110, -130, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 4)) });
-        set($('cloudB'), { transform: `translate3d(0,${lerp(140, -170, u).toFixed(2)}%,0) scale(1.9)` });
-        set($('bank'), { transform: `translate3d(0,${(((1.18 - u) / 1.5) * 100).toFixed(2)}%,0)` });
+      // runs on past the end of the section: the cloud wall wipes the sea away, the next section
+      // slides in underneath it, and the plane carries on across the top of that section
+      const skyA = T.sky[0] * span;
+      const skyB = span + vh * 0.9;
+      const u = clamp((-rect.top - skyA) / (skyB - skyA));
+      const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
+      set($('sky'), { display: skyOn ? '' : 'none' });
+      if (skyOn) {
+        set($('bank'), { transform: `translate3d(0,${(vh - 5 * vh * u).toFixed(1)}px,0)` });
+        set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6)) });
+        set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)` });
         // the whole aircraft crosses the page, lingering through the middle
-        const t = clamp((u - 0.04) / 0.9);
+        const t = clamp((u - 0.06) / 0.9);
         const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
         const pw = Math.min(vw * (mobile ? 0.98 : 0.9), vh * 1.18 * (1369 / 1087));
         set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${lerp(-pw - 40, vw + 40, glide).toFixed(1)}px,-50%,0)` });
@@ -619,22 +611,6 @@ function StoryFilm() {
           <img ref={r('fogB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
         </div>
 
-        {/* 8. sky: clouds, the white page rising, and a plane sweeping across on top */}
-        <div ref={r('sky')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[4] overflow-hidden" style={{ display: 'none' }}>
-          <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
-          <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
-          <div ref={r('bank')} className="absolute inset-x-0 bottom-0 h-[150%] will-change-transform" style={{ transform: 'translate3d(0,100%,0)' }}>
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(244,246,251,0.35)_8%,rgba(255,255,255,0.9)_18%,#FFFFFF_23%)]" />
-          </div>
-          <img
-            ref={r('plane')}
-            src={V('plane-xl.webp')}
-            alt=""
-            className="absolute left-0 top-1/2 max-w-none will-change-transform"
-            style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
-          />
-        </div>
-
         {/* speed */}
         <div ref={r('speed')} aria-hidden="true" className="container-x pointer-events-none absolute inset-x-0 top-0 z-[2] pt-20 text-ink lg:pt-24" style={{ opacity: 0, visibility: 'hidden' }}>
           <span ref={r('kmh')} className="font-display text-[15px] font-medium tabular-nums">
@@ -642,6 +618,21 @@ function StoryFilm() {
           </span>
           <span className="ml-1 text-[11px] tracking-[0.14em] opacity-60">KM/H</span>
         </div>
+      </div>
+      {/* 8. sky: a fixed layer, so the clouds and plane carry on over the next section */}
+      <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[30] overflow-hidden" style={{ display: 'none' }}>
+        <div ref={r('bank')} className="absolute inset-x-0 top-0 h-[400vh] will-change-transform" style={{ transform: 'translate3d(0,100vh,0)' }}>
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(240,244,250,0.6)_7%,#FFFFFF_15%,#FFFFFF_85%,rgba(240,244,250,0.6)_93%,rgba(255,255,255,0)_100%)]" />
+        </div>
+        <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
+        <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
+        <img
+          ref={r('plane')}
+          src={V('plane-xl.webp')}
+          alt=""
+          className="absolute left-0 top-1/2 max-w-none will-change-transform"
+          style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
+        />
       </div>
     </section>
   );
