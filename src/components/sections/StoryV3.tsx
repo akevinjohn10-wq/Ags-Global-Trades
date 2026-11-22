@@ -39,7 +39,8 @@ const SPLIT_SPREAD = 300;
 const SPLIT_BOX = 567;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const DRIVE = 96; // drive-in video frames, ending on the first turn frame
+const DRIVE = 85; // drive-in video frames, ending on the first turn frame
+const DRIVE_EXT = 900; // drive frames are widened this much to the left so the stacker is never cut by the frame edge
 
 // ---------- world (top view) ----------
 const TL = 1155 * TS;
@@ -254,12 +255,13 @@ function StoryFilm() {
       // drive-in: the camera holds still with the clip's left edge on the screen edge (slightly closer on
       // wide screens), so the stacker comes in from off-screen and the stack stays put on the right;
       // it eases to the normal framing during the turn
-      const settle = ease(seg(p, [T.turn[0] + 0.04, T.turn[1]]));
+      const settle = ease(seg(p, [lerp(T.turn[0], T.turn[1], 0.52), T.turn[1]])); // after the stack has left the turn clip
       const Kd = mobile ? K1 : Math.min(Math.max(K1, vw / 1280), K1 * 1.25);
       const K0 = lerp(Kd, K1, settle);
       const K = lerp(K0, K3, shrink);
-      const edgeX = Math.max(540, vw / (2 * Kd) + 4);
-      const startX = mobile ? 640 : lerp(edgeX, 640, settle);
+      // the stack's right edge (stage x 1205) sits near the right of the screen, above the chat button
+      const stackX = Math.max(1205 - (vw / 2 - Math.min(80, vw * 0.04)) / Kd, (vw / 2) / Kd - DRIVE_EXT + 4);
+      const startX = mobile ? 640 : lerp(stackX, 640, settle);
       const sx0 = lerp(startX, TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
       const ay = lerp(vh * (mobile ? 0.66 : 0.8), vh * (mobile ? 0.2 : 0.25), shrink);
@@ -318,11 +320,27 @@ function StoryFilm() {
         if (p < T.turn[0]) {
           // 1. the stacker drives in and picks up the grey box (video frames)
           const fr = frame(drive, Math.round(seg(p, T.driveIn) * (DRIVE - 1)), 0, DRIVE - 1) ?? frame(turn, 0);
-          if (fr) clipTop(() => g!.drawImage(fr, ...R_(FULL)));
+          if (fr) clipTop(() => g!.drawImage(fr, ...R_(fr.naturalWidth > fr.naturalHeight * 2 ? { x: -DRIVE_EXT, y: 0, w: 1280 + DRIVE_EXT, h: 720 } : FULL)));
         } else if (p < T.truckIn[0]) {
           // 2. lift and turn, frame by frame
-          const fr = frame(turn, Math.round(seg(p, T.turn) * (FRAMES - 1)));
-          if (fr) clipTop(() => g!.drawImage(fr, ...R_(FULL)));
+          const ti = Math.round(seg(p, T.turn) * (FRAMES - 1));
+          const fr = frame(turn, ti);
+          if (fr)
+            clipTop(() => {
+              const [fx, fy, fw, fh] = R_(FULL);
+              g!.drawImage(fr, fx, fy, fw, fh);
+              // feather the clip's side edges into the page so no seam shows on wide screens
+              const fe = 70 * K;
+              const edges: [number, number][] = [[fx - 1, fx + fe]];
+              if (ti >= 58) edges.push([fx + fw + 1, fx + fw - fe]);
+              for (const [x0, x1] of edges) {
+                const gr = g!.createLinearGradient(x0, 0, x1, 0);
+                gr.addColorStop(0, BG);
+                gr.addColorStop(1, 'rgba(251,251,251,0)');
+                g!.fillStyle = gr;
+                g!.fillRect(Math.min(x0, x1), fy, Math.abs(x1 - x0), fh);
+              }
+            });
         } else if (p < T.rise[0]) {
           // 3. truck in, container lowered, spreader released; 4. pull out
           const lower = ease(seg(p, T.lower)) * LOWER;
