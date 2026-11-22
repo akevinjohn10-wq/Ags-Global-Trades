@@ -240,7 +240,7 @@ function StoryFilm() {
       const K3 = mobile ? (vw * 0.92) / (1302 * 1) : K1 * 0.55;
       const shrink = easeIO(seg(p, T.shrink));
       const K = lerp(K1, K3, shrink);
-      const sx0 = lerp(640, TRUCK_C.x, shrink);
+      const sx0 = lerp(mobile ? 640 : lerp(540, 640, ease(seg(p, [T.turn[0] + 0.04, T.turn[1]]))), TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
       const ax = vw / 2;
       const ay = lerp(vh * (mobile ? 0.66 : 0.8), vh * (mobile ? 0.2 : 0.25), shrink);
