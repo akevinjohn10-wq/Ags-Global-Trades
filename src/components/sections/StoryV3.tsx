@@ -40,6 +40,7 @@ const SPLIT_BOX = 567;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
 const SHIP = 96; // ship pull-back video frames
+const SHIP_K = 0.0144; // the ship shrinks by about this much (log scale) per frame of the pull-back
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
 const DRIVE = 85; // drive-in video frames, ending on the first turn frame
@@ -538,8 +539,24 @@ function StoryFilm() {
         const liveReady = !!lv && lv.readyState >= 2 && p > T.ship[1] - 0.006;
         const mix = liveReady ? clamp((p - (T.ship[1] - 0.006)) / 0.006) : 0;
         if (mix < 1) {
-          const fr = frame(ship, Math.round(seg(p, T.ship) * (SHIP - 1)), 0, SHIP - 1);
-          if (fr) g!.drawImage(fr, (vw - sDW) / 2, edge + (vh - sDH) / 2, sDW, sDH);
+          // keep the water moving even when the page is still: show a frame a little further on,
+          // drifting back and forth, scaled up by exactly as much as the camera pulled back meanwhile,
+          // so the ship holds its size and only the sea and foam move
+          const i0 = Math.round(seg(p, T.ship) * (SHIP - 1));
+          const dd = 5 * (0.5 - 0.5 * Math.cos((performance.now() / 1000) * ((2 * Math.PI) / 3.2)));
+          const want = Math.min(SHIP - 1, Math.round(i0 + dd));
+          let got = -1;
+          for (let d = 0; d < SHIP && got < 0; d++) {
+            if (want - d >= i0 && ready(ship[want - d])) got = want - d;
+            else if (want + d < SHIP && ready(ship[want + d])) got = want + d;
+          }
+          const fr = got >= 0 ? ship[got] : frame(ship, i0, 0, SHIP - 1);
+          if (fr) {
+            const k = got >= 0 ? Math.exp(SHIP_K * (got - i0)) : 1;
+            const w = sDW * k;
+            const h = sDH * k;
+            g!.drawImage(fr, (vw - w) / 2, edge + (vh - h) / 2, w, h);
+          }
         }
         // then the live shot takes over and keeps moving; scrolling pulls the camera back further
         if (liveReady) drawLive(lv!, lerp(1, mobile ? 0.55 : 0.42, easeIO(seg(p, T.hold))), edge, mix);
@@ -611,7 +628,7 @@ function StoryFilm() {
         kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
         if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
       }
-      if (liveOn && !raf) raf = requestAnimationFrame(update);
+      if ((liveOn || shipOn) && !raf) raf = requestAnimationFrame(update);
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
       show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
