@@ -32,11 +32,9 @@ const BG = '#fbfbfb';
 const ROAD = '#0d0f13';
 const GROUND1 = 679;
 const TS = 1.125;
-const TRUCK = { x: 90.25, y: 174.4, w: 1280 * TS, h: 714 * TS };
-const GROUND2 = TRUCK.y + 544 * TS;
-const LOWER = 90;
-const SPLIT_SPREAD = 300;
-const SPLIT_BOX = 567;
+// the truck stands on the same ground line as the stacker (its wheels end at row 548 of the 720-high frames)
+const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
+const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
 const SHIP = 96; // ship pull-back video frames
@@ -64,9 +62,10 @@ const T = {
   intro: [0, 0.04],
   driveIn: [0.004, 0.1],
   turn: [0.1, 0.23],
-  truckIn: [0.23, 0.27],
-  lower: [0.27, 0.295],
-  swap: [0.292, 0.3],
+  lift: [0.23, 0.245], // the stacker raises the container high enough for the truck
+  truckIn: [0.24, 0.275],
+  lower: [0.275, 0.297],
+  swap: [0.289, 0.299],
   release: [0.3, 0.325],
   shrink: [0.325, 0.38],
   services: [0.36, 0.47],
@@ -157,7 +156,7 @@ function StoryFilm() {
       if (loading) return;
       loading = true;
       const dir = mobile ? '-m' : '';
-      for (const n of ['f118', 'truck-empty', 'truck-loaded', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
+      for (const n of ['fk-head', 'fk-box', 'fk-low', 'truck-e', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
       const order: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
       const dOrder: number[] = [];
@@ -267,14 +266,6 @@ function StoryFilm() {
       if (!ready(im) || alpha <= 0.002) return;
       g!.globalAlpha = alpha;
       g!.drawImage(im!, x, y, w, h);
-      g!.globalAlpha = 1;
-    }
-    function drawRows(im: HTMLImageElement | null | undefined, rect: { x: number; y: number; w: number; h: number }, sy0: number, sy1: number, dy: number, alpha = 1) {
-      if (!ready(im) || alpha <= 0.002) return;
-      const sy = im!.naturalHeight / 720;
-      const ky = rect.h / 720;
-      g!.globalAlpha = alpha;
-      g!.drawImage(im!, 0, sy0 * sy, im!.naturalWidth, (sy1 - sy0) * sy, rect.x, rect.y + sy0 * ky + dy, rect.w, (sy1 - sy0) * ky);
       g!.globalAlpha = 1;
     }
     /** Lane dashes running along a horizontal band, offset by distance travelled. */
@@ -426,18 +417,64 @@ function StoryFilm() {
               feather(fx, fy, fw, fh, ti >= 58 ? 'lr' : 'l');
             });
         } else if (p < T.rise[0]) {
-          // 3. truck in, container lowered, spreader released; 4. pull out
-          const lower = ease(seg(p, T.lower)) * LOWER;
+          // 3. the stacker raises the container, the truck drives in under it on the same ground line,
+          //    the container is lowered onto the trailer, the spreader lets go and lifts; 4. the truck
+          //    drives off and the stacker is left behind. Nothing fades: every part is moved.
+          const lift = ease(seg(p, T.lift));
+          const low = easeIO(seg(p, T.lower));
           const swap = ease(seg(p, T.swap));
-          const release = ease(seg(p, T.release));
-          const L = R_(FULL);
-          const L2 = { x: L[0], y: L[1], w: L[2], h: L[3] };
-          drawRows(one.f118, L2, SPLIT_BOX, GROUND1 + 2, 0, 1 - swap);
-          const [ex, ey, ew, eh] = R_({ ...TRUCK, x: TRUCK.x + (1 - truckIn) * 1700 });
-          drawImg(one['truck-empty'], ex, ey, ew, eh, 1 - swap);
-          drawImg(one['truck-loaded'], ex, ey, ew, eh, swap);
-          drawRows(one.f118, L2, SPLIT_SPREAD, SPLIT_BOX, lower * K, 1 - swap);
-          drawRows(one.f118, L2, 0, SPLIT_SPREAD, (lower - release * 420) * K, 1 - release);
+          const rel = ease(seg(p, T.release));
+          const leave = easeIO(seg(p, [T.release[1] - 0.004, T.release[1] + 0.03]));
+          // container: held box (stage 159..1124 x 300..566) -> lands exactly on the truck's container
+          const BX0 = 159, BY0 = 300, BX1 = 1124, BY1 = 566;
+          const L0 = 156.6, LT = 279.6, L1 = 1126.4, LB = 553;
+          const up = -70 * lift * (1 - low);
+          const cx0 = lerp(BX0, L0, low);
+          const cy0 = lerp(BY0, LT, low) + up;
+          const sxk = lerp(1, (L1 - L0) / (BX1 - BX0), low);
+          const syk = lerp(1, (LB - LT) / (BY1 - BY0), low);
+          // the stacker slides out to the left as the camera follows the truck away
+          const away = leave * (OX / K + 1150 + 60);
+          const fx = -away;
+          // head and spreader ride on top of the container, then lift off
+          const headDy = cy0 - BY0 - 90 * rel;
+          clipTop(() => {
+            // behind: lower body and the chassis column (seen when the container is up or gone)
+            drawImg(one['fk-low'], OX + (380 + fx) * K, OY + 566 * K, 520 * K, 146 * K);
+            const colTop = OY + (299 + headDy) * K;
+            const colBot = OY + 578 * K;
+            if (colBot > colTop) {
+              // the boom seen end-on: as wide as the head, shaded like it
+              const gc = g!.createLinearGradient(OX + (548 + fx) * K, 0, OX + (732 + fx) * K, 0);
+              gc.addColorStop(0, '#16191e');
+              gc.addColorStop(0.18, '#2f343b');
+              gc.addColorStop(0.5, '#454b54');
+              gc.addColorStop(0.82, '#2f343b');
+              gc.addColorStop(1, '#16191e');
+              g!.fillStyle = gc;
+              g!.fillRect(OX + (548 + fx) * K, colTop, 184 * K, colBot - colTop);
+            }
+            // the truck (empty, then the identical loaded frame once the box is down)
+            const tx = (1 - easeOut(seg(p, T.truckIn))) * 1700;
+            const [rx, ry, rw, rh] = R_({ ...RISE, x: RISE.x + tx });
+            drawImg(one['truck-e'], rx, ry, rw, rh, 1);
+            // the held container, scaled onto the truck's container as it comes down
+            if (swap < 1) {
+              const w = 1000 * sxk;
+              const h = 276 * syk;
+              drawImg(one['fk-box'], OX + (cx0 + (140 - BX0) * sxk) * K, OY + (cy0 + (296 - BY0) * syk) * K, w * K, h * K);
+            }
+            if (swap > 0) {
+              const fr = frame(riseCut, 0);
+              if (fr) {
+                g!.save();
+                g!.globalAlpha = swap;
+                g!.drawImage(fr, rx, ry, rw, rh);
+                g!.restore();
+              }
+            }
+            drawImg(one['fk-head'], OX + (140 + fx) * K, OY + headDy * K, 1000 * K, 299 * K);
+          });
         } else {
           // 5. the camera rises over the truck, which stays on the road (frames are cut out)
           const fr = frame(riseCut, riseI);
