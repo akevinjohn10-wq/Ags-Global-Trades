@@ -43,6 +43,14 @@ const SHIP_HULL = [456,456,456,456,456,456,456,456,456,455,454,453,451,449,447,4
 const SHIP_K = 0.0144; // the ship shrinks by about this much (log scale) per frame of the pull-back
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
+// wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
+const WHEELS = [
+  [180, 501],
+  [286, 500],
+  [391, 501],
+  [777, 502],
+  [1090, 501],
+] as const;
 const DRIVE = 85; // drive-in video frames, ending on the first turn frame
 const DRIVE_EXT = 900; // drive frames are widened this much to the left so the stacker is never cut by the frame edge
 
@@ -464,12 +472,30 @@ function StoryFilm() {
               const h = 276 * syk;
               drawImg(one['fk-box'], OX + (cx0 + (140 - BX0) * sxk) * K, OY + (cy0 + (296 - BY0) * syk) * K, w * K, h * K);
             }
-            if (swap > 0) {
-              const fr = frame(riseCut, 0);
-              if (fr) {
+            const f0 = frame(riseCut, 0);
+            if (swap > 0 && f0) {
+              g!.save();
+              g!.globalAlpha = swap;
+              g!.drawImage(f0, rx, ry, rw, rh);
+              g!.restore();
+            }
+            // spin the wheels by the distance travelled (driving in: to the left; driving off: to the right)
+            const top = swap >= 1 && f0 ? f0 : one['truck-e'];
+            if (ready(top)) {
+              const k = top!.naturalWidth / 1280;
+              const sc = rw / 1280;
+              const angle = (tx + Math.max(0, travelled) / K) / (47 * TS);
+              for (const [wx, wy] of WHEELS) {
+                const cx = rx + wx * sc;
+                const cy = ry + wy * sc;
+                const r = 45.5 * sc;
                 g!.save();
-                g!.globalAlpha = swap;
-                g!.drawImage(fr, rx, ry, rw, rh);
+                g!.beginPath();
+                g!.arc(cx, cy, r, 0, Math.PI * 2);
+                g!.clip();
+                g!.translate(cx, cy);
+                g!.rotate(angle);
+                g!.drawImage(top!, (wx - 46) * k, (wy - 46) * k, 92 * k, 92 * k, -46 * sc, -46 * sc, 92 * sc, 92 * sc);
                 g!.restore();
               }
             }
