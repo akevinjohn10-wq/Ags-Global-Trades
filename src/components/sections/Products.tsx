@@ -5,7 +5,6 @@ import Reveal from '@/components/ui/Reveal';
 import SectionHeading from '@/components/ui/SectionHeading';
 import { productCategories } from '@/data/siteContent';
 import { requestEnquiry } from '@/lib/enquiry';
-import Scramble from '@/components/ui/Scramble';
 
 /** Numbered accordion of product categories (the unitedcarriers.com "Industries" list). */
 export default function Products() {
@@ -62,7 +61,7 @@ export default function Products() {
                           isOpen ? 'text-ink' : 'text-ink/70 group-hover:translate-x-2 group-hover:text-ink'
                         }`}
                       >
-                        <Scramble text={item.name} />
+                        {item.name}
                       </span>
                       <span
                         className={`hidden items-center gap-2 rounded border px-3 py-1.5 font-mono text-[12px] lg:text-[13px] uppercase tracking-eyebrow transition-[opacity,color,border-color] duration-500 md:flex ${

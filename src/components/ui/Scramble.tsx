@@ -1,56 +1,44 @@
 import { useEffect, useRef } from 'react';
 
-const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&*+=/<>?';
-
 type Props = {
   text: string;
   className?: string;
-  /** how long the scramble runs, in ms */
+  /** total length of the effect, in ms */
   duration?: number;
 };
 
 /**
- * Menu / option label that breaks up and resolves when its link or button is hovered or focused:
- * letters flicker through random characters with a slight horizontal tear, then settle left to right.
- * The real text keeps the width (so nothing around it shifts) and stays readable to screen readers.
+ * Menu label that dissolves on hover/focus: each letter briefly fades and softens, then comes back,
+ * in a quick left-to-right wave. Letters never change, move or resize, so nothing around it shifts.
  */
 export default function Scramble({ text, className = '', duration = 520 }: Props) {
   const wrap = useRef<HTMLSpanElement>(null);
-  const fx = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const el = wrap.current;
-    const out = fx.current;
-    if (!el || !out) return;
+    if (!el) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const host = (el.closest('a,button,[data-scramble-host]') as HTMLElement | null) ?? el;
+    const chars = Array.from(el.querySelectorAll<HTMLSpanElement>('[data-ch]'));
     let raf = 0;
     let start = 0;
-    let last = 0;
 
     const tick = (now: number) => {
       if (!start) start = now;
       const t = (now - start) / duration;
-      if (now - last > 38 || t >= 1) {
-        last = now;
-        let s = '';
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
-          // each letter settles a little after the one before it
-          const settleAt = 0.25 + (i / Math.max(1, text.length)) * 0.65;
-          s += ch === ' ' || t >= settleAt ? ch : GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        }
-        out.textContent = s;
-        const k = Math.max(0, 1 - t);
-        out.style.transform = t < 1 ? `translateX(${((Math.random() - 0.5) * 4 * k).toFixed(2)}px) skewX(${((Math.random() - 0.5) * 10 * k).toFixed(1)}deg)` : '';
-        out.style.textShadow = t < 1 ? `${(2.5 * k).toFixed(1)}px 0 rgba(120,150,255,${(0.55 * k).toFixed(2)}), ${(-2.5 * k).toFixed(1)}px 0 rgba(255,90,90,${(0.4 * k).toFixed(2)})` : '';
-      }
+      const n = Math.max(1, chars.length);
+      chars.forEach((c, i) => {
+        // each letter dips and returns, a little after the one before it, with a touch of noise
+        const local = (t - (i / n) * 0.45) / 0.55;
+        const dip = local <= 0 || local >= 1 ? 0 : Math.sin(Math.PI * local) * (0.75 + 0.25 * Math.random());
+        c.style.opacity = dip ? String(1 - 0.7 * dip) : '';
+        c.style.filter = dip ? `blur(${(1.4 * dip).toFixed(2)}px)` : '';
+      });
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     const run = () => {
       cancelAnimationFrame(raf);
       start = 0;
-      last = 0;
       raf = requestAnimationFrame(tick);
     };
     host.addEventListener('mouseenter', run);
@@ -59,15 +47,20 @@ export default function Scramble({ text, className = '', duration = 520 }: Props
       cancelAnimationFrame(raf);
       host.removeEventListener('mouseenter', run);
       host.removeEventListener('focus', run);
+      chars.forEach((c) => {
+        c.style.opacity = '';
+        c.style.filter = '';
+      });
     };
   }, [text, duration]);
 
   return (
-    <span ref={wrap} className={`relative inline-block whitespace-nowrap ${className}`}>
-      <span className="opacity-0">{text}</span>
-      <span ref={fx} aria-hidden="true" className="absolute left-0 top-0 will-change-transform">
-        {text}
-      </span>
+    <span ref={wrap} aria-label={text} className={`inline-block whitespace-nowrap ${className}`}>
+      {Array.from(text).map((ch, i) => (
+        <span key={i} data-ch aria-hidden="true">
+          {ch === ' ' ? ' ' : ch}
+        </span>
+      ))}
     </span>
   );
 }
