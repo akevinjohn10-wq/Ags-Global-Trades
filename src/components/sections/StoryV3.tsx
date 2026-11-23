@@ -40,7 +40,6 @@ const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
 const SHIP = 96; // ship pull-back video frames
 // hull width (out to where the foam starts) in each pull-back frame, in 1280-wide frame pixels
 const SHIP_HULL = [456,456,456,456,456,456,456,456,456,455,454,453,451,449,447,445,442,439,435,431,428,424,420,415,411,406,401,395,390,385,379,373,367,362,357,351,345,339,333,327,320,314,307,301,295,289,282,276,270,264,258,252,247,242,236,231,226,221,217,212,207,203,199,195,191,187,183,180,177,174,171,168,165,163,160,158,155,153,151,149,147,146,145,143,142,141,141,140,139,139,139,138,138,138,138,138];
-const SHIP_K = 0.0144; // the ship shrinks by about this much (log scale) per frame of the pull-back
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
@@ -203,6 +202,8 @@ function StoryFilm() {
 
     // ---------- the live ship shot: plays on its own so the water keeps moving when you stop scrolling ----------
     let liveOn = false;
+    let lastP = -1;
+    let lastMove = 0;
     const setLive = (on: boolean) => {
       const v = liveRef.current;
       if (!v || on === liveOn) return;
@@ -325,7 +326,9 @@ function StoryFilm() {
       const riseI = Math.round(riseT * (FRAMES - 1));
       // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
       const toRoad = easeIO(clamp(riseT / 0.95));
-      const travelled = (p - T.release[1]) * vw * 9;
+      // once it is under way the truck keeps driving on its own (wheels and road markings), even when the page is still
+      const driving = p > T.release[1] && p < T.rise[1];
+      const travelled = (p - T.release[1]) * vw * 9 + (driving ? (performance.now() / 1000) * vw * 0.45 : 0);
 
       // ===================== stage scenes (1-5) =====================
       if (p < T.road[0]) {
@@ -511,7 +514,7 @@ function StoryFilm() {
       // ===================== 6. the road, top-down =====================
       // where the ship's light grey container column sits on screen (the ship frame is drawn to cover)
       const sc = mobile ? SHIP_COL.m : SHIP_COL.d;
-      const sCover = Math.max(vw / sc.fw, vh / sc.fh);
+      const sCover = Math.max((vw * 1.06) / sc.fw, vh / sc.fh); // a little overscan so sliding it sideways never shows an edge
       const sDW = sc.fw * sCover;
       const sDH = sc.fh * sCover;
       const colX = (vw - sDW) / 2 + sc.cx * sDW;
@@ -540,7 +543,6 @@ function StoryFilm() {
         if (hT > 0) {
           // camera holds; the truck drives on down until its cab reaches the bottom of the page
           z = lerp(zRoad, zH, hA);
-          sxA = lerp(vw / 2, colX, hA);
           const drive = (vh - syA) / zH - 640 * TS - 30;
           py += hA * drive;
           hd = Math.PI / 2;
@@ -607,6 +609,14 @@ function StoryFilm() {
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
+        // the road stays put: the ship is slid sideways so its container column sits under the truck,
+        // then drifts back to centre as the camera pulls back
+        const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(seg(p, T.ship) / 0.35)));
+        // the sea only keeps moving on its own once scrolling has paused, so scrolling never pulses
+        const nowT = performance.now();
+        if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
+        lastP = p;
+        const amp = ease(clamp((nowT - lastMove - 200) / 700));
         const liveReady = !!lv && lv.readyState >= 2 && p > T.ship[1] - 0.006;
         const mix = liveReady ? clamp((p - (T.ship[1] - 0.006)) / 0.006) : 0;
         if (mix < 1) {
@@ -614,7 +624,7 @@ function StoryFilm() {
           // drifting back and forth, scaled up by exactly as much as the camera pulled back meanwhile,
           // so the ship holds its size and only the sea and foam move
           const i0 = Math.round(seg(p, T.ship) * (SHIP - 1));
-          const dd = 7 * (0.5 - 0.5 * Math.cos((performance.now() / 1000) * ((2 * Math.PI) / 2.6)));
+          const dd = 7 * amp * (0.5 - 0.5 * Math.cos(((nowT - lastMove) / 1000) * ((2 * Math.PI) / 2.6)));
           const want = Math.min(SHIP - 1, Math.round(i0 + dd));
           let got = -1;
           for (let d = 0; d < SHIP && got < 0; d++) {
@@ -623,20 +633,22 @@ function StoryFilm() {
           }
           const fr = got >= 0 ? ship[got] : frame(ship, i0, 0, SHIP - 1);
           if (fr) {
-            const k = got >= 0 ? Math.exp(SHIP_K * (got - i0)) : 1;
+            // scale by the measured ship widths, so the ship keeps exactly its size
+            const k = got >= 0 ? SHIP_HULL[i0] / SHIP_HULL[got] : 1;
             const w = sDW * k;
             const h = sDH * k;
-            g!.drawImage(fr, (vw - w) / 2, edge + (vh - h) / 2, w, h);
+            g!.drawImage(fr, (vw - w) / 2 + dxS, edge + (vh - h) / 2, w, h);
             // the ship itself stays put: redraw the hull from the current frame over the moving water
             const base = got !== i0 ? frame(ship, i0, 0, SHIP - 1) : null;
             if (base && base !== fr) {
               const srcW = mobile ? 720 : 2560;
-              const hullW = ((SHIP_HULL[i0] * 2) / srcW) * sDW;
+              // the ship was slimmed to 56% of its measured width (two middle column pairs removed)
+              const hullW = ((SHIP_HULL[i0] * 2 * 0.6) / srcW) * sDW;
               g!.save();
               g!.beginPath();
-              g!.rect(vw / 2 - hullW / 2, edge, hullW, vh - edge);
+              g!.rect(vw / 2 + dxS - hullW / 2, edge, hullW, vh - edge);
               g!.clip();
-              g!.drawImage(base, (vw - sDW) / 2, edge + (vh - sDH) / 2, sDW, sDH);
+              g!.drawImage(base, (vw - sDW) / 2 + dxS, edge + (vh - sDH) / 2, sDW, sDH);
               g!.restore();
             }
           }
@@ -712,7 +724,7 @@ function StoryFilm() {
         kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
         if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
       }
-      if ((liveOn || shipOn) && !raf) raf = requestAnimationFrame(update);
+      if ((liveOn || shipOn || driving) && !raf) raf = requestAnimationFrame(update);
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
       show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
