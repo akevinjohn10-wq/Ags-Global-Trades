@@ -171,8 +171,8 @@ const T = {
   road: [0.55, 0.69],
   hand: [0.69, 0.75], // the truck reaches the bottom of the page, which slides up onto the ship
   ship: [0.75, 0.84], // camera pulls back from the deck to the whole ship (video frames)
-  hold: [0.84, 0.89], // live footage: the sea keeps moving while the camera pulls back further
-  sky: [0.89, 1],
+  hold: [0.84, 0.92], // live footage: pulls back a little, then holds on the wide shot while it plays
+  sky: [0.92, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -329,7 +329,8 @@ function StoryFilm() {
       const dw = sw * k;
       const dh = VH * k;
       const dx = (vw - dw) / 2;
-      const dy = top + (vh - dh) / 2;
+      // the top edge stays at the top of the screen, so the wake always runs off the top
+      const dy = top + Math.min(0, (vh - dh) / 2);
       g!.globalAlpha = alpha;
       if (zz > 0.999 || !og) {
         g!.drawImage(v, sx, 0, sw, VH, dx, dy, dw, dh);
@@ -362,8 +363,7 @@ function StoryFilm() {
       og.fillStyle = gx;
       og.fillRect(0, 0, W, H);
       const gy = og.createLinearGradient(0, 0, 0, H);
-      gy.addColorStop(0, 'rgba(0,0,0,0)');
-      gy.addColorStop(f, '#000');
+      gy.addColorStop(0, '#000');
       gy.addColorStop(1 - f, '#000');
       gy.addColorStop(1, 'rgba(0,0,0,0)');
       og.fillStyle = gy;
@@ -773,7 +773,7 @@ function StoryFilm() {
           }
         }
         // then the live shot takes over and keeps moving; scrolling pulls the camera back further
-        if (liveReady) drawLive(lv!, lerp(1, mobile ? 0.55 : 0.42, easeIO(seg(p, T.hold))), edge, mix);
+        if (liveReady) drawLive(lv!, lerp(1, mobile ? 0.8 : 0.72, easeIO(clamp(seg(p, T.hold) / 0.45))), edge, mix);
       }
       // mist over the edges of the wide shot
       const ho = seg(p, T.hold);
@@ -798,7 +798,8 @@ function StoryFilm() {
         // the white wall only covers this section: the next section shows through under the plane
         // (the next section starts a full screen before this one ends, so its top is rect.bottom - vh)
         const nextTop = rect.bottom - vh;
-        set($('bankClip'), { height: `${clamp(nextTop, 0, vh).toFixed(1)}px` });
+        // overlaps the next section's empty top margin a little, so a late frame while scrolling fast never opens a gap
+        set($('bankClip'), { height: `${clamp(nextTop + (mobile ? 48 : 130), 0, vh).toFixed(1)}px` });
         set($('bank'), { transform: `translate3d(0,${(vh - 5 * vh * u).toFixed(1)}px,0)` });
         const after = clamp((vh - nextTop) / vh);
         set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6) * (1 - 0.85 * after)) });
