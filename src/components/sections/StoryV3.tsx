@@ -37,7 +37,7 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 144; // ship frames: the steadied pull-back (84), then 5 s of the wide shot (60)
+const SHIP = 158; // ship frames: the steadied pull-back (84), then the wide shot (74)
 const SHIP_CU = 84;
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
@@ -158,22 +158,23 @@ const BOX = { x: (56 - 639.5) * TS, y: (234 - 360) * TS, w: 856 * TS, h: 262 * T
 
 // ---------- timeline ----------
 const T = {
-  intro: [0, 0.04],
-  driveIn: [0.004, 0.1],
-  turn: [0.1, 0.23],
-  lift: [0.23, 0.245], // the stacker raises the container high enough for the truck
-  truckIn: [0.24, 0.275],
-  lower: [0.275, 0.297],
-  swap: [0.289, 0.299],
-  release: [0.3, 0.325],
-  shrink: [0.325, 0.395],
-  services: [0.36, 0.47],
-  rise: [0.47, 0.55],
-  road: [0.55, 0.69],
-  hand: [0.69, 0.75], // the truck reaches the bottom of the page, which slides up onto the ship
-  ship: [0.75, 0.865], // camera pulls back from the deck to the whole ship, then the wide shot plays on (frames)
-  hold: [0.84, 0.865],
-  sky: [0.865, 1],
+  intro: [0, 0.0343],
+  driveIn: [0.0034, 0.0857],
+  turn: [0.0857, 0.1971],
+  lift: [0.1971, 0.21], // the stacker raises the container high enough for the truck
+  truckIn: [0.2057, 0.2357],
+  lower: [0.2357, 0.2546],
+  swap: [0.2477, 0.2563],
+  release: [0.2571, 0.2786],
+  shrink: [0.2786, 0.3386],
+  services: [0.3086, 0.4029],
+  rise: [0.4029, 0.4714],
+  road: [0.4714, 0.5914],
+  hand: [0.5914, 0.6429], // the truck reaches the bottom of the page, which slides up onto the ship
+  ship: [0.643, 0.703], // the steadied pull-back from the deck to the whole ship
+  wide: [0.703, 0.865], // the wide shot plays on, the ship sailing forward
+  out: [0.765, 0.875], // the camera keeps pulling back while fog rolls over the ship
+  sky: [0.875, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -215,7 +216,6 @@ function StoryFilm() {
   const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
   const roadRefs = useRef<(HTMLLIElement | null)[]>([]);
   const valueRefs = useRef<(HTMLLIElement | null)[]>([]);
-  const liveRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -296,7 +296,6 @@ function StoryFilm() {
     };
 
     // ---------- the live ship shot: plays on its own so the water keeps moving when you stop scrolling ----------
-    let liveOn = false;
     let productOpen = false;
     const onProduct = (e: Event) => {
       productOpen = !!(e as CustomEvent<boolean>).detail;
@@ -306,28 +305,6 @@ function StoryFilm() {
     let lastMove = 0;
     let lastT = performance.now();
     let shipOff = 0;
-    let livePlaying = false;
-    const setLive = (on: boolean, play = false) => {
-      const v = liveRef.current;
-      if (!v) return;
-      if (on && !v.src) {
-        v.muted = true;
-        v.preload = 'auto';
-        v.src = V(mobile ? 'ship-loop-m.mp4' : 'ship-loop.mp4');
-        v.load();
-      }
-      liveOn = on;
-      const want = on && play;
-      if (want === livePlaying) return;
-      livePlaying = want;
-      if (want) {
-        v.currentTime = 0; // picks up exactly where the last frame left off
-        v.play().catch(() => {});
-      } else {
-        v.pause();
-        v.currentTime = 0;
-      }
-    };
     function drawImg(im: HTMLImageElement | null | undefined, x: number, y: number, w: number, h: number, alpha = 1) {
       if (!ready(im) || alpha <= 0.002) return;
       g!.globalAlpha = alpha;
@@ -384,7 +361,7 @@ function StoryFilm() {
       const riseI = Math.round(riseT * (FRAMES - 1));
       // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
       const toRoad = easeIO(clamp(riseT / 0.95));
-      const travelled = (p - T.release[1]) * vw * 9;
+      const travelled = (p - T.release[1]) * vw * 10.5;
 
       // ===================== stage scenes (1-5) =====================
       if (p < T.road[0]) {
@@ -695,7 +672,6 @@ function StoryFilm() {
       // ===================== 7. the ship: the page slides up onto the deck, then the camera pulls back =====================
       const shipOn = (hT > 0.4 || p >= T.ship[0]) && rect.bottom > 0;
       set($('shipScene'), { display: shipOn ? '' : 'none', top: `${Math.max(0, edge).toFixed(1)}px` });
-      const lv = liveRef.current;
       // the drone keeps rising on its own while the page is still (the footage plays forward at its
       // real speed), so the sea and foam are always moving; scrolling moves it too. No pasting, no reversing.
       const nowT = performance.now();
@@ -704,32 +680,66 @@ function StoryFilm() {
       if (!shipOn || p < T.ship[0] - 0.02) shipOff = 0;
       else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
       lastT = nowT;
-      const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
-      // the clip that carries on from the last frame: loaded near the end, played from its start once reached
-      setLive(shipOn && pos > SHIP - 30, shipOn && pos >= SHIP - 1);
+      // pull-back frames over T.ship, then the wide shot over T.wide; when idle it carries on playing forward
+      const pos = Math.min(SHIP - 1, (p < T.wide[0] ? seg(p, T.ship) * (SHIP_CU - 1) : SHIP_CU - 1 + seg(p, T.wide) * (SHIP - SHIP_CU)) + shipOff);
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
         // the road stays put: the ship is slid sideways so its container column sits under the truck,
         // then drifts back to centre as the camera pulls back
         const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP_CU * 0.35))));
-        const x = (vw - sDW) / 2 + dxS;
-        const y = edge + (vh - sDH) / 2;
-        const liveReady = !!lv && livePlaying && lv.readyState >= 2 && lv.currentTime > 0.01;
-        if (!liveReady) {
+        // then the camera keeps climbing: the shot shrinks toward the middle (open sea fills in around it)
+        // and the ship sails on down the page, while fog rolls in over everything
+        const oT = seg(p, T.out);
+        const zo = lerp(1, 0.5, easeIO(oT));
+        const W2 = sDW * zo;
+        const H2 = sDH * zo;
+        const x = (vw - W2) / 2 + dxS;
+        const y = edge + (vh - H2) / 2 + vh * 0.12 * oT * oT;
+        if (zo < 0.999) {
+          g!.fillStyle = '#1f3547';
+          g!.fillRect(0, edge, vw, vh - edge);
+        }
+        {
           // blend the two nearest frames so the motion is smooth between them
           const i0 = Math.floor(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
           const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
-          if (fA) g!.drawImage(fA, x, y, sDW, sDH);
+          if (fA) g!.drawImage(fA, x, y, W2, H2);
           if (fB && pos - i0 > 0.02) {
             g!.globalAlpha = pos - i0;
-            g!.drawImage(fB, x, y, sDW, sDH);
+            g!.drawImage(fB, x, y, W2, H2);
             g!.globalAlpha = 1;
           }
         }
-        // then the clip carries straight on in exactly the same place, so the sea never stops moving
-        else g!.drawImage(lv!, x, y, sDW, sDH);
+        if (zo < 0.999) {
+          // feather the shot's edges into the open sea around it
+          const fw = Math.min(W2, H2) * 0.22;
+          const sea = (x0: number, y0: number, x1: number, y1: number) => {
+            const gr = g!.createLinearGradient(x0, y0, x1, y1);
+            gr.addColorStop(0, '#1f3547');
+            gr.addColorStop(1, 'rgba(31,53,71,0)');
+            return gr;
+          };
+          g!.fillStyle = sea(x, 0, x + fw, 0);
+          g!.fillRect(x - 1, y, fw + 1, H2);
+          g!.fillStyle = sea(x + W2, 0, x + W2 - fw, 0);
+          g!.fillRect(x + W2 - fw, y, fw + 1, H2);
+          g!.fillStyle = sea(0, y, 0, y + fw);
+          g!.fillRect(x, y - 1, W2, fw + 1);
+          g!.fillStyle = sea(0, y + H2, 0, y + H2 - fw);
+          g!.fillRect(x, y + H2 - fw, W2, fw + 1);
+        }
+      }
+      // fog rolls in from the edges, thickens and finally covers the ship, just before the clouds
+      const fo = seg(p, [lerp(T.out[0], T.out[1], 0.25), T.out[1]]);
+      set($('fog'), { display: shipOn && fo > 0 ? '' : 'none' });
+      if (shipOn && fo > 0) {
+        set($('fogEdge'), { opacity: ease(clamp(fo / 0.55)).toFixed(3) });
+        set($('fogFull'), { opacity: ease(clamp((fo - 0.45) / 0.55)).toFixed(3) });
+        const drift = (performance.now() / 1000) % 200;
+        set($('fogA'), { opacity: ease(clamp(fo / 0.6)).toFixed(3), transform: `translate3d(${(lerp(-45, -6, ease(fo)) - drift * 0.04).toFixed(2)}%,0,0) scale(${lerp(1.5, 1.15, fo).toFixed(3)})` });
+        set($('fogB'), { opacity: ease(clamp(fo / 0.6)).toFixed(3), transform: `translate3d(${(lerp(45, 6, ease(fo)) + drift * 0.04).toFixed(2)}%,0,0) scale(${lerp(1.6, 1.2, fo).toFixed(3)}) scaleX(-1)` });
       }
       // ===================== 8. sky: clouds and a plane =====================
       // runs on past the end of the section: the cloud wall wipes the sea away, the next section
@@ -786,9 +796,8 @@ function StoryFilm() {
         li.style.opacity = String(t);
         li.style.transform = `translate3d(0,${((1 - t) * 20).toFixed(1)}px,0)`;
       });
-      const shipT = seg(p, T.ship);
-      const c2 = lerp(T.ship[0], T.ship[1], 0.55);
-      show('copy2', win(p, c2, T.sky[0] + 0.03, 0.12));
+      const c2 = lerp(T.ship[0], T.ship[1], 0.9);
+      show('copy2', win(p, c2, lerp(T.out[0], T.out[1], 0.45), 0.12));
       valueRefs.current.forEach((li, i) => {
         if (!li) return;
         const t = ease(clamp((p - c2 - 0.012 - i * 0.005) / 0.008));
@@ -802,7 +811,7 @@ function StoryFilm() {
         kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
         if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
       }
-      if ((liveOn || shipOn) && !raf) raf = requestAnimationFrame(update);
+      if (shipOn && !raf) raf = requestAnimationFrame(update);
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
       show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
@@ -827,7 +836,6 @@ function StoryFilm() {
       window.removeEventListener('ags:product-open', onProduct);
       window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
-      setLive(false);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', size);
@@ -836,10 +844,9 @@ function StoryFilm() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1550vh] scroll-mt-24 bg-[#fbfbfb] md:h-[1900vh]">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1800vh] scroll-mt-24 bg-[#fbfbfb] md:h-[2200vh]">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
-        <video ref={liveRef} muted loop playsInline preload="none" aria-hidden="true" className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0" />
 
         {/* 7. the ship at sea */}
         <div ref={r('shipScene')} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden" style={{ display: 'none', top: '100%' }}>
@@ -848,6 +855,13 @@ function StoryFilm() {
           {/* phones: the ship fills the width, so shade behind the heading and the points */}
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,20,0.7)_0%,rgba(2,10,20,0.15)_32%,rgba(2,10,20,0.15)_52%,rgba(2,10,20,0.75)_75%)] sm:hidden" />
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(2,12,24,0.55))]" />
+          {/* fog that rolls in over the ship before the clouds: thick at the edges first, then over everything */}
+          <div ref={r('fog')} className="absolute inset-0" style={{ display: 'none' }}>
+            <div ref={r('fogEdge')} className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_50%,rgba(236,241,247,0)_20%,rgba(236,241,247,0.75)_70%,#eef2f7_100%)]" style={{ opacity: 0 }} />
+            <img ref={r('fogA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ opacity: 0, WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
+            <img ref={r('fogB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ opacity: 0, WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
+            <div ref={r('fogFull')} className="absolute inset-0 bg-[#f4f7fa]" style={{ opacity: 0 }} />
+          </div>
         </div>
 
         {/* 4. the black panel under the truck */}
