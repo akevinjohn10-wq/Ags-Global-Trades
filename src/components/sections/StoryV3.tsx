@@ -38,8 +38,6 @@ const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
 const SHIP = 96; // ship pull-back video frames
-// hull width (out to where the foam starts) in each pull-back frame, in 1280-wide frame pixels
-const SHIP_HULL = [456,456,456,456,456,456,456,456,456,455,454,453,451,449,447,445,442,439,435,431,428,424,420,415,411,406,401,395,390,385,379,373,367,362,357,351,345,339,333,327,320,314,307,301,295,289,282,276,270,264,258,252,247,242,236,231,226,221,217,212,207,203,199,195,191,187,183,180,177,174,171,168,165,163,160,158,155,153,151,149,147,146,145,143,142,141,141,140,139,139,139,138,138,138,138,138];
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
@@ -50,6 +48,94 @@ const WHEELS = [
   [777, 502],
   [1090, 501],
 ] as const;
+// wheel centre (x, y) and how round it still is (1 = side-on) in each camera-rise frame, for spinning
+const RISE_WHEELS: number[][] = [
+  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
+  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
+  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
+  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
+  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
+  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
+  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
+  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
+  [180,503,1.00,286,502,1.00,391,503,1.00,777,504,1.00,1090,503,1.00],
+  [180,503,1.00,286,502,1.00,391,503,1.00,777,504,1.00,1090,503,1.00],
+  [180,504,1.00,286,503,1.00,391,504,1.00,777,505,1.00,1090,504,1.00],
+  [180,505,1.00,286,504,1.00,391,505,1.00,777,506,1.00,1090,505,1.00],
+  [180,505,1.00,286,504,1.00,391,505,1.00,777,506,1.00,1090,505,1.00],
+  [180,506,1.00,286,505,1.00,391,506,1.00,777,507,1.00,1090,506,1.00],
+  [180,507,1.00,286,506,1.00,391,507,1.00,777,508,1.00,1090,507,1.00],
+  [180,508,1.00,286,507,1.00,391,508,1.00,777,509,1.00,1090,508,1.00],
+  [180,509,1.00,286,508,1.00,391,509,1.00,777,510,1.00,1090,509,1.00],
+  [180,510,1.00,286,509,1.00,391,510,1.00,777,511,1.00,1090,510,1.00],
+  [180,511,1.00,286,510,1.00,391,511,1.00,777,512,1.00,1090,511,1.00],
+  [180,512,1.00,286,511,1.00,391,512,1.00,777,514,1.00,1090,513,1.00],
+  [180,514,1.00,286,513,1.00,391,514,1.00,777,515,1.00,1090,514,1.00],
+  [179,515,1.00,286,514,1.00,391,515,1.00,777,516,1.00,1090,515,1.00],
+  [179,516,1.00,286,515,1.00,391,516,1.00,777,518,1.00,1091,517,1.00],
+  [179,518,1.00,286,517,1.00,391,518,1.00,777,519,1.00,1091,518,1.00],
+  [179,519,1.00,286,518,1.00,391,520,1.00,777,521,1.00,1091,520,1.00],
+  [179,521,1.00,285,520,1.00,391,521,1.00,777,523,1.00,1091,522,1.00],
+  [179,523,1.00,285,522,1.00,391,523,1.00,777,524,1.00,1091,523,1.00],
+  [179,524,1.00,285,523,1.00,391,524,1.00,777,526,1.00,1091,525,1.00],
+  [179,526,1.00,285,525,1.00,391,526,1.00,777,527,1.00,1091,526,1.00],
+  [179,527,1.00,285,526,1.00,391,527,1.00,777,529,1.00,1091,528,1.00],
+  [179,529,1.00,285,528,0.99,391,529,1.00,777,531,1.00,1091,530,1.00],
+  [179,531,1.00,285,529,0.99,391,531,1.00,777,532,1.00,1091,531,1.00],
+  [179,532,1.00,285,531,0.98,391,532,1.00,777,534,1.00,1091,533,1.00],
+  [179,534,0.99,285,533,0.97,391,534,1.00,777,536,1.00,1091,535,1.00],
+  [179,536,0.99,285,535,0.96,391,536,1.00,777,538,1.00,1091,537,1.00],
+  [179,538,0.99,285,537,0.96,391,539,1.00,777,540,1.00,1091,539,0.99],
+  [179,540,0.98,285,539,0.95,391,541,1.00,777,542,1.00,1091,541,0.99],
+  [179,543,0.97,285,542,0.95,391,543,0.99,777,545,1.00,1091,543,0.99],
+  [180,545,0.96,286,544,0.95,391,546,0.99,777,547,1.00,1091,546,0.99],
+  [180,548,0.96,286,547,0.95,391,548,0.98,777,549,0.99,1090,548,0.98],
+  [180,550,0.96,286,549,0.95,391,550,0.97,777,552,0.99,1090,550,0.97],
+  [180,552,0.96,286,551,0.95,391,552,0.96,777,553,0.98,1090,552,0.96],
+  [180,553,0.95,286,552,0.95,391,554,0.96,777,555,0.97,1090,554,0.96],
+  [180,554,0.95,286,554,0.95,391,555,0.95,777,556,0.96,1090,554,0.96],
+  [180,555,0.95,286,554,0.95,391,555,0.95,777,556,0.96,1090,555,0.95],
+  [181,555,0.95,286,554,0.95,391,556,0.95,777,556,0.95,1090,555,0.95],
+  [181,555,0.95,287,554,0.94,391,555,0.95,777,556,0.95,1089,555,0.95],
+  [181,554,0.94,287,554,0.94,392,555,0.95,777,556,0.95,1089,554,0.94],
+  [182,554,0.94,287,554,0.93,392,554,0.94,777,555,0.95,1089,554,0.94],
+  [182,554,0.93,287,553,0.92,392,554,0.94,777,555,0.95,1089,554,0.93],
+  [182,554,0.92,288,553,0.91,392,554,0.93,777,555,0.94,1089,553,0.92],
+  [182,554,0.91,288,553,0.91,392,554,0.92,776,555,0.94,1088,553,0.91],
+  [183,553,0.91,288,553,0.89,392,554,0.91,776,555,0.93,1088,553,0.91],
+  [183,554,0.90,288,553,0.89,392,554,0.90,776,555,0.92,1088,553,0.89],
+  [183,553,0.91,288,553,0.88,393,554,0.89,776,555,0.91,1087,553,0.89],
+  [184,553,0.92,289,553,0.87,393,554,0.88,776,555,0.89,1087,553,0.88],
+  [184,552,0.93,289,552,0.88,393,554,0.87,776,555,0.88,1087,553,0.87],
+  [184,551,0.94,289,552,0.89,393,554,0.88,776,555,0.87,1086,553,0.86],
+  [185,551,0.94,289,551,0.89,393,553,0.89,776,555,0.88,1086,553,0.86],
+  [185,551,0.94,289,551,0.91,393,553,0.89,776,554,0.89,1086,553,0.84],
+  [185,550,0.96,289,550,0.92,394,552,0.91,776,554,0.89,1086,553,0.84],
+  [186,550,0.95,290,549,0.94,394,552,0.92,776,553,0.91,1085,554,0.83],
+  [186,550,0.95,290,548,0.95,394,551,0.94,776,552,0.92,1085,554,0.82],
+  [186,549,0.95,290,548,0.95,394,550,0.95,776,551,0.94,1084,554,0.81],
+  [187,549,0.95,290,548,0.95,394,550,0.95,776,550,0.95,1084,554,0.80],
+  [187,549,0.95,291,548,0.95,395,549,0.95,776,550,0.95,1084,554,0.79],
+  [187,549,0.94,291,547,0.94,395,549,0.95,776,550,0.95,1083,553,0.78],
+  [188,548,0.94,291,547,0.94,395,549,0.94,776,549,0.95,1083,553,0.77],
+  [188,548,0.93,291,547,0.93,395,549,0.94,776,549,0.94,1083,553,0.76],
+  [188,548,0.92,292,547,0.92,395,548,0.93,776,549,0.94,1082,553,0.74],
+  [189,548,0.91,292,546,0.91,395,548,0.92,775,548,0.93,1082,553,0.73],
+  [189,548,0.89,292,546,0.89,396,548,0.91,775,548,0.92,1082,553,0.72],
+  [189,548,0.88,293,546,0.88,396,547,0.89,775,548,0.91,1081,552,0.71],
+  [190,547,0.86,293,546,0.86,396,547,0.88,775,548,0.89,1081,552,0.70],
+  [190,547,0.85,293,546,0.85,396,547,0.86,775,547,0.88,1081,552,0.69],
+  [190,547,0.84,293,545,0.84,396,546,0.85,775,547,0.86,1080,552,0.68],
+  [191,546,0.82,293,545,0.82,396,546,0.84,774,547,0.85,1080,551,0.67],
+  [191,546,0.81,294,545,0.81,397,546,0.82,774,546,0.84,1080,551,0.66],
+  [191,546,0.79,294,544,0.79,397,545,0.81,774,546,0.82,1079,550,0.64],
+  [192,545,0.78,294,544,0.78,397,545,0.79,774,545,0.81,1079,550,0.63],
+  [192,544,0.77,294,543,0.76,397,544,0.78,774,545,0.79,1078,549,0.61],
+  [192,544,0.76,295,543,0.75,397,544,0.76,774,544,0.78,1078,549,0.60],
+  [193,543,0.74,295,542,0.74,398,543,0.75,774,544,0.77,1078,548,0.59],
+  [193,543,0.73,295,542,0.72,398,543,0.74,774,543,0.76,1077,548,0.57],
+  [193,542,0.72,295,542,0.71,398,542,0.72,774,543,0.76,1077,547,0.56],
+];
 const DRIVE = 85; // drive-in video frames, ending on the first turn frame
 const DRIVE_EXT = 900; // drive frames are widened this much to the left so the stacker is never cut by the frame edge
 
@@ -204,6 +290,8 @@ function StoryFilm() {
     let liveOn = false;
     let lastP = -1;
     let lastMove = 0;
+    let lastT = performance.now();
+    let shipOff = 0;
     const setLive = (on: boolean) => {
       const v = liveRef.current;
       if (!v || on === liveOn) return;
@@ -309,7 +397,8 @@ function StoryFilm() {
       const K0 = lerp(Kd, K1, settle);
       const K = lerp(K0, K3, shrink);
       // the stack's right edge (stage x 1205) sits near the right of the screen, above the chat button
-      const stackX = Math.max(1205 - (vw / 2 - Math.min(80, vw * 0.04)) / Kd, (vw / 2) / Kd - DRIVE_EXT + 4);
+      // (the clip's widened left side is plain page white, so its edge never shows even when on screen)
+      const stackX = 1205 - (vw / 2 - Math.max(150, vw * 0.09)) / Kd;
       const startX = mobile ? 640 : lerp(stackX, 640, settle);
       const sx0 = lerp(startX, TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
@@ -326,9 +415,7 @@ function StoryFilm() {
       const riseI = Math.round(riseT * (FRAMES - 1));
       // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
       const toRoad = easeIO(clamp(riseT / 0.95));
-      // once it is under way the truck keeps driving on its own (wheels and road markings), even when the page is still
-      const driving = p > T.release[1] && p < T.rise[1];
-      const travelled = (p - T.release[1]) * vw * 9 + (driving ? (performance.now() / 1000) * vw * 0.45 : 0);
+      const travelled = (p - T.release[1]) * vw * 9;
 
       // ===================== stage scenes (1-5) =====================
       if (p < T.road[0]) {
@@ -350,6 +437,11 @@ function StoryFilm() {
         let top = toY(groundStage + 2);
         let bottom = vh;
         if (p > T.rise[0]) {
+          // the road's edge stays under the tyres while the camera climbs (tyre bottoms tracked per frame)
+          const tw = RISE_WHEELS[Math.min(riseI, RISE_WHEELS.length - 1)];
+          let contact = 0;
+          for (let j = 0; j < 5; j++) contact = Math.max(contact, tw[j * 3 + 1] + 44 * tw[j * 3 + 2]);
+          top = toY(RISE.y + contact * (RISE.h / 720));
           top = lerp(top, toY(TRUCK_C.y - WR / 2), toRoad);
           bottom = lerp(vh, toY(TRUCK_C.y + WR / 2), toRoad);
         }
@@ -507,7 +599,31 @@ function StoryFilm() {
         } else {
           // 5. the camera rises over the truck, which stays on the road (frames are cut out)
           const fr = frame(riseCut, riseI);
-          if (fr) g!.drawImage(fr, ...R_(RISE));
+          if (fr) {
+            const [rx, ry, rw, rh] = R_(RISE);
+            g!.drawImage(fr, rx, ry, rw, rh);
+            // wheels keep turning as it drives, while they can still be seen from the side
+            const rw5 = RISE_WHEELS[riseI];
+            if (rw5 && fr === riseCut[riseI]) {
+              const k = fr.naturalWidth / 1280;
+              const sc = rw / 1280;
+              const angle = travelled / K / (47 * TS);
+              for (let j = 0; j < 5; j++) {
+                const wx = rw5[j * 3];
+                const wy = rw5[j * 3 + 1];
+                const sq = rw5[j * 3 + 2];
+                g!.save();
+                g!.translate(rx + wx * sc, ry + wy * sc);
+                g!.scale(1, sq);
+                g!.beginPath();
+                g!.arc(0, 0, 45.5 * sc, 0, Math.PI * 2);
+                g!.clip();
+                g!.rotate(angle);
+                g!.drawImage(fr, (wx - 46) * k, (wy - 46 * sq) * k, 92 * k, 92 * sq * k, -46 * sc, -46 * sc, 92 * sc, 92 * sc);
+                g!.restore();
+              }
+            }
+          }
         }
       }
 
@@ -605,52 +721,36 @@ function StoryFilm() {
       const shipOn = (hT > 0.4 || p >= T.ship[0]) && rect.bottom > 0;
       set($('shipScene'), { display: shipOn ? '' : 'none', top: `${Math.max(0, edge).toFixed(1)}px` });
       const lv = liveRef.current;
-      setLive(shipOn && p > T.ship[1] - 0.03);
+      // the drone keeps rising on its own while the page is still (the footage plays forward at its
+      // real speed), so the sea and foam are always moving; scrolling moves it too. No pasting, no reversing.
+      const nowT = performance.now();
+      if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
+      lastP = p;
+      if (!shipOn || p < T.ship[0] - 0.02) shipOff = 0;
+      else if (nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
+      lastT = nowT;
+      const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
+      setLive(shipOn && pos > SHIP - 25);
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
         // the road stays put: the ship is slid sideways so its container column sits under the truck,
         // then drifts back to centre as the camera pulls back
-        const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(seg(p, T.ship) / 0.35)));
-        // the sea only keeps moving on its own once scrolling has paused, so scrolling never pulses
-        const nowT = performance.now();
-        if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
-        lastP = p;
-        const amp = ease(clamp((nowT - lastMove - 200) / 700));
-        const liveReady = !!lv && lv.readyState >= 2 && p > T.ship[1] - 0.006;
-        const mix = liveReady ? clamp((p - (T.ship[1] - 0.006)) / 0.006) : 0;
+        const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP * 0.35))));
+        const liveReady = !!lv && lv.readyState >= 2 && pos > SHIP - 2.5;
+        const mix = liveReady ? clamp((pos - (SHIP - 2.5)) / 1.5) : 0;
         if (mix < 1) {
-          // keep the water moving even when the page is still: show a frame a little further on,
-          // drifting back and forth, scaled up by exactly as much as the camera pulled back meanwhile,
-          // so the ship holds its size and only the sea and foam move
-          const i0 = Math.round(seg(p, T.ship) * (SHIP - 1));
-          const dd = 7 * amp * (0.5 - 0.5 * Math.cos(((nowT - lastMove) / 1000) * ((2 * Math.PI) / 2.6)));
-          const want = Math.min(SHIP - 1, Math.round(i0 + dd));
-          let got = -1;
-          for (let d = 0; d < SHIP && got < 0; d++) {
-            if (want - d >= i0 && ready(ship[want - d])) got = want - d;
-            else if (want + d < SHIP && ready(ship[want + d])) got = want + d;
-          }
-          const fr = got >= 0 ? ship[got] : frame(ship, i0, 0, SHIP - 1);
-          if (fr) {
-            // scale by the measured ship widths, so the ship keeps exactly its size
-            const k = got >= 0 ? SHIP_HULL[i0] / SHIP_HULL[got] : 1;
-            const w = sDW * k;
-            const h = sDH * k;
-            g!.drawImage(fr, (vw - w) / 2 + dxS, edge + (vh - h) / 2, w, h);
-            // the ship itself stays put: redraw the hull from the current frame over the moving water
-            const base = got !== i0 ? frame(ship, i0, 0, SHIP - 1) : null;
-            if (base && base !== fr) {
-              const srcW = mobile ? 720 : 2560;
-              // the ship was slimmed to 56% of its measured width (two middle column pairs removed)
-              const hullW = ((SHIP_HULL[i0] * 2 * 0.6) / srcW) * sDW;
-              g!.save();
-              g!.beginPath();
-              g!.rect(vw / 2 + dxS - hullW / 2, edge, hullW, vh - edge);
-              g!.clip();
-              g!.drawImage(base, (vw - sDW) / 2 + dxS, edge + (vh - sDH) / 2, sDW, sDH);
-              g!.restore();
-            }
+          // blend the two nearest frames so the motion is smooth between them
+          const i0 = Math.floor(pos);
+          const fA = frame(ship, i0, 0, SHIP - 1);
+          const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
+          const x = (vw - sDW) / 2 + dxS;
+          const y = edge + (vh - sDH) / 2;
+          if (fA) g!.drawImage(fA, x, y, sDW, sDH);
+          if (fB && pos - i0 > 0.02) {
+            g!.globalAlpha = pos - i0;
+            g!.drawImage(fB, x, y, sDW, sDH);
+            g!.globalAlpha = 1;
           }
         }
         // then the live shot takes over and keeps moving; scrolling pulls the camera back further
@@ -724,7 +824,7 @@ function StoryFilm() {
         kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
         if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
       }
-      if ((liveOn || shipOn || driving) && !raf) raf = requestAnimationFrame(update);
+      if ((liveOn || shipOn) && !raf) raf = requestAnimationFrame(update);
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
       show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
