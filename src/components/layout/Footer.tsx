@@ -10,6 +10,7 @@ import LegalModal from '@/components/layout/LegalModal';
 import { contactDetails, navLinks, productCategories, services } from '@/data/siteContent';
 import { legalDocuments } from '@/data/legal';
 import type { LegalKey } from '@/data/legal';
+import Scramble from '@/components/ui/Scramble';
 
 const languages = [
   { code: 'en', label: 'English (original)' },
@@ -137,7 +138,7 @@ export default function Footer() {
             {navLinks.map((link) => (
               <li key={link.href}>
                 <a href={link.href} className={linkClass}>
-                  {link.label}
+                  <Scramble text={link.label} />
                 </a>
               </li>
             ))}

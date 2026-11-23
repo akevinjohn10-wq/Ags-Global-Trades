@@ -5,6 +5,7 @@ import Button from '@/components/ui/Button';
 import DotMap from '@/components/ui/DotMap';
 import { allHubs } from '@/data/globe';
 import { contactDetails, navLinks } from '@/data/siteContent';
+import Scramble from '@/components/ui/Scramble';
 
 /** Header: Apple-style global nav bar, and a full-screen "Menu" overlay. */
 export default function Navbar() {
@@ -81,7 +82,7 @@ export default function Navbar() {
           >
             {navLinks.slice(1).map((link) => (
               <a key={link.href} href={link.href} className="hidden h-11 items-center whitespace-nowrap px-2 opacity-80 transition-opacity hover:opacity-100 md:flex">
-                {link.label}
+                <Scramble text={link.label} />
               </a>
             ))}
             <div className="flex items-center gap-1 md:contents">
@@ -96,7 +97,7 @@ export default function Navbar() {
                 aria-label={open ? 'Close menu' : 'Open menu'}
                 className="flex h-11 items-center pl-2 opacity-80 transition-opacity hover:opacity-100 md:px-2"
               >
-                <span>{open ? 'Close' : 'Menu'}</span>
+                <Scramble text={open ? 'Close' : 'Menu'} />
               </button>
             </div>
           </nav>
@@ -141,7 +142,7 @@ export default function Navbar() {
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   <span className="font-display text-[34px] font-normal leading-none lg:font-light transition-transform duration-500 ease-expo group-hover:translate-x-3 sm:text-[56px] lg:text-[34px] xl:text-[38px]">
-                    {link.label}
+                    <Scramble text={link.label} />
                   </span>
                 </a>
               </li>
