@@ -37,7 +37,8 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 84; // ship pull-back video frames
+const SHIP = 144; // ship frames: the steadied pull-back (84), then 5 s of the wide shot (60)
+const SHIP_CU = 84;
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
 // phones use a 360-wide centre slice of the 1280 frame
@@ -170,8 +171,8 @@ const T = {
   rise: [0.47, 0.55],
   road: [0.55, 0.69],
   hand: [0.69, 0.75], // the truck reaches the bottom of the page, which slides up onto the ship
-  ship: [0.75, 0.84], // camera pulls back from the deck to the whole ship (video frames)
-  hold: [0.84, 0.865], // the wide shot holds (no extra zoom) while its footage plays
+  ship: [0.75, 0.865], // camera pulls back from the deck to the whole ship, then the wide shot plays on (frames)
+  hold: [0.84, 0.865],
   sky: [0.865, 1],
 } as const;
 
@@ -196,7 +197,7 @@ function path(s: number): [number, number, number] {
   return [XS, R + (s - A - ARC), Math.PI / 2];
 }
 
-const MIST_MASK = 'radial-gradient(ellipse 34% 60% at 50% 50%, transparent 35%, #000 100%)';
+const SIDE_MASK = 'linear-gradient(to right, #000 0%, #000 55%, transparent 100%)';
 const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
 
 export default function StoryV3() {
@@ -272,7 +273,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship2${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship3${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -305,73 +306,28 @@ function StoryFilm() {
     let lastMove = 0;
     let lastT = performance.now();
     let shipOff = 0;
-    const setLive = (on: boolean) => {
+    let livePlaying = false;
+    const setLive = (on: boolean, play = false) => {
       const v = liveRef.current;
-      if (!v || on === liveOn) return;
+      if (!v) return;
+      if (on && !v.src) {
+        v.muted = true;
+        v.preload = 'auto';
+        v.src = V(mobile ? 'ship-loop-m.mp4' : 'ship-loop.mp4');
+        v.load();
+      }
       liveOn = on;
-      if (on) {
-        if (!v.src) {
-          v.muted = true;
-          v.src = V(mobile ? 'ship-loop-m.mp4' : 'ship-loop.mp4');
-        }
+      const want = on && play;
+      if (want === livePlaying) return;
+      livePlaying = want;
+      if (want) {
+        v.currentTime = 0; // picks up exactly where the last frame left off
         v.play().catch(() => {});
-      } else v.pause();
+      } else {
+        v.pause();
+        v.currentTime = 0;
+      }
     };
-    const oc = document.createElement('canvas');
-    const og = oc.getContext('2d');
-    /** The live shot scaled by zz around the centre, with open sea from the clip's own left side filling around it. */
-    function drawLive(v: HTMLVideoElement, zz: number, top: number, alpha: number) {
-      const VW = v.videoWidth;
-      const VH = v.videoHeight;
-      const sw = mobile ? (VW * 720) / 2560 : VW; // phones use the same centre slice as the frames
-      const sx = (VW - sw) / 2;
-      const k = Math.max(vw / sw, vh / VH) * zz;
-      const dw = sw * k;
-      const dh = VH * k;
-      const dx = (vw - dw) / 2;
-      // the top edge stays at the top of the screen, so the wake always runs off the top
-      const dy = top + Math.min(0, (vh - dh) / 2);
-      g!.globalAlpha = alpha;
-      if (zz > 0.999 || !og) {
-        g!.drawImage(v, sx, 0, sw, VH, dx, dy, dw, dh);
-        g!.globalAlpha = 1;
-        return;
-      }
-      // open sea all around in the clip's own deep blue; the shot fades into it
-      const sea = g!.createRadialGradient(vw / 2, top + vh / 2, Math.min(dw, dh) * 0.3, vw / 2, top + vh / 2, Math.max(vw, vh) * 0.75);
-      sea.addColorStop(0, '#26405f');
-      sea.addColorStop(1, '#152a47');
-      g!.fillStyle = sea;
-      g!.fillRect(0, top, vw, vh - top);
-      // the shot itself, edges feathered into the sea
-      const W = Math.max(2, Math.round(dw * dpr));
-      const H = Math.max(2, Math.round(dh * dpr));
-      if (oc.width !== W || oc.height !== H) {
-        oc.width = W;
-        oc.height = H;
-      }
-      og.globalCompositeOperation = 'source-over';
-      og.clearRect(0, 0, W, H);
-      og.drawImage(v, sx, 0, sw, VH, 0, 0, W, H);
-      og.globalCompositeOperation = 'destination-in';
-      const f = 0.22;
-      const gx = og.createLinearGradient(0, 0, W, 0);
-      gx.addColorStop(0, 'rgba(0,0,0,0)');
-      gx.addColorStop(f, '#000');
-      gx.addColorStop(1 - f, '#000');
-      gx.addColorStop(1, 'rgba(0,0,0,0)');
-      og.fillStyle = gx;
-      og.fillRect(0, 0, W, H);
-      const gy = og.createLinearGradient(0, 0, 0, H);
-      gy.addColorStop(0, '#000');
-      gy.addColorStop(1 - f, '#000');
-      gy.addColorStop(1, 'rgba(0,0,0,0)');
-      og.fillStyle = gy;
-      og.fillRect(0, 0, W, H);
-      g!.drawImage(oc, dx, dy, dw, dh);
-      g!.globalAlpha = 1;
-    }
-
     function drawImg(im: HTMLImageElement | null | undefined, x: number, y: number, w: number, h: number, alpha = 1) {
       if (!ready(im) || alpha <= 0.002) return;
       g!.globalAlpha = alpha;
@@ -749,22 +705,22 @@ function StoryFilm() {
       else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
       lastT = nowT;
       const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
-      setLive(shipOn && pos > SHIP - 25);
+      // the clip that carries on from the last frame: loaded near the end, played from its start once reached
+      setLive(shipOn && pos > SHIP - 30, shipOn && pos >= SHIP - 1);
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
         // the road stays put: the ship is slid sideways so its container column sits under the truck,
         // then drifts back to centre as the camera pulls back
-        const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP * 0.35))));
-        const liveReady = !!lv && lv.readyState >= 2 && pos > SHIP - 2.5;
-        const mix = liveReady ? clamp((pos - (SHIP - 2.5)) / 1.5) : 0;
-        if (mix < 1) {
+        const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP_CU * 0.35))));
+        const x = (vw - sDW) / 2 + dxS;
+        const y = edge + (vh - sDH) / 2;
+        const liveReady = !!lv && livePlaying && lv.readyState >= 2 && lv.currentTime > 0.01;
+        if (!liveReady) {
           // blend the two nearest frames so the motion is smooth between them
           const i0 = Math.floor(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
           const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
-          const x = (vw - sDW) / 2 + dxS;
-          const y = edge + (vh - sDH) / 2;
           if (fA) g!.drawImage(fA, x, y, sDW, sDH);
           if (fB && pos - i0 > 0.02) {
             g!.globalAlpha = pos - i0;
@@ -772,18 +728,9 @@ function StoryFilm() {
             g!.globalAlpha = 1;
           }
         }
-        // then the live shot takes over and keeps moving; scrolling pulls the camera back further
-        if (liveReady) drawLive(lv!, 1, edge, mix);
+        // then the clip carries straight on in exactly the same place, so the sea never stops moving
+        else g!.drawImage(lv!, x, y, sDW, sDH);
       }
-      // mist over the edges of the wide shot
-      const ho = seg(p, T.hold);
-      set($('mist'), { display: shipOn && ho > 0 ? '' : 'none', opacity: (0.85 * ease(clamp(ho / 0.5))).toFixed(3) });
-      if (shipOn && ho > 0) {
-        const drift = (performance.now() / 1000) % 120;
-        set($('mistA'), { transform: `translate3d(${(-8 - drift * 0.08).toFixed(2)}%,0,0) scale(1.4)` });
-        set($('mistB'), { transform: `translate3d(${(6 + drift * 0.06).toFixed(2)}%,0,0) scale(1.5) scaleX(-1)` });
-      }
-
       // ===================== 8. sky: clouds and a plane =====================
       // runs on past the end of the section: the cloud wall wipes the sea away, the next section
       // slides in underneath it, and the plane carries on across the top of that section
@@ -800,12 +747,21 @@ function StoryFilm() {
         const nextTop = rect.bottom - vh;
         // overlaps the next section's empty top margin a little, so a late frame while scrolling fast never opens a gap
         set($('bankClip'), { height: `${clamp(nextTop + (mobile ? 48 : 130), 0, vh).toFixed(1)}px` });
-        set($('bank'), { transform: `translate3d(0,${(vh - 5 * vh * u).toFixed(1)}px,0)` });
+        // clouds close in from both sides like curtains, the sky whitens behind them, then they drift apart again
+        const shut = easeIO(clamp(u / 0.24));
+        const part = ease(clamp((u - 0.3) / 0.7));
+        set($('bank'), { opacity: ease(clamp((u - 0.08) / 0.16)).toFixed(3) });
         const after = clamp((vh - nextTop) / vh);
-        set($('cloudA'), { transform: `translate3d(0,${lerp(110, -260, u).toFixed(2)}%,0) scale(1.5)`, opacity: String(Math.min(1, u * 6) * (1 - 0.85 * after)) });
-        set($('cloudB'), { transform: `translate3d(0,${lerp(160, -230, u).toFixed(2)}%,0) scale(1.9)`, opacity: String(1 - 0.85 * after) });
+        const cOp = String(Math.min(1, u * 8) * (1 - 0.85 * after));
+        set($('cloudA'), { transform: `translate3d(${(lerp(-100, 8, shut) - 70 * part).toFixed(2)}%,${(-4 * u).toFixed(2)}%,0) scale(1.35)`, opacity: cOp });
+        set($('cloudB'), { transform: `translate3d(${(lerp(100, -8, shut) + 70 * part).toFixed(2)}%,${(4 * u).toFixed(2)}%,0) scale(1.35) scaleX(-1)`, opacity: cOp });
+        // once the sky is solid white, the stage under it goes white too, so scrolling back fast never shows the sea through a gap
+        if (u > 0.25) {
+          g!.fillStyle = '#ffffff';
+          g!.fillRect(0, 0, vw, vh);
+        }
         // the whole aircraft crosses the page, lingering through the middle
-        const t = clamp(u / 0.92);
+        const t = clamp((u - 0.14) / 0.8); // enters once the clouds have closed in
         const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
         const pw = Math.min(vw * (mobile ? 0.98 : 0.9), vh * 1.18 * (1369 / 1087));
         set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${lerp(-pw - 40, vw + 40, glide).toFixed(1)}px,-50%,0)` });
@@ -892,11 +848,6 @@ function StoryFilm() {
           {/* phones: the ship fills the width, so shade behind the heading and the points */}
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,20,0.7)_0%,rgba(2,10,20,0.15)_32%,rgba(2,10,20,0.15)_52%,rgba(2,10,20,0.75)_75%)] sm:hidden" />
           <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(2,12,24,0.55))]" />
-          {/* mist drifting over the edges of the wide shot, clear in the middle where the ship is */}
-          <div ref={r('mist')} className="absolute inset-0" style={{ display: 'none', opacity: 0, WebkitMaskImage: MIST_MASK, maskImage: MIST_MASK }}>
-            <img ref={r('mistA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70 will-change-transform" />
-            <img ref={r('mistB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60 will-change-transform" />
-          </div>
         </div>
 
         {/* 4. the black panel under the truck */}
@@ -1007,12 +958,10 @@ function StoryFilm() {
       {/* 8. sky: a fixed layer, so the clouds and plane carry on over the next section */}
       <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[30] overflow-hidden" style={{ display: 'none' }}>
         <div ref={r('bankClip')} className="absolute inset-x-0 top-0 h-full overflow-hidden">
-          <div ref={r('bank')} className="absolute inset-x-0 top-0 h-[400vh] will-change-transform" style={{ transform: 'translate3d(0,100vh,0)' }}>
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_0%,rgba(240,244,250,0.6)_7%,#FFFFFF_15%,#FFFFFF_85%,rgba(240,244,250,0.6)_93%,rgba(255,255,255,0)_100%)]" />
-          </div>
+          <div ref={r('bank')} className="absolute inset-0 bg-white" style={{ opacity: 0 }} />
         </div>
-        <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
-        <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK }} />
+        <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
+        <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
       </div>
       {/* the plane is its own layer, multiplied onto the page: the next section's text shows through it,
           so the text reads as lying on top of the plane */}

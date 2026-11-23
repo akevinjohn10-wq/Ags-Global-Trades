@@ -579,10 +579,35 @@ html.brand-cursor select {
   border-radius: 9999px;
   pointer-events: none;
   color: #0a1640;
-  background: radial-gradient(circle at 30% 25%, #ffffff, #dfe7ff 70%, #b7c8f7);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 14px rgba(127, 155, 234, 0.7), 0 6px 16px rgba(10, 22, 64, 0.35);
+  /* the ring it becomes between glows */
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95), 0 0 0 1px rgba(10, 22, 64, 0.25);
   will-change: transform;
   transition: opacity 0.3s ease;
+  isolation: isolate;
+  animation: nav-link-ink 2.4s ease-in-out infinite;
+}
+/* the glowing ball: fades in and out, leaving just the ring */
+.nav-cursor-link::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(circle at 30% 25%, #ffffff, #dfe7ff 70%, #b7c8f7);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6), 0 0 14px rgba(127, 155, 234, 0.75), 0 0 28px rgba(127, 155, 234, 0.35), 0 6px 16px rgba(10, 22, 64, 0.35);
+  animation: nav-link-glow 2.4s ease-in-out infinite;
+}
+.nav-cursor-link svg { filter: drop-shadow(0 0 1px rgba(10, 22, 64, 0.5)); }
+@keyframes nav-link-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0; transform: scale(0.82); }
+}
+@keyframes nav-link-ink {
+  0%, 100% { color: #0a1640; }
+  50% { color: #ffffff; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-cursor-link, .nav-cursor-link::before { animation: none; }
 }
 
 /* Catalogue pages: no saving by drag, long-press or selection; a faint repeating watermark over the open page */
