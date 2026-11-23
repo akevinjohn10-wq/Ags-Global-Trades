@@ -298,14 +298,14 @@ function StoryFilm() {
       g!.clearRect(0, 0, vw, vh);
 
       // camera for the stage scenes
-      const K1 = mobile ? (vw * 1.3) / 1280 : Math.min((vw * 0.85) / 1280, (vh * 0.68) / 720);
+      const K1 = mobile ? (vw * 1.3) / 1280 : Math.min((vw * 0.66) / 1280, (vh * 0.56) / 720);
       const K3 = mobile ? (vw * 0.92) / 1302 : K1 * 0.55;
       const shrink = easeIO(seg(p, T.shrink));
       // drive-in: the camera holds still with the clip's left edge on the screen edge (slightly closer on
       // wide screens), so the stacker comes in from off-screen and the stack stays put on the right;
       // it eases to the normal framing during the turn
       const settle = ease(seg(p, [lerp(T.turn[0], T.turn[1], 0.52), T.turn[1]])); // after the stack has left the turn clip
-      const Kd = mobile ? K1 : Math.min(Math.max(K1, vw / 1280), K1 * 1.25);
+      const Kd = K1;
       const K0 = lerp(Kd, K1, settle);
       const K = lerp(K0, K3, shrink);
       // the stack's right edge (stage x 1205) sits near the right of the screen, above the chat button
@@ -357,6 +357,20 @@ function StoryFilm() {
         if (p > T.release[1]) dashes(toRoad > 0 ? (top + bottom) / 2 : top + 70 * K, K, travelled, toRoad > 0 ? toRoad : 0.5 * win(p, T.release[1], T.rise[0] + 0.03, 0.08));
         set($('panel'), { top: `${top.toFixed(1)}px` });
 
+        // fade a clip's edges into the page so its slightly different white never shows as a box
+        const feather = (x: number, y: number, w: number, h: number, sides: string) => {
+          const fe = 80 * K;
+          const run = (x0: number, y0: number, x1: number, y1: number, rx: number, ry: number, rw: number, rh: number) => {
+            const gr = g!.createLinearGradient(x0, y0, x1, y1);
+            gr.addColorStop(0, BG);
+            gr.addColorStop(1, 'rgba(251,251,251,0)');
+            g!.fillStyle = gr;
+            g!.fillRect(rx, ry, rw, rh);
+          };
+          if (sides.includes('t')) run(0, y - 1, 0, y + fe, x - 2, y - 2, w + 4, fe + 2);
+          if (sides.includes('l')) run(x - 1, 0, x + fe, 0, x - 2, y, fe + 2, h);
+          if (sides.includes('r')) run(x + w + 1, 0, x + w - fe, 0, x + w - fe, y, fe + 2, h);
+        };
         const clipTop = (fn: () => void) => {
           g!.save();
           g!.beginPath();
@@ -398,6 +412,7 @@ function StoryFilm() {
               g!.drawImage(fr, D[0] - off, D[1], D[2], D[3]);
               g!.restore();
             });
+            clipTop(() => feather(D[0] - off, D[1], D[2] + off, D[3], 'tr'));
           }
         } else if (p < T.truckIn[0]) {
           // 2. lift and turn, frame by frame
@@ -407,17 +422,8 @@ function StoryFilm() {
             clipTop(() => {
               const [fx, fy, fw, fh] = R_(FULL);
               g!.drawImage(fr, fx, fy, fw, fh);
-              // feather the clip's side edges into the page so no seam shows on wide screens
-              const fe = 70 * K;
-              const edges: [number, number][] = [[fx - 1, fx + fe]];
-              if (ti >= 58) edges.push([fx + fw + 1, fx + fw - fe]);
-              for (const [x0, x1] of edges) {
-                const gr = g!.createLinearGradient(x0, 0, x1, 0);
-                gr.addColorStop(0, BG);
-                gr.addColorStop(1, 'rgba(251,251,251,0)');
-                g!.fillStyle = gr;
-                g!.fillRect(Math.min(x0, x1), fy, Math.abs(x1 - x0), fh);
-              }
+              // feather the clip's edges into the page (the right edge only once the stack has left it)
+              feather(fx, fy, fw, fh, ti >= 58 ? 'lr' : 'l');
             });
         } else if (p < T.rise[0]) {
           // 3. truck in, container lowered, spreader released; 4. pull out
