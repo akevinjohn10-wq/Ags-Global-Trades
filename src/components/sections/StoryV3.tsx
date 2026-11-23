@@ -160,7 +160,7 @@ const T = {
   lower: [0.275, 0.297],
   swap: [0.289, 0.299],
   release: [0.3, 0.325],
-  shrink: [0.325, 0.38],
+  shrink: [0.325, 0.395],
   services: [0.36, 0.47],
   rise: [0.47, 0.55],
   road: [0.55, 0.69],
@@ -234,7 +234,10 @@ function StoryFilm() {
     const img = (src: string) => {
       const im = new Image();
       im.decoding = 'async';
-      im.onload = () => onScroll();
+      im.onload = () => {
+        onScroll();
+        im.decode?.().catch(() => {});
+      };
       im.src = src;
       return im;
     };
@@ -386,7 +389,7 @@ function StoryFilm() {
       g!.clearRect(0, 0, vw, vh);
 
       // camera for the stage scenes
-      const K1 = mobile ? (vw * 1.3) / 1280 : Math.min((vw * 0.66) / 1280, (vh * 0.56) / 720);
+      const K1 = mobile ? (vw * 1.3) / 1280 : Math.min((vw * 0.74) / 1280, (vh * 0.63) / 720);
       const K3 = mobile ? (vw * 0.92) / 1302 : K1 * 0.55;
       const shrink = easeIO(seg(p, T.shrink));
       // drive-in: the camera holds still with the clip's left edge on the screen edge (slightly closer on
@@ -527,7 +530,7 @@ function StoryFilm() {
           const low = easeIO(seg(p, T.lower));
           const swap = ease(seg(p, T.swap));
           const rel = ease(seg(p, T.release));
-          const leave = easeIO(seg(p, [T.release[1] - 0.004, T.release[1] + 0.03]));
+          const leave = easeIO(seg(p, [T.release[1] - 0.006, T.release[1] + 0.055]));
           // container: held box (stage 159..1124 x 300..566) -> lands exactly on the truck's container
           const BX0 = 159, BY0 = 300, BX1 = 1124, BY1 = 566;
           const L0 = 156.6, LT = 279.6, L1 = 1126.4, LB = 553;
@@ -642,7 +645,7 @@ function StoryFilm() {
 
       if (p >= T.road[0] && p < T.hand[1]) {
         const sEnd = S_END * 0.97;
-        const s = sEnd * easeIO(seg(p, T.road));
+        const s = sEnd * ease(seg(p, T.road));
         const [px, py0, hd0] = path(s);
         let py = py0;
         let hd = hd0;
@@ -839,7 +842,13 @@ function StoryFilm() {
     ro.observe(section);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', size);
+    let early = 0;
+    const kick = () => (early = window.setTimeout(startLoading, 600));
+    if (document.readyState === 'complete') kick();
+    else window.addEventListener('load', kick, { once: true });
     return () => {
+      clearTimeout(early);
+      window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
       setLive(false);
       ro.disconnect();
