@@ -171,8 +171,8 @@ const T = {
   road: [0.55, 0.69],
   hand: [0.69, 0.75], // the truck reaches the bottom of the page, which slides up onto the ship
   ship: [0.75, 0.84], // camera pulls back from the deck to the whole ship (video frames)
-  hold: [0.84, 0.92], // live footage: pulls back a little, then holds on the wide shot while it plays
-  sky: [0.92, 1],
+  hold: [0.84, 0.865], // the wide shot holds (no extra zoom) while its footage plays
+  sky: [0.865, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -773,7 +773,7 @@ function StoryFilm() {
           }
         }
         // then the live shot takes over and keeps moving; scrolling pulls the camera back further
-        if (liveReady) drawLive(lv!, lerp(1, mobile ? 0.8 : 0.72, easeIO(clamp(seg(p, T.hold) / 0.45))), edge, mix);
+        if (liveReady) drawLive(lv!, 1, edge, mix);
       }
       // mist over the edges of the wide shot
       const ho = seg(p, T.hold);
