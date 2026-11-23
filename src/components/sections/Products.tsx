@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Reveal from '@/components/ui/Reveal';
@@ -9,6 +9,10 @@ import { requestEnquiry } from '@/lib/enquiry';
 /** Numbered accordion of product categories (the unitedcarriers.com "Industries" list). */
 export default function Products() {
   const [open, setOpen] = useState<number | null>(null);
+  // tell the story's plane to get out of the way while a category is open
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ags:product-open', { detail: open !== null }));
+  }, [open]);
 
   return (
     <section id="catalogue" className="section-y relative isolate z-10 -mt-[100vh] scroll-mt-24 overflow-hidden bg-paper">

@@ -37,9 +37,14 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 96; // ship pull-back video frames
+const SHIP = 84; // ship pull-back video frames
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
-const SHIP_COL = { d: { cx: 1337 / 2560, w: 83 / 2560, fw: 1600, fh: 900 }, m: { cx: 417 / 720, w: 83 / 720, fw: 480, fh: 960 } };
+// the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
+// phones use a 360-wide centre slice of the 1280 frame
+const SHIP_COL = {
+  d: { cx: 639.3 / 1280, w: 33.5 / 1280, deck: 467 / 1280, fw: 1280, fh: 720 },
+  m: { cx: 179.3 / 360, w: 33.5 / 360, deck: 467 / 360, fw: 360, fh: 720 },
+};
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
 const WHEELS = [
   [180, 501],
@@ -267,7 +272,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship2${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -291,6 +296,11 @@ function StoryFilm() {
 
     // ---------- the live ship shot: plays on its own so the water keeps moving when you stop scrolling ----------
     let liveOn = false;
+    let productOpen = false;
+    const onProduct = (e: Event) => {
+      productOpen = !!(e as CustomEvent<boolean>).detail;
+      onScroll();
+    };
     let lastP = -1;
     let lastMove = 0;
     let lastT = performance.now();
@@ -302,7 +312,7 @@ function StoryFilm() {
       if (on) {
         if (!v.src) {
           v.muted = true;
-          v.src = V(mobile ? 'ship-live-m.mp4' : 'ship-live.mp4');
+          v.src = V(mobile ? 'ship-loop-m.mp4' : 'ship-loop.mp4');
         }
         v.play().catch(() => {});
       } else v.pause();
@@ -405,7 +415,7 @@ function StoryFilm() {
       const startX = mobile ? 640 : lerp(stackX, 640, settle);
       const sx0 = lerp(startX, TRUCK_C.x, shrink);
       const sy0 = lerp(GROUND1, TRUCK_C.y, shrink);
-      const ay = lerp(vh * (mobile ? 0.66 : 0.8), vh * (mobile ? 0.2 : 0.25), shrink);
+      const ay = lerp(vh * (mobile ? 0.66 : 0.73), vh * (mobile ? 0.2 : 0.25), shrink);
       const OX = vw / 2 - sx0 * K;
       const OY = ay - sy0 * K;
       const toY = (y: number) => OY + y * K;
@@ -691,6 +701,12 @@ function StoryFilm() {
         g!.stroke();
         g!.fillStyle = ROAD;
         g!.fillRect(XS - WR / 2, -WR / 2, WR, WR + 2);
+        if (hA > 0) {
+          // as it reaches the ship the road widens to the full width of the deck, like the reference
+          const wD = lerp(WR, (sc.deck * sDW) / z, hA);
+          const yTop = cy - (3 * vh) / z;
+          g!.fillRect(XS - wD / 2, yTop, wD, S_END + 6000 - yTop);
+        }
         g!.strokeStyle = 'rgba(255,255,255,0.55)';
         g!.lineWidth = 14;
         g!.setLineDash([120, 140]);
@@ -730,7 +746,7 @@ function StoryFilm() {
       if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
       lastP = p;
       if (!shipOn || p < T.ship[0] - 0.02) shipOff = 0;
-      else if (nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
+      else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
       lastT = nowT;
       const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
       setLive(shipOn && pos > SHIP - 25);
@@ -777,7 +793,7 @@ function StoryFilm() {
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       set($('sky'), { display: skyOn ? '' : 'none' });
       // solid over the sea and clouds; multiplied only once the next section is under it, so its text shows through
-      set($('planeLayer'), { display: skyOn ? '' : 'none', mixBlendMode: rect.bottom - vh < vh * 0.95 ? 'multiply' : 'normal' });
+      set($('planeLayer'), { opacity: productOpen ? '0' : '1', display: skyOn ? '' : 'none', mixBlendMode: rect.bottom - vh < vh * 0.95 ? 'multiply' : 'normal' });
       if (skyOn) {
         // the white wall only covers this section: the next section shows through under the plane
         // (the next section starts a full screen before this one ends, so its top is rect.bottom - vh)
@@ -795,8 +811,10 @@ function StoryFilm() {
       }
 
       // ===================== copy =====================
-      const c0 = clamp((T.intro[1] - p) / 0.03);
-      show('copy0', c0, { transform: `translate3d(0,${((1 - c0) * -20).toFixed(1)}px,0)` });
+      // fades as the stacker reaches the stack (end of its run across the page)
+      const reach = lerp(T.driveIn[0], T.driveIn[1], 0.55);
+      const c0 = clamp((reach + 0.006 - p) / 0.022);
+      show('copy0', c0, { transform: `translate3d(0,${((1 - c0) * 16).toFixed(1)}px,0)` });
       show('panelCopy', win(p, T.shrink[0] + 0.015, T.rise[0] + 0.015, 0.12));
       const row = $('row');
       if (row) row.style.transform = `translate3d(${lerp(vw * 0.25, -Math.max(0, row.scrollWidth - vw * 0.7), seg(p, T.services)).toFixed(1)}px,0,0)`;
@@ -842,12 +860,14 @@ function StoryFilm() {
     ro.observe(section);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', size);
+    window.addEventListener('ags:product-open', onProduct);
     let early = 0;
     const kick = () => (early = window.setTimeout(startLoading, 600));
     if (document.readyState === 'complete') kick();
     else window.addEventListener('load', kick, { once: true });
     return () => {
       clearTimeout(early);
+      window.removeEventListener('ags:product-open', onProduct);
       window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
       setLive(false);
@@ -878,15 +898,18 @@ function StoryFilm() {
           </div>
         </div>
 
-        {/* 1. intro */}
-        <div ref={r('copy0')} className="container-x absolute inset-x-0 top-0 z-[2] pt-28 text-ink sm:pt-32">
-          <p className="eyebrow">Our services</p>
-          <h2 className="mt-5 max-w-3xl text-[36px] font-medium leading-[1.02] sm:text-[56px] lg:text-[64px]">Every order, packed and on its way.</h2>
-          <p className="mt-5 max-w-md text-[16px] leading-[1.65] text-muted sm:text-[17px]">From the supplier&apos;s door to yours, we handle each step and keep you posted along the way.</p>
-        </div>
-
         {/* 4. the black panel under the truck */}
         <div ref={r('panel')} className="absolute inset-x-0 z-[2] overflow-hidden" style={{ top: '100%' }}>
+          {/* 1. intro, in white on the black ground strip */}
+          <div ref={r('copy0')} className="container-x absolute inset-x-0 top-0 grid gap-x-12 gap-y-3 pt-6 text-white sm:pt-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-7">
+              <p className="eyebrow eyebrow-light">Our services</p>
+              <h2 className="mt-3 text-[28px] font-medium leading-[1.04] sm:text-[38px] lg:text-[44px]">Every order, packed and on its way.</h2>
+            </div>
+            <p className="max-w-md text-[15px] leading-[1.6] text-white/70 sm:text-[16px] lg:col-span-5 lg:pb-1">
+              From the supplier&apos;s door to yours, we handle each step and keep you posted along the way.
+            </p>
+          </div>
           <div ref={r('panelCopy')} className="text-white" style={{ opacity: 0, visibility: 'hidden' }}>
             <div className="container-x grid gap-6 pt-10 lg:grid-cols-12 lg:pt-14">
               <div className="lg:col-span-5">
@@ -992,7 +1015,7 @@ function StoryFilm() {
       </div>
       {/* the plane is its own layer, multiplied onto the page: the next section's text shows through it,
           so the text reads as lying on top of the plane */}
-      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden" style={{ display: 'none' }}>
+      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden transition-opacity duration-500" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
           src={V('plane-xl.webp')}
