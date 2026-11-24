@@ -37,14 +37,14 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 158; // ship frames: the steadied pull-back (84), then the wide shot (74)
-const SHIP_CU = 84;
+const SHIP = 135; // ship frames (every frame of the 24 fps clip): deck close-up, pull-back to the whole ship, clouds rolling in
+const SHIP_CU = 40; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
 // phones use a 360-wide centre slice of the 1280 frame
 const SHIP_COL = {
-  d: { cx: 639.3 / 1280, w: 33.5 / 1280, deck: 467 / 1280, fw: 1280, fh: 720 },
-  m: { cx: 179.3 / 360, w: 33.5 / 360, deck: 467 / 360, fw: 360, fh: 720 },
+  d: { cx: 639.5 / 1280, w: 44 / 1280, deck: 640 / 1280, fw: 1280, fh: 720 },
+  m: { cx: 179.5 / 360, w: 44 / 360, deck: 640 / 360, fw: 360, fh: 720 },
 };
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
 const WHEELS = [
@@ -171,10 +171,8 @@ const T = {
   rise: [0.4029, 0.4714],
   road: [0.4714, 0.5914],
   hand: [0.5914, 0.6429], // the truck reaches the bottom of the page, which slides up onto the ship
-  ship: [0.643, 0.703], // the steadied pull-back from the deck to the whole ship
-  wide: [0.703, 0.865], // the wide shot plays on, the ship sailing forward
-  out: [0.765, 0.875], // the camera keeps pulling back while fog rolls over the ship
-  sky: [0.875, 1],
+  ship: [0.643, 0.88], // the clip: deck close-up, pull-back to the whole ship, clouds rolling in
+  sky: [0.88, 1], // clouds drift over the sea, then the plane crosses and wipes the scene away
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -198,6 +196,7 @@ function path(s: number): [number, number, number] {
   return [XS, R + (s - A - ARC), Math.PI / 2];
 }
 
+const PAPER = '#ffffff';
 const SIDE_MASK = 'linear-gradient(to right, #000 0%, #000 55%, transparent 100%)';
 const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
 
@@ -209,6 +208,7 @@ export default function StoryV3() {
 function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const skyRef = useRef<HTMLCanvasElement>(null);
   const q = useRef<Record<string, HTMLElement | null>>({});
   const r = (k: string) => (el: HTMLElement | null) => {
     q.current[k] = el;
@@ -220,6 +220,9 @@ function StoryFilm() {
   useEffect(() => {
     const section = sectionRef.current;
     const canvas = canvasRef.current;
+    const skyCv = skyRef.current;
+    const sg = skyCv?.getContext('2d') ?? null;
+    let sdpr = 1;
     const g = canvas?.getContext('2d');
     if (!section || !canvas || !g) return;
     const $ = (k: string) => q.current[k] ?? null;
@@ -273,7 +276,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship3${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship4${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -292,6 +295,11 @@ function StoryFilm() {
       dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
       canvas.width = Math.round(vw * dpr);
       canvas.height = Math.round(vh * dpr);
+      if (skyCv) {
+        sdpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        skyCv.width = Math.round(vw * sdpr);
+        skyCv.height = Math.round(vh * sdpr);
+      }
       update();
     };
 
@@ -586,7 +594,8 @@ function StoryFilm() {
       const hB = easeIO(clamp((hT - 0.4) / 0.6)); // the page slides up, the ship comes up under it
       const edge = lerp(vh, 0, hB);
 
-      if (p >= T.road[0] && p < T.hand[1]) {
+      let truckAt: number[] | null = null;
+      if (p >= T.road[0] && p < T.hand[1] + 0.02) {
         const sEnd = S_END * 0.97;
         const s = sEnd * ease(seg(p, T.road));
         const [px, py0, hd0] = path(s);
@@ -634,12 +643,6 @@ function StoryFilm() {
         g!.stroke();
         g!.fillStyle = ROAD;
         g!.fillRect(XS - WR / 2, -WR / 2, WR, WR + 2);
-        if (hA > 0) {
-          // as it reaches the ship the road widens to the full width of the deck, like the reference
-          const wD = lerp(WR, (sc.deck * sDW) / z, hA);
-          const yTop = cy - (3 * vh) / z;
-          g!.fillRect(XS - wD / 2, yTop, wD, S_END + 6000 - yTop);
-        }
         g!.strokeStyle = 'rgba(255,255,255,0.55)';
         g!.lineWidth = 14;
         g!.setLineDash([120, 140]);
@@ -658,15 +661,9 @@ function StoryFilm() {
           g!.fillRect(XS - WR / 2 - 160, i, 110, 34);
           g!.fillRect(XS + i, WR / 2 + 50, 34, 110);
         }
-        // the truck
-        g!.translate(px, py);
-        g!.rotate(hd);
-        g!.fillStyle = '#2a2d33';
-        g!.fillRect(BOX.x + 30, -60, BOX.w - 60, 34);
-        g!.fillRect(BOX.x + 30, 26, BOX.w - 60, 34);
-        if (ready(one['truck-top-cab'])) g!.drawImage(one['truck-top-cab'], -639.5 * TS, -360 * TS, 1280 * TS, 714 * TS);
-        if (ready(one['truck-top-box'])) g!.drawImage(one['truck-top-box'], BOX.x, BOX.y, BOX.w, BOX.h);
         g!.restore();
+        // the truck: not clipped with the page; it stays where it is and ends up on the ship's centre column
+        truckAt = [sxA, syA, z, cx, cy, px, py, hd];
       }
 
       // ===================== 7. the ship: the page slides up onto the deck, then the camera pulls back =====================
@@ -678,103 +675,98 @@ function StoryFilm() {
       if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
       lastP = p;
       if (!shipOn || p < T.ship[0] - 0.02) shipOff = 0;
-      else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 12;
+      else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 24;
       lastT = nowT;
       // pull-back frames over T.ship, then the wide shot over T.wide; when idle it carries on playing forward
-      const pos = Math.min(SHIP - 1, (p < T.wide[0] ? seg(p, T.ship) * (SHIP_CU - 1) : SHIP_CU - 1 + seg(p, T.wide) * (SHIP - SHIP_CU)) + shipOff);
+      const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
         // the road stays put: the ship is slid sideways so its container column sits under the truck,
         // then drifts back to centre as the camera pulls back
         const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP_CU * 0.35))));
-        // then the camera keeps climbing: the shot shrinks toward the middle (open sea fills in around it)
-        // and the ship sails on down the page, while fog rolls in over everything
-        const oT = seg(p, T.out);
-        const zo = lerp(1, 0.5, easeIO(oT));
-        const W2 = sDW * zo;
-        const H2 = sDH * zo;
-        const x = (vw - W2) / 2 + dxS;
-        const y = edge + (vh - H2) / 2 + vh * 0.12 * oT * oT;
-        if (zo < 0.999) {
-          g!.fillStyle = '#1f3547';
-          g!.fillRect(0, edge, vw, vh - edge);
-        }
+        const x = (vw - sDW) / 2 + dxS;
+        const y = edge + (vh - sDH) / 2;
         {
           // blend the two nearest frames so the motion is smooth between them
           const i0 = Math.floor(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
           const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
-          if (fA) g!.drawImage(fA, x, y, W2, H2);
+          if (fA) g!.drawImage(fA, x, y, sDW, sDH);
           if (fB && pos - i0 > 0.02) {
             g!.globalAlpha = pos - i0;
-            g!.drawImage(fB, x, y, W2, H2);
+            g!.drawImage(fB, x, y, sDW, sDH);
             g!.globalAlpha = 1;
           }
         }
-        if (zo < 0.999) {
-          // feather the shot's edges into the open sea around it
-          const fw = Math.min(W2, H2) * 0.22;
-          const sea = (x0: number, y0: number, x1: number, y1: number) => {
-            const gr = g!.createLinearGradient(x0, y0, x1, y1);
-            gr.addColorStop(0, '#1f3547');
-            gr.addColorStop(1, 'rgba(31,53,71,0)');
-            return gr;
-          };
-          g!.fillStyle = sea(x, 0, x + fw, 0);
-          g!.fillRect(x - 1, y, fw + 1, H2);
-          g!.fillStyle = sea(x + W2, 0, x + W2 - fw, 0);
-          g!.fillRect(x + W2 - fw, y, fw + 1, H2);
-          g!.fillStyle = sea(0, y, 0, y + fw);
-          g!.fillRect(x, y - 1, W2, fw + 1);
-          g!.fillStyle = sea(0, y + H2, 0, y + H2 - fw);
-          g!.fillRect(x, y + H2 - fw, W2, fw + 1);
+      }
+      // the truck on top of the page and the ship; once the camera starts climbing it becomes one of the deck's containers
+      if (truckAt) {
+        const [tx0, ty0, tz, tcx, tcy, tpx, tpy, thd] = truckAt;
+        const fade = clamp(1 - pos / 6);
+        if (fade > 0) {
+          g!.save();
+          g!.globalAlpha = fade;
+          g!.translate(tx0, ty0);
+          g!.scale(tz, tz);
+          g!.translate(-tcx + tpx, -tcy + tpy);
+          g!.rotate(thd);
+          g!.fillStyle = '#2a2d33';
+          g!.fillRect(BOX.x + 30, -60, BOX.w - 60, 34);
+          g!.fillRect(BOX.x + 30, 26, BOX.w - 60, 34);
+          if (ready(one['truck-top-cab'])) g!.drawImage(one['truck-top-cab'], -639.5 * TS, -360 * TS, 1280 * TS, 714 * TS);
+          if (ready(one['truck-top-box'])) g!.drawImage(one['truck-top-box'], BOX.x, BOX.y, BOX.w, BOX.h);
+          g!.restore();
         }
       }
-      // fog rolls in from the edges, thickens and finally covers the ship, just before the clouds
-      const fo = seg(p, [lerp(T.out[0], T.out[1], 0.25), T.out[1]]);
-      set($('fog'), { display: shipOn && fo > 0 ? '' : 'none' });
-      if (shipOn && fo > 0) {
-        set($('fogEdge'), { opacity: ease(clamp(fo / 0.55)).toFixed(3) });
-        set($('fogFull'), { opacity: ease(clamp((fo - 0.45) / 0.55)).toFixed(3) });
-        const drift = (performance.now() / 1000) % 200;
-        set($('fogA'), { opacity: ease(clamp(fo / 0.6)).toFixed(3), transform: `translate3d(${(lerp(-45, -6, ease(fo)) - drift * 0.04).toFixed(2)}%,0,0) scale(${lerp(1.5, 1.15, fo).toFixed(3)})` });
-        set($('fogB'), { opacity: ease(clamp(fo / 0.6)).toFixed(3), transform: `translate3d(${(lerp(45, 6, ease(fo)) + drift * 0.04).toFixed(2)}%,0,0) scale(${lerp(1.6, 1.2, fo).toFixed(3)}) scaleX(-1)` });
-      }
+
       // ===================== 8. sky: clouds and a plane =====================
-      // runs on past the end of the section: the cloud wall wipes the sea away, the next section
-      // slides in underneath it, and the plane carries on across the top of that section
+      // the sea scene moves onto a fixed layer that sits over the next section; clouds drift in over part of
+      // the sea, then the plane flies across and wipes the whole scene away right behind its wings, uncovering
+      // the next section as it goes (like the reference: no white screen in between)
       const skyA = T.sky[0] * span;
-      const skyB = span + vh * 0.9;
+      const skyB = span + vh * 0.95;
       const u = clamp((-rect.top - skyA) / (skyB - skyA));
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       set($('sky'), { display: skyOn ? '' : 'none' });
-      // solid over the sea and clouds; multiplied only once the next section is under it, so its text shows through
-      set($('planeLayer'), { opacity: productOpen ? '0' : '1', display: skyOn ? '' : 'none', mixBlendMode: rect.bottom - vh < vh * 0.95 ? 'multiply' : 'normal' });
-      if (skyOn) {
-        // the white wall only covers this section: the next section shows through under the plane
-        // (the next section starts a full screen before this one ends, so its top is rect.bottom - vh)
-        const nextTop = rect.bottom - vh;
-        // overlaps the next section's empty top margin a little, so a late frame while scrolling fast never opens a gap
-        set($('bankClip'), { height: `${clamp(nextTop + (mobile ? 48 : 130), 0, vh).toFixed(1)}px` });
-        // clouds close in from both sides like curtains, the sky whitens behind them, then they drift apart again
-        const shut = easeIO(clamp(u / 0.24));
-        const part = ease(clamp((u - 0.3) / 0.7));
-        set($('bank'), { opacity: ease(clamp((u - 0.08) / 0.16)).toFixed(3) });
-        const after = clamp((vh - nextTop) / vh);
-        const cOp = String(Math.min(1, u * 8) * (1 - 0.85 * after));
-        set($('cloudA'), { transform: `translate3d(${(lerp(-100, 8, shut) - 70 * part).toFixed(2)}%,${(-4 * u).toFixed(2)}%,0) scale(1.35)`, opacity: cOp });
-        set($('cloudB'), { transform: `translate3d(${(lerp(100, -8, shut) + 70 * part).toFixed(2)}%,${(4 * u).toFixed(2)}%,0) scale(1.35) scaleX(-1)`, opacity: cOp });
-        // once the sky is solid white, the stage under it goes white too, so scrolling back fast never shows the sea through a gap
-        if (u > 0.25) {
-          g!.fillStyle = '#ffffff';
+      set($('planeLayer'), { opacity: productOpen ? '0' : '1', display: skyOn ? '' : 'none' });
+      if (skyOn && sg) {
+        // the same frame of the clip, full screen, on the fixed layer
+        sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
+        sg.fillStyle = '#0b2a45';
+        sg.fillRect(0, 0, vw, vh);
+        const i0 = Math.floor(pos);
+        const fA = frame(ship, i0, 0, SHIP - 1);
+        const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
+        const sx = (vw - sDW) / 2;
+        const sy = (vh - sDH) / 2;
+        if (fA) sg.drawImage(fA, sx, sy, sDW, sDH);
+        if (fB && pos - i0 > 0.02) {
+          sg.globalAlpha = pos - i0;
+          sg.drawImage(fB, sx, sy, sDW, sDH);
+          sg.globalAlpha = 1;
+        }
+        // more cloud drifts in from the sides, leaving the middle of the sea open
+        const drift = easeIO(clamp(u / 0.4));
+        set($('cloudA'), { transform: `translate3d(${lerp(-100, mobile ? -30 : -42, drift).toFixed(2)}%,${(-3 * u).toFixed(2)}%,0) scale(1.3)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
+        set($('cloudB'), { transform: `translate3d(${lerp(100, mobile ? 30 : 42, drift).toFixed(2)}%,${(3 * u).toFixed(2)}%,0) scale(1.3) scaleX(-1)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
+        // the plane: big, nose first, lingering a little through the middle
+        const u0 = (span - skyA) / (skyB - skyA) - 0.04; // the next section reaches the top just as the wipe begins
+        const t = clamp((u - u0) / (1 - u0));
+        const glide = t; // a steady pass, so the wipe moves at an even pace
+        const span2 = vh * (mobile ? 0.78 : 1.55); // wingspan
+        const pw = span2 * (1369 / 1087);
+        const px = lerp(-pw - 40, vw + 40, glide);
+        set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${px.toFixed(1)}px,-50%,0)` });
+        // everything left of the wings is already the next section
+        const wipe = px + pw * 0.46;
+        const m = wipe <= -60 ? 'none' : `linear-gradient(to right, transparent ${(wipe - 70).toFixed(0)}px, #000 ${(wipe + 50).toFixed(0)}px)`;
+        set($('sky'), { WebkitMaskImage: m, maskImage: m });
+        // under the wiped part the page is plain paper until the next section's own background reaches the top
+        if (wipe > -60) {
+          g!.fillStyle = PAPER;
           g!.fillRect(0, 0, vw, vh);
         }
-        // the whole aircraft crosses the page, lingering through the middle
-        const t = clamp((u - 0.14) / 0.8); // enters once the clouds have closed in
-        const glide = 0.5 + 4 * Math.pow(t - 0.5, 3);
-        const pw = Math.min(vw * (mobile ? 0.98 : 0.9), vh * 1.18 * (1369 / 1087));
-        set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${lerp(-pw - 40, vw + 40, glide).toFixed(1)}px,-50%,0)` });
       }
 
       // ===================== copy =====================
@@ -796,8 +788,8 @@ function StoryFilm() {
         li.style.opacity = String(t);
         li.style.transform = `translate3d(0,${((1 - t) * 20).toFixed(1)}px,0)`;
       });
-      const c2 = lerp(T.ship[0], T.ship[1], 0.9);
-      show('copy2', win(p, c2, lerp(T.out[0], T.out[1], 0.45), 0.12));
+      const c2 = lerp(T.ship[0], T.ship[1], 0.5);
+      show('copy2', win(p, c2, lerp(T.ship[0], T.ship[1], 0.93), 0.12));
       valueRefs.current.forEach((li, i) => {
         if (!li) return;
         const t = ease(clamp((p - c2 - 0.012 - i * 0.005) / 0.008));
@@ -854,14 +846,7 @@ function StoryFilm() {
           <div className="absolute inset-0 bg-[#020a14]/10" />
           {/* phones: the ship fills the width, so shade behind the heading and the points */}
           <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,20,0.7)_0%,rgba(2,10,20,0.15)_32%,rgba(2,10,20,0.15)_52%,rgba(2,10,20,0.75)_75%)] sm:hidden" />
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_50%,rgba(2,12,24,0.55))]" />
-          {/* fog that rolls in over the ship before the clouds: thick at the edges first, then over everything */}
-          <div ref={r('fog')} className="absolute inset-0" style={{ display: 'none' }}>
-            <div ref={r('fogEdge')} className="absolute inset-0 bg-[radial-gradient(ellipse_60%_55%_at_50%_50%,rgba(236,241,247,0)_20%,rgba(236,241,247,0.75)_70%,#eef2f7_100%)]" style={{ opacity: 0 }} />
-            <img ref={r('fogA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ opacity: 0, WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
-            <img ref={r('fogB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover will-change-transform" style={{ opacity: 0, WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
-            <div ref={r('fogFull')} className="absolute inset-0 bg-[#f4f7fa]" style={{ opacity: 0 }} />
-          </div>
+          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_55%,rgba(2,12,24,0.4))] max-md:bg-[radial-gradient(160%_80%_at_50%_45%,transparent_60%,rgba(2,12,24,0.3))]" />
         </div>
 
         {/* 4. the black panel under the truck */}
@@ -971,14 +956,11 @@ function StoryFilm() {
       </div>
       {/* 8. sky: a fixed layer, so the clouds and plane carry on over the next section */}
       <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[30] overflow-hidden" style={{ display: 'none' }}>
-        <div ref={r('bankClip')} className="absolute inset-x-0 top-0 h-full overflow-hidden">
-          <div ref={r('bank')} className="absolute inset-0 bg-white" style={{ opacity: 0 }} />
-        </div>
+        <canvas ref={skyRef} className="absolute inset-0 h-full w-full" />
         <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
       </div>
-      {/* the plane is its own layer, multiplied onto the page: the next section's text shows through it,
-          so the text reads as lying on top of the plane */}
+      {/* the plane flies over everything: the old scene and then the next section */}
       <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden transition-opacity duration-500" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
