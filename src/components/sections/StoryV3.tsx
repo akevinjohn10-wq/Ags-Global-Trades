@@ -410,7 +410,7 @@ function StoryFilm() {
       const v = shipView(seaState.posS, ...seaState.rect);
       if (!v) return true;
       const veil = skyState.on ? 0.4 * (1 - easeIO(clamp(skyState.u / 0.5))) : 0.4;
-      sea.draw(v.a, v.b, v.mixB, seaState.edge, v.halfW, now / 1000, mobile ? 2.2 : 3.6, gdpr, veil);
+      sea.draw(v.a, v.b, v.mixB, seaState.edge, v.halfW, now / 1000, mobile ? 1.6 : 3.6, gdpr, veil, mobile ? 0.6 : 1);
       return true;
     };
     // the fixed sky layer shows the same (moving) sea until the plane wipes it away
@@ -538,12 +538,12 @@ function StoryFilm() {
       const B = ready(ship[i]) ? ship[i] : null;
       if (!A || f < 1e-4) {
         const im = B ?? frame(ship, i, 0, SHIP - 1);
-        return im ? { a: at(im, 1), b: null, mixB: 0, halfW: 0.265 * shipScale(i) } : null;
+        return im ? { a: at(im, 1), b: null, mixB: 0, halfW: 0.265 * shipScale(i) * (mobile ? 1920 / 540 : 1) } : null;
       }
       const sNow = Math.exp(lerp(Math.log(shipScale(i)), Math.log(shipScale(i + 1)), f));
       const fo = clamp(f / 0.35);
       const mixB = B ? 1 - fo * fo * (3 - 2 * fo) : 0;
-      return { a: at(A, sNow / shipScale(i + 1)), b: B ? at(B, sNow / shipScale(i)) : null, mixB, halfW: 0.265 * shipScale(i + 1) };
+      return { a: at(A, sNow / shipScale(i + 1)), b: B ? at(B, sNow / shipScale(i)) : null, mixB, halfW: 0.265 * shipScale(i + 1) * (mobile ? 1920 / 540 : 1) };
     };
 
     const size = () => {
@@ -561,11 +561,11 @@ function StoryFilm() {
       };
       fit(canvas, dpr);
       if (sea) {
-        gdpr = Math.min(window.devicePixelRatio || 1, 1.5) * seaRes;
+        gdpr = Math.min(window.devicePixelRatio || 1, mobile ? 3 : 2) * seaRes;
         fit(sea.canvas, gdpr);
       }
       if (skyCv) {
-        sdpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        sdpr = Math.min(window.devicePixelRatio || 1, mobile ? 3 : 2);
         fit(skyCv, sdpr);
       }
       update();
