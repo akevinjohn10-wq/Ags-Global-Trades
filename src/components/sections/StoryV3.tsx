@@ -43,7 +43,7 @@ const SHIP_CU = 1; // roughly where the pull-back is well under way
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
 // full-size frames (1920 x 1080); phones use a 540-wide centre slice
 const SHIP_COL = {
-  d: { cx: 959.25 / 1920, w: 66 / 1920, deck: 960 / 1920, fw: 1920, fh: 1080 },
+  d: { cx: 959.25 / 1920, w: 66 / 1920, deck: 960 / 1920, fw: 1440, fh: 810 },
   m: { cx: 269.25 / 540, w: 66 / 540, deck: 960 / 540, fw: 540, fh: 1080 },
 };
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
@@ -158,21 +158,21 @@ const BOX = { x: (56 - 639.5) * TS, y: (234 - 360) * TS, w: 856 * TS, h: 262 * T
 
 // ---------- timeline ----------
 const T = {
-  intro: [0, 0.0343],
-  driveIn: [0.0034, 0.0857],
-  turn: [0.0857, 0.1971],
-  lift: [0.1971, 0.21], // the stacker raises the container high enough for the truck
-  truckIn: [0.2057, 0.2357],
-  lower: [0.2357, 0.2546],
-  swap: [0.2477, 0.2563],
-  release: [0.2571, 0.2786],
-  shrink: [0.2786, 0.3386],
-  services: [0.3086, 0.4029],
-  rise: [0.4029, 0.4714],
-  road: [0.4714, 0.5914],
-  hand: [0.5914, 0.6429], // the truck reaches the bottom of the page, which slides up onto the ship
-  ship: [0.643, 0.88], // the clip: deck close-up, pull-back to the whole ship, clouds rolling in
-  sky: [0.88, 1], // clouds drift over the sea, then the plane crosses and wipes the scene away
+  intro: [0, 0.0365],
+  driveIn: [0.0036, 0.0911],
+  turn: [0.0911, 0.2095],
+  lift: [0.2095, 0.2232], // the stacker raises the container high enough for the truck
+  truckIn: [0.2186, 0.2505],
+  lower: [0.2505, 0.2706],
+  swap: [0.2632, 0.2724],
+  release: [0.2732, 0.2961],
+  shrink: [0.2961, 0.3598],
+  services: [0.3279, 0.4282],
+  rise: [0.4282, 0.501],
+  road: [0.501, 0.6285],
+  hand: [0.6285, 0.6832], // the truck reaches the bottom of the page, which slides up onto the ship
+  ship: [0.6833, 0.8725], // the wide shot sails up the page, clouds roll in
+  sky: [0.8725, 1],
 } as const;
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -215,7 +215,7 @@ class SeaGL {
   private u: Record<string, WebGLUniformLocation | null> = {};
   static create(canvas: HTMLCanvasElement) {
     try {
-      const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: true, antialias: false });
+      const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: false, antialias: false });
       return gl ? new SeaGL(canvas, gl) : null;
     } catch {
       return null;
@@ -234,7 +234,7 @@ uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform fl
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
   return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
-float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*vn(p);p*=2.03;a*=.5;}return v;}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<3;i++){v+=a*vn(p);p*=2.03;a*=.5;}return v;}
 void main(){
   vec2 px=vec2(gl_FragCoord.x,res.y-gl_FragCoord.y);
   // where the page meets the sea: a ragged, moving line of foam and spray instead of a straight edge
@@ -431,8 +431,8 @@ function StoryFilm() {
       seaRaf = 0;
       if (sea && lastTick) {
         const dt = now - lastTick;
-        slowFrames = dt > 24 && dt < 250 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
-        if (slowFrames > 30) {
+        slowFrames = dt > 21 && dt < 250 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
+        if (slowFrames > 14) {
           slowFrames = 0;
           if (seaRes > 0.55) {
             seaRes *= 0.75;
@@ -510,7 +510,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship6${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship7${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -551,7 +551,8 @@ function StoryFilm() {
       // the stage is the full (toolbar-hidden) screen height on phones, so it never leaves a strip at the bottom
       vh = canvas.parentElement?.clientHeight || window.innerHeight;
       mobile = vw < 768;
-      dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
+      // render a little under the screen's full sharpness: far less to draw each frame, barely visible
+      dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.25);
       // only reallocate a canvas when its size really changes (phone toolbars fire resize while scrolling)
       const fit = (cv: HTMLCanvasElement, k: number) => {
         const w = Math.round(vw * k);
@@ -561,11 +562,11 @@ function StoryFilm() {
       };
       fit(canvas, dpr);
       if (sea) {
-        gdpr = Math.min(window.devicePixelRatio || 1, mobile ? 3 : 2) * seaRes;
+        gdpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.35 : 1) * seaRes;
         fit(sea.canvas, gdpr);
       }
       if (skyCv) {
-        sdpr = Math.min(window.devicePixelRatio || 1, mobile ? 3 : 2);
+        sdpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1);
         fit(skyCv, sdpr);
       }
       update();
@@ -633,7 +634,7 @@ function StoryFilm() {
       const riseI = Math.round(riseT * (FRAMES - 1));
       // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
       const toRoad = easeIO(clamp(riseT / 0.95));
-      const travelled = (p - T.release[1]) * vw * 10.5;
+      const travelled = (p - T.release[1]) * vw * 9.88;
 
       // ===================== stage scenes (1-5) =====================
       if (p < T.road[0]) {
@@ -1153,7 +1154,7 @@ function StoryFilm() {
   }, []);
 
   return (
-    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1800vh] scroll-mt-24 bg-[#fbfbfb] md:h-[2200vh]">
+    <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1695vh] scroll-mt-24 bg-[#fbfbfb] md:h-[2070vh]">
       <div className="sticky top-0 h-[100lvh] overflow-hidden">
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
         <canvas ref={seaRef} aria-hidden="true" className="absolute inset-0 h-full w-full" style={{ display: 'none' }} />
