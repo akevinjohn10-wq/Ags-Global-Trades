@@ -692,16 +692,10 @@ function StoryFilm() {
           g!.beginPath();
           g!.rect(0, Math.max(0, edge), vw, vh);
           g!.clip();
-          // blend the two nearest frames so the motion is smooth between them
-          const i0 = Math.floor(pos);
+          // the nearest frame only (blending two frames doubles the image while the camera moves fast)
+          const i0 = Math.round(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
-          const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
           if (fA) g!.drawImage(fA, x, y, sDW, sDH);
-          if (fB && pos - i0 > 0.02) {
-            g!.globalAlpha = pos - i0;
-            g!.drawImage(fB, x, y, sDW, sDH);
-            g!.globalAlpha = 1;
-          }
           g!.restore();
         }
       }
@@ -723,17 +717,11 @@ function StoryFilm() {
         sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
         sg.fillStyle = '#0b2a45';
         sg.fillRect(0, 0, vw, vh);
-        const i0 = Math.floor(pos);
+        const i0 = Math.round(pos);
         const fA = frame(ship, i0, 0, SHIP - 1);
-        const fB = i0 + 1 < SHIP && ready(ship[i0 + 1]) ? ship[i0 + 1] : null;
         const sx = (vw - sDW) / 2;
         const sy = (vh - sDH) / 2;
         if (fA) sg.drawImage(fA, sx, sy, sDW, sDH);
-        if (fB && pos - i0 > 0.02) {
-          sg.globalAlpha = pos - i0;
-          sg.drawImage(fB, sx, sy, sDW, sDH);
-          sg.globalAlpha = 1;
-        }
         // more cloud drifts in from the sides, leaving the middle of the sea open
         const drift = easeIO(clamp(u / 0.4));
         set($('cloudA'), { transform: `translate3d(${lerp(-100, mobile ? -30 : -42, drift).toFixed(2)}%,${(-3 * u).toFixed(2)}%,0) scale(1.3)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
