@@ -213,8 +213,6 @@ class SeaGL {
   gl: WebGLRenderingContext;
   canvas: HTMLCanvasElement;
   private u: Record<string, WebGLUniformLocation | null> = {};
-  private tex: WebGLTexture[] = [];
-  private last: (HTMLImageElement | null)[] = [null, null];
   static create(canvas: HTMLCanvasElement) {
     try {
       const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: true, antialias: false });
@@ -228,7 +226,7 @@ class SeaGL {
     this.gl = gl;
     const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const fs = `precision mediump float;
-uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB,veil,sc;
+uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB,veil,sc,glare;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
   return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
@@ -252,6 +250,18 @@ void main(){
   if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+dd-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
   c*=1.+.06*w*sin(uv.x*50.+uv.y*43.+t*1.7)*sin(uv.y*30.-t*1.3);
   c=mix(c,vec3(.008,.04,.08),veil);
+  // a soft sun glare from the top right, with small glints sparkling on the waves near it
+  vec2 sp=px/sc;float asp=res.x/res.y;
+  float sd=distance(vec2(px.x/res.x*asp,px.y/res.y),vec2(.9*asp,.08));
+  if(glare>0.&&sd<1.3){
+    float sun=exp(-sd*2.4);
+    c+=vec3(1.,.86,.64)*sun*.2*glare;
+    if(sd<.75&&w>0.){
+      float gl=max(0.,sin(sp.x*.9+t*2.2+sin(sp.y*.31)*3.)*sin(sp.y*.7-t*1.6+sin(sp.x*.23)*2.));
+      gl*=gl;gl*=gl;gl*=gl;gl*=gl;
+      c+=vec3(1.,.95,.86)*gl*w*sun*.85*glare;
+    }
+  }
   if(d>=1e3){gl_FragColor=vec4(c,1.);return;}
   float seaA=smoothstep(-8.,8.,d);
   float foam=clamp(smoothstep(95.,0.,abs(d-6.))*smoothstep(.36,.62,n2*.75+n*.55-abs(d)/220.),0.,1.);
@@ -278,42 +288,49 @@ void main(){
     const a = gl.getAttribLocation(prog, 'a');
     gl.enableVertexAttribArray(a);
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['rectA', 'rectB', 'res', 'edge', 't', 'halfW', 'amp', 'mixB', 'texA', 'texB', 'veil', 'sc']) this.u[k] = gl.getUniformLocation(prog, k);
+    for (const k of ['rectA', 'rectB', 'res', 'edge', 't', 'halfW', 'amp', 'mixB', 'texA', 'texB', 'veil', 'sc', 'glare']) this.u[k] = gl.getUniformLocation(prog, k);
     gl.uniform1i(this.u.texA, 0);
     gl.uniform1i(this.u.texB, 1);
-    for (let i = 0; i < 2; i++) {
-      const tx = gl.createTexture();
-      gl.activeTexture(gl.TEXTURE0 + i);
-      gl.bindTexture(gl.TEXTURE_2D, tx);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      this.tex.push(tx);
-    }
+
   }
   get ok() {
     return !this.gl.isContextLost();
   }
-  private upload(unit: number, img: HTMLImageElement) {
-    if (img === this.last[unit]) return;
+  // recently used frames stay on the graphics card, so scrolling back and forth never sends them again
+  private cache = new Map<HTMLImageElement, WebGLTexture>();
+  private texFor(img: HTMLImageElement) {
     const gl = this.gl;
-    gl.activeTexture(gl.TEXTURE0 + unit);
-    gl.bindTexture(gl.TEXTURE_2D, this.tex[unit]);
+    let tx = this.cache.get(img);
+    if (tx) {
+      this.cache.delete(img);
+      this.cache.set(img, tx);
+      return tx;
+    }
+    if (this.cache.size >= 14) {
+      const [oldImg, oldTx] = this.cache.entries().next().value as [HTMLImageElement, WebGLTexture];
+      this.cache.delete(oldImg);
+      tx = oldTx;
+    } else tx = gl.createTexture()!;
+    gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
-    this.last[unit] = img;
+    this.cache.set(img, tx);
+    return tx;
   }
   /** rects and edge in CSS pixels; scale = the canvas's pixels per CSS pixel */
-  draw(a: ShipLayer, b: ShipLayer | null, mixB: number, edge: number, halfW: number, t: number, amp: number, scale: number, veil: number) {
+  draw(a: ShipLayer, b: ShipLayer | null, mixB: number, edge: number, halfW: number, t: number, amp: number, scale: number, veil: number, glare = 1) {
     const gl = this.gl;
-    // keep each image in the texture unit it's already in, so a frame is uploaded once, not on every swap
-    let ua = 0;
-    if (this.last[1] === a.img || (b && this.last[0] === b.img)) ua = 1;
-    const ub = 1 - ua;
-    this.upload(ua, a.img);
-    if (b && mixB > 0.001) this.upload(ub, b.img);
-    gl.uniform1i(this.u.texA, ua);
-    gl.uniform1i(this.u.texB, ub);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texFor(a.img));
+    if (b && mixB > 0.001) {
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, this.texFor(b.img));
+    }
+    gl.uniform1i(this.u.texA, 0);
+    gl.uniform1i(this.u.texB, 1);
     const rb = b ?? a;
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
     gl.uniform4f(this.u.rectA, a.rect[0] * scale, a.rect[1] * scale, a.rect[2] * scale, a.rect[3] * scale);
@@ -326,6 +343,7 @@ void main(){
     gl.uniform1f(this.u.mixB, b ? mixB : 0);
     gl.uniform1f(this.u.veil, veil);
     gl.uniform1f(this.u.sc, scale);
+    gl.uniform1f(this.u.glare, glare);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
@@ -359,13 +377,20 @@ function StoryFilm() {
     let nextInner: HTMLElement | null = null;
     // moving water (WebGL); skipped for reduced motion, and the plain frames are used if it's unavailable
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const sea = !reduceMotion && seaRef.current ? SeaGL.create(seaRef.current) : null;
+    let sea = !reduceMotion && seaRef.current ? SeaGL.create(seaRef.current) : null;
+    // if a machine can't keep up, the water layer drops resolution, and as a last resort turns itself off
+    let seaRes = 1;
+    let slowFrames = 0;
+    let lastTick = 0;
     let gdpr = 1;
     const seaState = { on: false, target: 0, posS: -1, lastT: 0, rect: [0, 0, 0, 0] as [number, number, number, number], edge: 0 };
     const skyState = { on: false, u: 0, img: null as HTMLImageElement | null, rect: [0, 0, 0, 0] as [number, number, number, number] };
     let seaRaf = 0;
+    let lastRender = 0;
     const renderSea = (now: number) => {
       if (!sea || !seaState.on) return false;
+      if (now - lastRender < 4) return true; // already drawn this refresh
+      lastRender = now;
       // the ship glides toward where the scroll is, every screen refresh, instead of jumping with each scroll event
       const dt = Math.min(0.1, Math.max(0, (now - seaState.lastT) / 1000));
       seaState.lastT = now;
@@ -393,6 +418,27 @@ function StoryFilm() {
     };
     const seaTick = (now: number) => {
       seaRaf = 0;
+      if (sea && lastTick) {
+        const dt = now - lastTick;
+        slowFrames = dt > 24 && dt < 250 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
+        if (slowFrames > 30) {
+          slowFrames = 0;
+          if (seaRes > 0.55) {
+            seaRes *= 0.75;
+            size();
+          } else {
+            // too slow even at low resolution: back to plain frames (still smooth, no ripple)
+            set(sea.canvas, { display: 'none' });
+            sea = null;
+            seaState.on = false;
+            set($('shipTint'), { opacity: '1' });
+            lastTick = 0;
+            update();
+            return;
+          }
+        }
+      }
+      lastTick = now;
       if (!renderSea(now)) return;
       paintSky();
       seaRaf = requestAnimationFrame(seaTick);
@@ -438,7 +484,7 @@ function StoryFilm() {
       if (loading) return;
       loading = true;
       const dir = mobile ? '-m' : '';
-      for (const n of ['fk-head', 'fk-box', 'fk-low', 'truck-e', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
+      for (const n of ['fk-head', 'fk-box', 'fk-low2', 'truck-e', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
       const order: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
       const dOrder: number[] = [];
@@ -497,7 +543,7 @@ function StoryFilm() {
       canvas.width = Math.round(vw * dpr);
       canvas.height = Math.round(vh * dpr);
       if (sea) {
-        gdpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        gdpr = Math.min(window.devicePixelRatio || 1, 1.5) * seaRes;
         sea.canvas.width = Math.round(vw * gdpr);
         sea.canvas.height = Math.round(vh * gdpr);
       }
@@ -699,19 +745,34 @@ function StoryFilm() {
           const headDy = cy0 - BY0 - 90 * rel;
           clipTop(() => {
             // behind: lower body and the chassis column (seen when the container is up or gone)
-            drawImg(one['fk-low'], OX + (380 + fx) * K, OY + 566 * K, 520 * K, 146 * K);
+            drawImg(one['fk-low2'], OX + (380 + fx) * K, OY + 566 * K, 520 * K, 146 * K);
             const colTop = OY + (299 + headDy) * K;
             const colBot = OY + 578 * K;
             if (colBot > colTop) {
-              // the boom seen end-on: as wide as the head, shaded like it
-              const gc = g!.createLinearGradient(OX + (548 + fx) * K, 0, OX + (732 + fx) * K, 0);
-              gc.addColorStop(0, '#16191e');
-              gc.addColorStop(0.18, '#2f343b');
-              gc.addColorStop(0.5, '#454b54');
-              gc.addColorStop(0.82, '#2f343b');
-              gc.addColorStop(1, '#16191e');
-              g!.fillStyle = gc;
-              g!.fillRect(OX + (548 + fx) * K, colTop, 184 * K, colBot - colTop);
+              // a telescopic steel mast: a wide outer sleeve on the chassis, and a lighter inner section that
+              // slides up out of it as the container is lifted
+              const steel = (x0: number, x1: number, c0: string, c1: string, hi: string) => {
+                const gr = g!.createLinearGradient(OX + (x0 + fx) * K, 0, OX + (x1 + fx) * K, 0);
+                gr.addColorStop(0, c0);
+                gr.addColorStop(0.22, c1);
+                gr.addColorStop(0.42, hi);
+                gr.addColorStop(0.6, c1);
+                gr.addColorStop(1, c0);
+                return gr;
+              };
+              const sleeveTop = Math.max(colTop, colBot - 70 * K);
+              // inner section (behind the sleeve's top edge)
+              g!.fillStyle = steel(590, 690, '#2a2f36', '#4f5660', '#7d858f');
+              g!.fillRect(OX + (590 + fx) * K, colTop, 100 * K, colBot - colTop);
+              // two guide rails down the inner section
+              g!.fillStyle = 'rgba(15,18,22,0.55)';
+              g!.fillRect(OX + (606 + fx) * K, colTop, 4 * K, colBot - colTop);
+              g!.fillRect(OX + (670 + fx) * K, colTop, 4 * K, colBot - colTop);
+              // outer sleeve with a collar at its top
+              g!.fillStyle = steel(570, 710, '#15181d', '#30353d', '#4a515a');
+              g!.fillRect(OX + (570 + fx) * K, sleeveTop, 140 * K, colBot - sleeveTop);
+              g!.fillStyle = '#0f1216';
+              g!.fillRect(OX + (566 + fx) * K, sleeveTop, 148 * K, 7 * K);
             }
             // the truck (empty, then the identical loaded frame once the box is down)
             const tx = (1 - easeOut(seg(p, T.truckIn))) * 1700;
