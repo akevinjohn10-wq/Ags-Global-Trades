@@ -250,32 +250,36 @@ void main(){
   float w=smoothstep(halfW,halfW+0.03,abs(uv.x-0.4996));
   vec2 dd=vec2(sin(uv.y*34.+t*1.25)*.55+sin((uv.x+uv.y)*19.-t*.85)*.45,
               sin(uv.x*28.-t*1.)*.5+sin((uv.x-uv.y)*24.+t*.7)*.5)*amp*w;
-  // raindrops on the lens, sliding slowly down: each bends the picture behind it, with a rainbow rim
-  vec2 rq=px/sc;float dm=0.,rim=0.,spec=0.,ang=0.,edgeD=0.,lowL=0.;vec2 dn=vec2(0.);float dr=0.;
-  for(int L=0;L<2;L++){
-    float S=L==0?170.:80.;
-    vec2 g=rq/S;float col=floor(g.x);
-    g.y-=t*(.025+.03*h(vec2(col,float(L)*9.)));
-    vec2 id=floor(g)+float(L)*31.;vec2 f=fract(g)-.5;
-    if(h(id)>(L==0?.7:.8)){
-      vec2 o=(vec2(h(id+3.1),h(id+7.3))-.5)*.3;
-      float r=.11+.09*h(id+11.);
-      vec2 q=f-o;q.y*=q.y<0.?1.25:.9;float d=length(q)/r;
+  // rain on the glass: lots of small, irregular, clear droplets that bend the picture behind them;
+  // most sit still, a few slowly run down
+  vec2 rq=px/sc;float dm=0.,spec=0.,edgeD=0.;vec2 dn=vec2(0.);float dr=0.;
+  for(int L=0;L<3;L++){
+    float S=L==0?46.:(L==1?26.:15.);
+    vec2 g=rq/S+float(L)*17.3;float col=floor(g.x);
+    float run=step(.93,h(vec2(col,float(L)+40.)));
+    g.y-=t*run*(.15+.2*h(vec2(col,float(L))));
+    vec2 id=floor(g);vec2 f=fract(g)-.5;
+    if(h(id)>(L==0?.55:(L==1?.45:.4))){
+      vec2 o=(vec2(h(id+3.1),h(id+7.3))-.5)*.5;
+      float r=(L==0?.24:.2)+.14*h(id+11.);
+      vec2 q=f-o;
+      // irregular outline, a little flatter on top and heavier at the bottom
+      float an=atan(q.y,q.x);
+      float wob=1.+.12*sin(an*3.+h(id)*6.28)+.07*sin(an*5.+h(id+2.)*6.28);
+      q.y*=q.y<0.?1.2:.92;
+      float d=length(q)/(r*wob);
       if(d<1.){
-        float m=smoothstep(1.,.82,d);
-        if(m>dm){dm=m;dn=q/r;dr=r*S;ang=atan(q.y,q.x);}
-        rim=max(rim,smoothstep(.72,.95,d)*smoothstep(1.02,.95,d));
-        edgeD=max(edgeD,smoothstep(.55,.95,d)*m);
-        lowL=max(lowL,smoothstep(.2,.9,q.y/r)*smoothstep(1.,.6,d));
-        spec=max(spec,smoothstep(.32,0.,length(q/r-vec2(-.32,-.38))));
+        float m=smoothstep(1.,.75,d);
+        if(m>dm){dm=m;dn=q/r;dr=r*S;}
+        edgeD=max(edgeD,smoothstep(.45,1.,d));
+        spec=max(spec,smoothstep(.28,0.,length(q/r-vec2(-.25,-.32))));
       }
     }
   }
-  dd+=-dn*dr*sc*1.3*dm;
+  dd+=-dn*dr*sc*1.6*dm;
   vec3 c=texture2D(texA,clamp((px+dd-rectA.xy)/rectA.zw,0.,1.)).rgb;
   if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+dd-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
   c*=1.+.06*w*sin(uv.x*50.+uv.y*43.+t*1.7)*sin(uv.y*30.-t*1.3);
-  c*=1.+.1*dm;
   c=mix(c,vec3(.008,.04,.08),veil);
   // a subtle lens flare: a soft sun glow at the top right and a few faint rings along the line through the centre
   float asp=res.x/res.y;
@@ -295,10 +299,9 @@ void main(){
     float g5=smoothstep(.02,.012,distance(sp,sun+axis*1.1));
     c+=(vec3(1.,.8,.5)*g1*.1+vec3(.6,.85,1.)*g2*.14+vec3(.7,1.,.8)*g3*.07+vec3(1.,.7,.9)*g4*.1+vec3(1.)*g5*.12)*glare;
   }
-  // the drops: holographic rainbow rim and a small highlight
-  vec3 holo=.5+.5*cos(6.2832*(ang/6.2832+t*.08+vec3(0.,.33,.67)));
-  c*=1.-.35*edgeD;
-  c+=holo*rim*.13+vec3(1.)*spec*dm*.3+vec3(.75,.85,1.)*lowL*.12;
+  // the droplets: darker edges, a tiny bright highlight, slightly brighter inside
+  c=mix(c,c*.5,edgeD*.6);
+  c+=vec3(1.)*spec*.55+c*dm*.12;
   if(d>=1e3){gl_FragColor=vec4(c,1.);return;}
   float seaA=smoothstep(-8.,8.,d);
   float foam=clamp(smoothstep(95.,0.,abs(d-6.))*smoothstep(.36,.62,n2*.75+n*.55-abs(d)/220.),0.,1.);
