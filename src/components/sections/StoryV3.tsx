@@ -1061,7 +1061,7 @@ function StoryFilm() {
         // under the wiped part the page is plain paper until the next section's own background reaches the top
         // a bank of cloud rises from the bottom over the sea that's still showing beside the plane, so the
         // last of the sea is covered in cloud by the time the plane leaves
-        const rise = easeIO(clamp((wiped - 0.3) / 0.55));
+        const rise = ease(clamp((wiped - 0.25) / 0.65));
         set($('riseCloud'), { display: rise > 0 ? '' : 'none', transform: `translate3d(0,${lerp(vh + 20, -0.75 * vh, rise).toFixed(1)}px,0)` });
         // the next section's content waits until the plane has wiped about 70% of the way, then comes in
         const nx = clamp((wiped - 0.62) / 0.16);
@@ -1275,9 +1275,14 @@ function StoryFilm() {
       <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[30] h-[100lvh] overflow-hidden" style={{ display: 'none' }}>
         <canvas ref={skyRef} className="absolute inset-0 h-full w-full" />
         <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
-        <div ref={r('riseCloud')} className="absolute inset-x-0 top-0 h-[180%] will-change-transform" style={{ display: 'none' }}>
-          <img src={V('cloud-1.webp')} alt="" className="absolute inset-x-0 top-0 h-[42%] w-full scale-x-[1.3] object-cover" style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent, #000 45%)', maskImage: 'linear-gradient(to bottom, transparent, #000 45%)' }} />
-          <div className="absolute inset-x-0 bottom-0 top-[38%] bg-[linear-gradient(to_bottom,rgba(244,247,250,0),#f4f7fa_12%,#ffffff_40%)]" />
+        <div
+          ref={r('riseCloud')}
+          className="absolute inset-x-0 top-0 h-[180%] will-change-transform"
+          style={{ display: 'none', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 10%, #000 30%)', maskImage: 'linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.35) 10%, #000 30%)' }}
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(240,244,249,0.55)_0%,#f2f5f9_28%,#ffffff_45%)]" />
+          <img src={V('cloud-2.webp')} alt="" className="absolute inset-x-0 top-0 h-1/2 w-full object-cover opacity-90" style={{ WebkitMaskImage: 'linear-gradient(to bottom, #000 45%, transparent 95%)', maskImage: 'linear-gradient(to bottom, #000 45%, transparent 95%)' }} />
+          <img src={V('cloud-1.webp')} alt="" className="absolute inset-x-0 top-[8%] h-1/2 w-full -scale-x-100 object-cover opacity-70" style={{ WebkitMaskImage: 'linear-gradient(to bottom, #000 45%, transparent 95%)', maskImage: 'linear-gradient(to bottom, #000 45%, transparent 95%)' }} />
         </div>
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
       </div>
