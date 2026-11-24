@@ -400,7 +400,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship4${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship5${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
