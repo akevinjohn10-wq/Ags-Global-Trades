@@ -37,8 +37,8 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 135; // ship frames (every frame of the 24 fps clip): deck close-up, pull-back to the whole ship, clouds rolling in
-const SHIP_CU = 40; // roughly where the pull-back is well under way
+const SHIP = 55; // ship frames, in order: deck close-up, pull-back to the whole ship, clouds rolling in
+const SHIP_CU = 16; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
 // full-size frames (1920 x 1080); phones use a 540-wide centre slice
@@ -722,6 +722,9 @@ function StoryFilm() {
         const sx = (vw - sDW) / 2;
         const sy = (vh - sDH) / 2;
         if (fA) sg.drawImage(fA, sx, sy, sDW, sDH);
+        // the same dark veil as over the ship scene, lifting as the clouds roll in so they stay bright
+        sg.fillStyle = `rgba(2,10,20,${(0.4 * (1 - easeIO(clamp(u / 0.5)))).toFixed(3)})`;
+        sg.fillRect(0, 0, vw, vh);
         // more cloud drifts in from the sides, leaving the middle of the sea open
         const drift = easeIO(clamp(u / 0.4));
         set($('cloudA'), { transform: `translate3d(${lerp(-100, mobile ? -30 : -42, drift).toFixed(2)}%,${(-3 * u).toFixed(2)}%,0) scale(1.3)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
@@ -856,8 +859,7 @@ function StoryFilm() {
         <div ref={r('shipScene')} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden" style={{ display: 'none', top: '100%' }}>
           {/* darken the whole scene a little, plus a vignette */}
           <div ref={r('shipTint')} className="absolute inset-0">
-            <div className="absolute inset-0 bg-[#020a14]/10" />
-            <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_55%,rgba(2,12,24,0.4))] max-md:bg-[radial-gradient(160%_80%_at_50%_45%,transparent_60%,rgba(2,12,24,0.3))]" />
+            <div className="absolute inset-0 bg-[#020a14]/40" />
           </div>
         </div>
 
