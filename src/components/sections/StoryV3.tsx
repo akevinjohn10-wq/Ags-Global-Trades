@@ -261,17 +261,17 @@ void main(){
   vec2 sun=vec2(.9*asp,.07);
   if(glare>0.){
     float sd=distance(sp,sun);
-    c+=vec3(1.,.86,.64)*exp(-sd*2.3)*.34*glare;
-    c+=vec3(1.,.9,.75)*exp(-sd*9.)*.25*glare;
+    c+=vec3(1.,.86,.64)*exp(-sd*2.6)*.2*glare;
+    c+=vec3(1.,.9,.75)*exp(-sd*9.)*.14*glare;
     // a soft horizontal streak through the sun
-    c+=vec3(.85,.9,1.)*exp(-abs(sp.y-sun.y)*55.)*exp(-abs(sp.x-sun.x)*1.6)*.16*glare;
+    c+=vec3(.85,.9,1.)*exp(-abs(sp.y-sun.y)*55.)*exp(-abs(sp.x-sun.x)*1.6)*.09*glare;
     vec2 axis=vec2(.5*asp,.5)-sun;
     float g1=smoothstep(.08,.06,distance(sp,sun+axis*.55));
     float g2=smoothstep(.038,.028,distance(sp,sun+axis*.85));
     float g3=smoothstep(.14,.105,distance(sp,sun+axis*1.35))-smoothstep(.105,.07,distance(sp,sun+axis*1.35));
     float g4=smoothstep(.055,.04,distance(sp,sun+axis*1.75));
     float g5=smoothstep(.02,.012,distance(sp,sun+axis*1.1));
-    c+=(vec3(1.,.8,.5)*g1*.1+vec3(.6,.85,1.)*g2*.14+vec3(.7,1.,.8)*g3*.07+vec3(1.,.7,.9)*g4*.1+vec3(1.)*g5*.12)*glare;
+    c+=(vec3(1.,.8,.5)*g1*.07+vec3(.6,.85,1.)*g2*.09+vec3(.7,1.,.8)*g3*.05+vec3(1.,.7,.9)*g4*.07+vec3(1.)*g5*.08)*glare;
   }
   if(d>=1e3){gl_FragColor=vec4(c,1.);return;}
   float seaA=smoothstep(-8.,8.,d);
@@ -1287,7 +1287,7 @@ function StoryFilm() {
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
       </div>
       {/* the plane flies over everything: the old scene and then the next section */}
-      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[31] overflow-hidden transition-opacity duration-500" style={{ display: 'none' }}>
+      <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[31] h-[100lvh] overflow-hidden transition-opacity duration-500" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
           src={V('plane-xl.webp')}
