@@ -1029,23 +1029,29 @@ function StoryFilm() {
           const pw = span2 * (1369 / 1087); // nose to tail
           const cy = lerp(vh + pw / 2 + 40, -pw / 2 - 40, glide);
           set($('plane'), { width: `${pw.toFixed(0)}px`, top: '0px', transform: `translate3d(${(vw / 2 - pw / 2).toFixed(1)}px,${(cy - span2 / 2).toFixed(1)}px,0) rotate(-90deg)` });
-          // everything below the wings is already the next section
-          const wipe = cy + pw * 0.04;
-          wipeOn = wipe < vh + 60;
+          // everything behind the wings is already the next section: the cut follows the swept-back
+          // trailing edges (a chevron), so it stays hidden under the wings all the way out
+          const wipe = cy - pw * 0.03;
+          const side = wipe + (vw / 2) * 0.42;
+          wipeOn = Math.min(wipe, side) < vh + 10;
           wiped = 1 - wipe / vh;
-          const m = wipeOn ? `linear-gradient(to bottom, #000 ${(wipe - 50).toFixed(0)}px, transparent ${(wipe + 70).toFixed(0)}px)` : 'none';
-          set($('sky'), { WebkitMaskImage: m, maskImage: m });
+          const cp = wipeOn ? `polygon(0 0, ${vw}px 0, ${vw}px ${side.toFixed(1)}px, ${(vw / 2).toFixed(1)}px ${wipe.toFixed(1)}px, 0 ${side.toFixed(1)}px)` : 'none';
+          set($('sky'), { clipPath: cp, WebkitClipPath: cp } as Partial<CSSStyleDeclaration>);
         } else {
           const span2 = vh * 1.55; // wingspan
           const pw = span2 * (1369 / 1087);
           const px = lerp(-pw - 40, vw + 40, glide);
           set($('plane'), { width: `${pw.toFixed(0)}px`, top: '50%', transform: `translate3d(${px.toFixed(1)}px,-50%,0)` });
-          // everything left of the wings is already the next section
-          const wipe = px + pw * 0.46;
-          wipeOn = wipe > -60;
+          // everything behind the wings is already the next section: the cut follows the swept-back
+          // trailing edges (a chevron), so no sea shows between the wings and the uncovered page
+          const wipe = px + pw * 0.53;
+          const side = wipe - (vh / 2) * 0.42;
+          wipeOn = Math.max(wipe, side) > -10;
           wiped = wipe / vw;
-          const m = wipeOn ? `linear-gradient(to right, transparent ${(wipe - 70).toFixed(0)}px, #000 ${(wipe + 50).toFixed(0)}px)` : 'none';
-          set($('sky'), { WebkitMaskImage: m, maskImage: m });
+          const cp = wipeOn
+            ? `polygon(${side.toFixed(1)}px 0, ${vw}px 0, ${vw}px ${vh}px, ${side.toFixed(1)}px ${vh}px, ${wipe.toFixed(1)}px ${(vh / 2).toFixed(1)}px)`
+            : 'none';
+          set($('sky'), { clipPath: cp, WebkitClipPath: cp } as Partial<CSSStyleDeclaration>);
         }
         // under the wiped part the page is plain paper until the next section's own background reaches the top
         // the next section's content waits until the plane has wiped about 70% of the way, then comes in
