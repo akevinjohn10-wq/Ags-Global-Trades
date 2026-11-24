@@ -200,6 +200,93 @@ const PAPER = '#ffffff';
 const SIDE_MASK = 'linear-gradient(to right, #000 0%, #000 55%, transparent 100%)';
 const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, transparent)';
 
+// how far the camera has pulled back in each ship frame (1 = the deck close-up); the ship's hull is
+// about half the frame wide at 1, so the moving-water effect leaves a band that wide (times this) alone
+const SHIP_SCALE = [1,0.9997,0.9994,0.9992,0.9986,0.9984,0.9981,0.9979,0.997,0.9847,0.9394,0.8935,0.8164,0.7632,0.6821,0.6295,0.577,0.5021,0.4553,0.3879,0.3466,0.3087,0.2614,0.2343,0.2008,0.1833,0.1688,0.1516,0.1428,0.1329,0.128,0.1241,0.1194,0.1167,0.1133,0.1114,0.1098,0.1077,0.1065,0.1052,0.1044,0.1038,0.103,0.1027,0.1022,0.102,0.1018,0.1014,0.1012,0.101,0.1007,0.1005,0.1003,0.1001,0.0999];
+
+/**
+ * The sea keeps moving while the page is still: the current ship frame is drawn through a tiny WebGL
+ * shader that nudges the water by a pixel or two in slow, overlapping swells (the ship's band is left
+ * alone). One texture upload when the frame changes, then a single cheap full-screen pass per tick.
+ */
+class SeaGL {
+  gl: WebGLRenderingContext;
+  canvas: HTMLCanvasElement;
+  private u: Record<string, WebGLUniformLocation | null> = {};
+  private tex: WebGLTexture | null;
+  private last: HTMLImageElement | null = null;
+  static create(canvas: HTMLCanvasElement) {
+    try {
+      const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: true, antialias: false });
+      return gl ? new SeaGL(canvas, gl) : null;
+    } catch {
+      return null;
+    }
+  }
+  constructor(canvas: HTMLCanvasElement, gl: WebGLRenderingContext) {
+    this.canvas = canvas;
+    this.gl = gl;
+    const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
+    const fs = `precision mediump float;
+uniform sampler2D tex;uniform vec4 rect;uniform vec2 res;uniform float edge,t,halfW,amp;
+void main(){
+  vec2 px=vec2(gl_FragCoord.x,res.y-gl_FragCoord.y);
+  if(px.y<edge){gl_FragColor=vec4(0.);return;}
+  vec2 uv=(px-rect.xy)/rect.zw;
+  float w=smoothstep(halfW,halfW+0.035,abs(uv.x-0.4996));
+  vec2 d=vec2(sin(uv.y*38.+t*1.15)*.55+sin((uv.x+uv.y)*21.-t*.8)*.45,
+              sin(uv.x*31.-t*.95)*.5+sin((uv.x-uv.y)*27.+t*.65)*.5);
+  vec2 s=uv+d*amp*w/rect.zw;
+  vec3 c=texture2D(tex,clamp(s,0.,1.)).rgb;
+  c*=1.+.035*w*sin(uv.x*55.+uv.y*47.+t*1.6)*sin(uv.y*33.-t*1.2);
+  gl_FragColor=vec4(c,1.);
+}`;
+    const sh = (type: number, src: string) => {
+      const o = gl.createShader(type)!;
+      gl.shaderSource(o, src);
+      gl.compileShader(o);
+      return o;
+    };
+    const prog = gl.createProgram()!;
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, vs));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, fs));
+    gl.linkProgram(prog);
+    gl.useProgram(prog);
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    const a = gl.getAttribLocation(prog, 'a');
+    gl.enableVertexAttribArray(a);
+    gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
+    for (const k of ['rect', 'res', 'edge', 't', 'halfW', 'amp']) this.u[k] = gl.getUniformLocation(prog, k);
+    this.tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, this.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  }
+  get ok() {
+    return !this.gl.isContextLost();
+  }
+  /** rect and edge in CSS pixels; scale = the canvas's pixels per CSS pixel */
+  draw(img: HTMLImageElement, rect: [number, number, number, number], edge: number, halfW: number, t: number, amp: number, scale: number) {
+    const gl = this.gl;
+    if (img !== this.last) {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+      this.last = img;
+    }
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+    gl.uniform4f(this.u.rect, rect[0] * scale, rect[1] * scale, rect[2] * scale, rect[3] * scale);
+    gl.uniform2f(this.u.res, this.canvas.width, this.canvas.height);
+    gl.uniform1f(this.u.edge, edge * scale);
+    gl.uniform1f(this.u.t, t);
+    gl.uniform1f(this.u.halfW, halfW);
+    gl.uniform1f(this.u.amp, amp * scale);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+}
+
 export default function StoryV3() {
   const [reduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return reduce ? <StoryStatic /> : <StoryFilm />;
@@ -209,6 +296,7 @@ function StoryFilm() {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const skyRef = useRef<HTMLCanvasElement>(null);
+  const seaRef = useRef<HTMLCanvasElement>(null);
   const q = useRef<Record<string, HTMLElement | null>>({});
   const r = (k: string) => (el: HTMLElement | null) => {
     q.current[k] = el;
@@ -224,6 +312,38 @@ function StoryFilm() {
     const sg = skyCv?.getContext('2d') ?? null;
     let sdpr = 1;
     let nextInner: HTMLElement | null = null;
+    // moving water (WebGL); skipped for reduced motion, and the plain frames are used if it's unavailable
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sea = !reduceMotion && seaRef.current ? SeaGL.create(seaRef.current) : null;
+    let gdpr = 1;
+    const seaState = { on: false, img: null as HTMLImageElement | null, rect: [0, 0, 0, 0] as [number, number, number, number], edge: 0, halfW: 0 };
+    const skyState = { on: false, u: 0, img: null as HTMLImageElement | null, rect: [0, 0, 0, 0] as [number, number, number, number] };
+    let seaRaf = 0;
+    const renderSea = (now: number) => {
+      if (!sea || !seaState.on || !seaState.img) return false;
+      sea.draw(seaState.img, seaState.rect, seaState.edge, seaState.halfW, now / 1000, mobile ? 1.3 : 2.1, gdpr);
+      return true;
+    };
+    // the fixed sky layer shows the same (moving) sea until the plane wipes it away
+    const paintSky = () => {
+      if (!sg || !skyState.on) return;
+      sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
+      if (sea && seaState.on) sg.drawImage(sea.canvas, 0, 0, vw, vh);
+      else {
+        sg.fillStyle = '#0b2a45';
+        sg.fillRect(0, 0, vw, vh);
+        if (skyState.img) sg.drawImage(skyState.img, ...skyState.rect);
+      }
+      // the same dark veil as over the ship scene, lifting as the clouds roll in so they stay bright
+      sg.fillStyle = `rgba(2,10,20,${(0.4 * (1 - easeIO(clamp(skyState.u / 0.5)))).toFixed(3)})`;
+      sg.fillRect(0, 0, vw, vh);
+    };
+    const seaTick = (now: number) => {
+      seaRaf = 0;
+      if (!renderSea(now)) return;
+      paintSky();
+      seaRaf = requestAnimationFrame(seaTick);
+    };
     let blurEl: Element | null = null;
     let blurV = 0;
     let lastY = 0;
@@ -299,6 +419,11 @@ function StoryFilm() {
       dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
       canvas.width = Math.round(vw * dpr);
       canvas.height = Math.round(vh * dpr);
+      if (sea) {
+        gdpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        sea.canvas.width = Math.round(vw * gdpr);
+        sea.canvas.height = Math.round(vh * gdpr);
+      }
       if (skyCv) {
         sdpr = Math.min(window.devicePixelRatio || 1, 1.5);
         skyCv.width = Math.round(vw * sdpr);
@@ -695,10 +820,19 @@ function StoryFilm() {
           // the nearest frame only (blending two frames doubles the image while the camera moves fast)
           const i0 = Math.round(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
-          if (fA) g!.drawImage(fA, x, y, sDW, sDH);
+          if (sea && sea.ok && fA) {
+            // the WebGL layer draws it (with the water moving); the plain canvas only keeps the sea colour
+            seaState.on = true;
+            seaState.img = fA;
+            seaState.rect = [x, y, sDW, sDH];
+            seaState.edge = Math.max(0, edge);
+            seaState.halfW = 0.265 * SHIP_SCALE[Math.min(SHIP_SCALE.length - 1, i0)];
+          } else if (fA) g!.drawImage(fA, x, y, sDW, sDH);
           g!.restore();
         }
       }
+      if (!shipOn) seaState.on = false;
+      if (sea) set(sea.canvas, { display: seaState.on ? '' : 'none' });
       // ===================== 8. sky: clouds and a plane =====================
       // the sea scene moves onto a fixed layer that sits over the next section; clouds drift in over part of
       // the sea, then the plane flies across and wipes the whole scene away right behind its wings, uncovering
@@ -709,22 +843,20 @@ function StoryFilm() {
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
       if (!blurEl) blurEl = document.getElementById('plane-mb-blur');
       set($('sky'), { display: skyOn ? '' : 'none' });
+      if (!skyOn) skyState.on = false;
+      if (!skyOn) {
+        set($('shipScene'), { visibility: '' });
+        if (sea) set(sea.canvas, { visibility: '' });
+      }
       if (!nextInner) nextInner = document.querySelector<HTMLElement>('#catalogue > .container-x');
       if (!skyOn) set(nextInner, { opacity: '', transform: '' });
       set($('planeLayer'), { opacity: productOpen ? '0' : '1', display: skyOn ? '' : 'none' });
       if (skyOn && sg) {
         // the same frame of the clip, full screen, on the fixed layer
-        sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
-        sg.fillStyle = '#0b2a45';
-        sg.fillRect(0, 0, vw, vh);
-        const i0 = Math.round(pos);
-        const fA = frame(ship, i0, 0, SHIP - 1);
-        const sx = (vw - sDW) / 2;
-        const sy = (vh - sDH) / 2;
-        if (fA) sg.drawImage(fA, sx, sy, sDW, sDH);
-        // the same dark veil as over the ship scene, lifting as the clouds roll in so they stay bright
-        sg.fillStyle = `rgba(2,10,20,${(0.4 * (1 - easeIO(clamp(u / 0.5)))).toFixed(3)})`;
-        sg.fillRect(0, 0, vw, vh);
+        skyState.on = true;
+        skyState.u = u;
+        skyState.img = frame(ship, Math.round(pos), 0, SHIP - 1);
+        skyState.rect = [(vw - sDW) / 2, (vh - sDH) / 2, sDW, sDH];
         // more cloud drifts in from the sides, leaving the middle of the sea open
         const drift = easeIO(clamp(u / 0.4));
         set($('cloudA'), { transform: `translate3d(${lerp(-100, mobile ? -30 : -42, drift).toFixed(2)}%,${(-3 * u).toFixed(2)}%,0) scale(1.3)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
@@ -779,11 +911,21 @@ function StoryFilm() {
           g!.fillStyle = PAPER;
           g!.fillRect(0, 0, vw, vh);
         }
+        // and the ship's veil and moving-water layer stay out of the uncovered part
+        set($('shipScene'), { visibility: wipeOn ? 'hidden' : '' });
+        if (sea) set(sea.canvas, { visibility: wipeOn ? 'hidden' : '' });
       }
 
       lastY = -rect.top;
       // keep easing the blur back to sharp after the scrolling stops
       if (skyOn && blurV > 0.2 && !raf) raf = requestAnimationFrame(update);
+
+      // draw the sea now (in step with the scroll), and keep it moving while it's on screen
+      if (seaState.on) {
+        renderSea(performance.now());
+        if (!seaRaf) seaRaf = requestAnimationFrame(seaTick);
+      }
+      paintSky();
 
       // ===================== copy =====================
       // fades as the stacker reaches the stack (end of its run across the page)
@@ -843,6 +985,7 @@ function StoryFilm() {
       window.removeEventListener('ags:product-open', onProduct);
       window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(seaRaf);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', size);
@@ -854,6 +997,7 @@ function StoryFilm() {
     <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1800vh] scroll-mt-24 bg-[#fbfbfb] md:h-[2200vh]">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+        <canvas ref={seaRef} aria-hidden="true" className="absolute inset-0 h-full w-full" style={{ display: 'none' }} />
 
         {/* 7. the ship at sea */}
         <div ref={r('shipScene')} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden" style={{ display: 'none', top: '100%' }}>
