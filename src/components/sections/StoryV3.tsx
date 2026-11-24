@@ -41,10 +41,10 @@ const SHIP = 135; // ship frames (every frame of the 24 fps clip): deck close-up
 const SHIP_CU = 40; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
-// phones use a 360-wide centre slice of the 1280 frame
+// full-size frames (1920 x 1080); phones use a 540-wide centre slice
 const SHIP_COL = {
-  d: { cx: 639.5 / 1280, w: 44 / 1280, deck: 640 / 1280, fw: 1280, fh: 720 },
-  m: { cx: 179.5 / 360, w: 44 / 360, deck: 640 / 360, fw: 360, fh: 720 },
+  d: { cx: 959.25 / 1920, w: 66 / 1920, deck: 960 / 1920, fw: 1920, fh: 1080 },
+  m: { cx: 269.25 / 540, w: 66 / 540, deck: 960 / 540, fw: 540, fh: 1080 },
 };
 // wheel centres in the 1280x720 truck frames (x, y), tyre radius 47: they are spun as the truck moves
 const WHEELS = [
