@@ -228,18 +228,38 @@ class SeaGL {
     this.gl = gl;
     const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const fs = `precision mediump float;
-uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB;
+uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB,veil,sc;
+float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+  return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*vn(p);p*=2.03;a*=.5;}return v;}
 void main(){
   vec2 px=vec2(gl_FragCoord.x,res.y-gl_FragCoord.y);
-  if(px.y<edge){gl_FragColor=vec4(0.);return;}
+  // where the page meets the sea: a ragged, moving line of foam and spray instead of a straight edge
+  float d=1e4;float n=.5,n2=.5;
+  if(edge>0.5){
+    vec2 q=px/sc;
+    n=fbm(vec2(q.x*.009,q.y*.014-t*.35));
+    n2=fbm(vec2(q.x*.03+7.,q.y*.045+t*.8));
+    d=(px.y-edge)/sc+(n-.5)*120.+(n2-.5)*46.;
+    if(d<-190.){gl_FragColor=vec4(0.);return;}
+  }
   vec2 uv=(px-rectA.xy)/rectA.zw;
   float w=smoothstep(halfW,halfW+0.03,abs(uv.x-0.4996));
-  vec2 d=vec2(sin(uv.y*34.+t*1.25)*.55+sin((uv.x+uv.y)*19.-t*.85)*.45,
+  vec2 dd=vec2(sin(uv.y*34.+t*1.25)*.55+sin((uv.x+uv.y)*19.-t*.85)*.45,
               sin(uv.x*28.-t*1.)*.5+sin((uv.x-uv.y)*24.+t*.7)*.5)*amp*w;
-  vec3 c=texture2D(texA,clamp((px+d-rectA.xy)/rectA.zw,0.,1.)).rgb;
-  if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+d-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
+  vec3 c=texture2D(texA,clamp((px+dd-rectA.xy)/rectA.zw,0.,1.)).rgb;
+  if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+dd-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
   c*=1.+.06*w*sin(uv.x*50.+uv.y*43.+t*1.7)*sin(uv.y*30.-t*1.3);
-  gl_FragColor=vec4(c,1.);
+  c=mix(c,vec3(.008,.04,.08),veil);
+  if(d>=1e3){gl_FragColor=vec4(c,1.);return;}
+  float seaA=smoothstep(-8.,8.,d);
+  float foam=clamp(smoothstep(95.,0.,abs(d-6.))*smoothstep(.36,.62,n2*.75+n*.55-abs(d)/220.),0.,1.);
+  float mist=(1.-seaA)*smoothstep(-190.,-10.,d)*(.25+.55*n);
+  vec3 white=vec3(.97,.98,1.);
+  float a=clamp(seaA+(1.-seaA)*max(foam,mist),0.,1.);
+  vec3 rgb=c*seaA*(1.-foam)+white*foam+white*mist*(1.-seaA)*(1.-foam);
+  gl_FragColor=vec4(min(rgb,vec3(a)),a);
 }`;
     const sh = (type: number, src: string) => {
       const o = gl.createShader(type)!;
@@ -258,7 +278,7 @@ void main(){
     const a = gl.getAttribLocation(prog, 'a');
     gl.enableVertexAttribArray(a);
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['rectA', 'rectB', 'res', 'edge', 't', 'halfW', 'amp', 'mixB', 'texA', 'texB']) this.u[k] = gl.getUniformLocation(prog, k);
+    for (const k of ['rectA', 'rectB', 'res', 'edge', 't', 'halfW', 'amp', 'mixB', 'texA', 'texB', 'veil', 'sc']) this.u[k] = gl.getUniformLocation(prog, k);
     gl.uniform1i(this.u.texA, 0);
     gl.uniform1i(this.u.texB, 1);
     for (let i = 0; i < 2; i++) {
@@ -284,7 +304,7 @@ void main(){
     this.last[unit] = img;
   }
   /** rects and edge in CSS pixels; scale = the canvas's pixels per CSS pixel */
-  draw(a: ShipLayer, b: ShipLayer | null, mixB: number, edge: number, halfW: number, t: number, amp: number, scale: number) {
+  draw(a: ShipLayer, b: ShipLayer | null, mixB: number, edge: number, halfW: number, t: number, amp: number, scale: number, veil: number) {
     const gl = this.gl;
     // keep each image in the texture unit it's already in, so a frame is uploaded once, not on every swap
     let ua = 0;
@@ -304,6 +324,8 @@ void main(){
     gl.uniform1f(this.u.halfW, halfW);
     gl.uniform1f(this.u.amp, amp * scale);
     gl.uniform1f(this.u.mixB, b ? mixB : 0);
+    gl.uniform1f(this.u.veil, veil);
+    gl.uniform1f(this.u.sc, scale);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
@@ -351,22 +373,23 @@ function StoryFilm() {
       else seaState.posS += (seaState.target - seaState.posS) * (1 - Math.exp(-dt * 14));
       const v = shipView(seaState.posS, ...seaState.rect);
       if (!v) return true;
-      sea.draw(v.a, v.b, v.mixB, seaState.edge, v.halfW, now / 1000, mobile ? 2.2 : 3.6, gdpr);
+      const veil = skyState.on ? 0.4 * (1 - easeIO(clamp(skyState.u / 0.5))) : 0.4;
+      sea.draw(v.a, v.b, v.mixB, seaState.edge, v.halfW, now / 1000, mobile ? 2.2 : 3.6, gdpr, veil);
       return true;
     };
     // the fixed sky layer shows the same (moving) sea until the plane wipes it away
     const paintSky = () => {
       if (!sg || !skyState.on) return;
       sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
-      if (sea && seaState.on) sg.drawImage(sea.canvas, 0, 0, vw, vh);
+      if (sea && seaState.on) sg.drawImage(sea.canvas, 0, 0, vw, vh); // already has the veil
       else {
         sg.fillStyle = '#0b2a45';
         sg.fillRect(0, 0, vw, vh);
         if (skyState.img) sg.drawImage(skyState.img, ...skyState.rect);
+        // the same dark veil as over the ship scene, lifting as the clouds roll in so they stay bright
+        sg.fillStyle = `rgba(2,10,20,${(0.4 * (1 - easeIO(clamp(skyState.u / 0.5)))).toFixed(3)})`;
+        sg.fillRect(0, 0, vw, vh);
       }
-      // the same dark veil as over the ship scene, lifting as the clouds roll in so they stay bright
-      sg.fillStyle = `rgba(2,10,20,${(0.4 * (1 - easeIO(clamp(skyState.u / 0.5)))).toFixed(3)})`;
-      sg.fillRect(0, 0, vw, vh);
     };
     const seaTick = (now: number) => {
       seaRaf = 0;
@@ -802,7 +825,8 @@ function StoryFilm() {
         g!.save();
         if (hT > 0) {
           g!.beginPath();
-          g!.rect(0, 0, vw, edge);
+          // with the foam line (WebGL) the page runs on a little under it, so the ragged edge shows road and page, not a gap
+          g!.rect(0, 0, vw, edge + (sea && sea.ok ? 160 : 0));
           g!.clip();
         }
         g!.translate(sxA, syA - (vh - edge));
@@ -858,8 +882,10 @@ function StoryFilm() {
       // the clip only moves when you scroll: it plays through the pull-back and on under the clouds until the plane
       const pos = Math.min(SHIP - 1, seg(p, [T.ship[0], 1]) * (SHIP - 1));
       if (shipOn) {
-        g!.fillStyle = '#0b2a45';
-        g!.fillRect(0, edge, vw, vh - edge);
+        if (!(sea && sea.ok)) {
+          g!.fillStyle = '#0b2a45';
+          g!.fillRect(0, edge, vw, vh - edge);
+        }
         // the road stays put: the ship is slid sideways so its container column sits under the truck,
         // then drifts back to centre as the camera pulls back
         const dxS = (vw / 2 - colX) * (1 - easeIO(clamp(pos / (SHIP_CU * 0.35))));
@@ -897,6 +923,7 @@ function StoryFilm() {
         seaState.posS = -1;
       }
       if (sea) set(sea.canvas, { display: seaState.on ? '' : 'none' });
+      set($('shipTint'), { opacity: seaState.on ? '0' : '1' });
       // ===================== 8. sky: clouds and a plane =====================
       // the sea scene moves onto a fixed layer that sits over the next section; clouds drift in over part of
       // the sea, then the plane flies across and wipes the whole scene away right behind its wings, uncovering
