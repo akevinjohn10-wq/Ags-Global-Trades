@@ -819,27 +819,8 @@ function StoryFilm() {
           if (fr) {
             const [rx, ry, rw, rh] = R_(RISE);
             g!.drawImage(fr, rx, ry, rw, rh);
-            // wheels keep turning as it drives, while they can still be seen from the side
-            const rw5 = RISE_WHEELS[riseI];
-            if (rw5 && fr === riseCut[riseI]) {
-              const k = fr.naturalWidth / 1280;
-              const sc = rw / 1280;
-              const angle = travelled / K / (47 * TS);
-              for (let j = 0; j < 5; j++) {
-                const wx = rw5[j * 3];
-                const wy = rw5[j * 3 + 1];
-                const sq = rw5[j * 3 + 2];
-                g!.save();
-                g!.translate(rx + wx * sc, ry + wy * sc);
-                g!.scale(1, sq);
-                g!.beginPath();
-                g!.arc(0, 0, 45.5 * sc, 0, Math.PI * 2);
-                g!.clip();
-                g!.rotate(angle);
-                g!.drawImage(fr, (wx - 46) * k, (wy - 46 * sq) * k, 92 * k, 92 * sq * k, -46 * sc, -46 * sc, 92 * sc, 92 * sc);
-                g!.restore();
-              }
-            }
+            // as in the reference, the wheels aren't redrawn while the camera rises: the frames' own tyres
+            // are shown untouched, so nothing is overlaid on wheels seen at an angle
           }
         }
       }
