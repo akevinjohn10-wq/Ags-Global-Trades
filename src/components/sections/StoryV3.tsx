@@ -213,8 +213,8 @@ class SeaGL {
   gl: WebGLRenderingContext;
   canvas: HTMLCanvasElement;
   private u: Record<string, WebGLUniformLocation | null> = {};
-  private tex: WebGLTexture | null;
-  private last: HTMLImageElement | null = null;
+  private tex: WebGLTexture[] = [];
+  private last: (HTMLImageElement | null)[] = [null, null];
   static create(canvas: HTMLCanvasElement) {
     try {
       const gl = canvas.getContext('webgl', { premultipliedAlpha: true, alpha: true, preserveDrawingBuffer: true, antialias: false });
@@ -228,17 +228,17 @@ class SeaGL {
     this.gl = gl;
     const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
     const fs = `precision mediump float;
-uniform sampler2D tex;uniform vec4 rect;uniform vec2 res;uniform float edge,t,halfW,amp;
+uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB;
 void main(){
   vec2 px=vec2(gl_FragCoord.x,res.y-gl_FragCoord.y);
   if(px.y<edge){gl_FragColor=vec4(0.);return;}
-  vec2 uv=(px-rect.xy)/rect.zw;
-  float w=smoothstep(halfW,halfW+0.035,abs(uv.x-0.4996));
-  vec2 d=vec2(sin(uv.y*38.+t*1.15)*.55+sin((uv.x+uv.y)*21.-t*.8)*.45,
-              sin(uv.x*31.-t*.95)*.5+sin((uv.x-uv.y)*27.+t*.65)*.5);
-  vec2 s=uv+d*amp*w/rect.zw;
-  vec3 c=texture2D(tex,clamp(s,0.,1.)).rgb;
-  c*=1.+.035*w*sin(uv.x*55.+uv.y*47.+t*1.6)*sin(uv.y*33.-t*1.2);
+  vec2 uv=(px-rectA.xy)/rectA.zw;
+  float w=smoothstep(halfW,halfW+0.03,abs(uv.x-0.4996));
+  vec2 d=vec2(sin(uv.y*34.+t*1.25)*.55+sin((uv.x+uv.y)*19.-t*.85)*.45,
+              sin(uv.x*28.-t*1.)*.5+sin((uv.x-uv.y)*24.+t*.7)*.5)*amp*w;
+  vec3 c=texture2D(texA,clamp((px+d-rectA.xy)/rectA.zw,0.,1.)).rgb;
+  if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+d-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
+  c*=1.+.06*w*sin(uv.x*50.+uv.y*43.+t*1.7)*sin(uv.y*30.-t*1.3);
   gl_FragColor=vec4(c,1.);
 }`;
     const sh = (type: number, src: string) => {
@@ -258,34 +258,57 @@ void main(){
     const a = gl.getAttribLocation(prog, 'a');
     gl.enableVertexAttribArray(a);
     gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
-    for (const k of ['rect', 'res', 'edge', 't', 'halfW', 'amp']) this.u[k] = gl.getUniformLocation(prog, k);
-    this.tex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    for (const k of ['rectA', 'rectB', 'res', 'edge', 't', 'halfW', 'amp', 'mixB', 'texA', 'texB']) this.u[k] = gl.getUniformLocation(prog, k);
+    gl.uniform1i(this.u.texA, 0);
+    gl.uniform1i(this.u.texB, 1);
+    for (let i = 0; i < 2; i++) {
+      const tx = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE0 + i);
+      gl.bindTexture(gl.TEXTURE_2D, tx);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      this.tex.push(tx);
+    }
   }
   get ok() {
     return !this.gl.isContextLost();
   }
-  /** rect and edge in CSS pixels; scale = the canvas's pixels per CSS pixel */
-  draw(img: HTMLImageElement, rect: [number, number, number, number], edge: number, halfW: number, t: number, amp: number, scale: number) {
+  private upload(unit: number, img: HTMLImageElement) {
+    if (img === this.last[unit]) return;
     const gl = this.gl;
-    if (img !== this.last) {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
-      this.last = img;
-    }
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, this.tex[unit]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, img);
+    this.last[unit] = img;
+  }
+  /** rects and edge in CSS pixels; scale = the canvas's pixels per CSS pixel */
+  draw(a: ShipLayer, b: ShipLayer | null, mixB: number, edge: number, halfW: number, t: number, amp: number, scale: number) {
+    const gl = this.gl;
+    // keep each image in the texture unit it's already in, so a frame is uploaded once, not on every swap
+    let ua = 0;
+    if (this.last[1] === a.img || (b && this.last[0] === b.img)) ua = 1;
+    const ub = 1 - ua;
+    this.upload(ua, a.img);
+    if (b && mixB > 0.001) this.upload(ub, b.img);
+    gl.uniform1i(this.u.texA, ua);
+    gl.uniform1i(this.u.texB, ub);
+    const rb = b ?? a;
     gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-    gl.uniform4f(this.u.rect, rect[0] * scale, rect[1] * scale, rect[2] * scale, rect[3] * scale);
+    gl.uniform4f(this.u.rectA, a.rect[0] * scale, a.rect[1] * scale, a.rect[2] * scale, a.rect[3] * scale);
+    gl.uniform4f(this.u.rectB, rb.rect[0] * scale, rb.rect[1] * scale, rb.rect[2] * scale, rb.rect[3] * scale);
     gl.uniform2f(this.u.res, this.canvas.width, this.canvas.height);
     gl.uniform1f(this.u.edge, edge * scale);
     gl.uniform1f(this.u.t, t);
     gl.uniform1f(this.u.halfW, halfW);
     gl.uniform1f(this.u.amp, amp * scale);
+    gl.uniform1f(this.u.mixB, b ? mixB : 0);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
+
+type ShipLayer = { img: HTMLImageElement; rect: [number, number, number, number] };
 
 export default function StoryV3() {
   const [reduce] = useState(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -316,12 +339,19 @@ function StoryFilm() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sea = !reduceMotion && seaRef.current ? SeaGL.create(seaRef.current) : null;
     let gdpr = 1;
-    const seaState = { on: false, img: null as HTMLImageElement | null, rect: [0, 0, 0, 0] as [number, number, number, number], edge: 0, halfW: 0 };
+    const seaState = { on: false, target: 0, posS: -1, lastT: 0, rect: [0, 0, 0, 0] as [number, number, number, number], edge: 0 };
     const skyState = { on: false, u: 0, img: null as HTMLImageElement | null, rect: [0, 0, 0, 0] as [number, number, number, number] };
     let seaRaf = 0;
     const renderSea = (now: number) => {
-      if (!sea || !seaState.on || !seaState.img) return false;
-      sea.draw(seaState.img, seaState.rect, seaState.edge, seaState.halfW, now / 1000, mobile ? 1.3 : 2.1, gdpr);
+      if (!sea || !seaState.on) return false;
+      // the ship glides toward where the scroll is, every screen refresh, instead of jumping with each scroll event
+      const dt = Math.min(0.1, Math.max(0, (now - seaState.lastT) / 1000));
+      seaState.lastT = now;
+      if (seaState.posS < 0 || Math.abs(seaState.target - seaState.posS) > 12) seaState.posS = seaState.target;
+      else seaState.posS += (seaState.target - seaState.posS) * (1 - Math.exp(-dt * 14));
+      const v = shipView(seaState.posS, ...seaState.rect);
+      if (!v) return true;
+      sea.draw(v.a, v.b, v.mixB, seaState.edge, v.halfW, now / 1000, mobile ? 2.2 : 3.6, gdpr);
       return true;
     };
     // the fixed sky layer shows the same (moving) sea until the plane wipes it away
@@ -410,6 +440,30 @@ function StoryFilm() {
         if (ready(b)) return b;
       }
       return null;
+    };
+
+    // between two frames the next one is enlarged to exactly where the camera would be, so the pull-back moves
+    // continuously however slowly you scroll; at the start of each step the previous frame (lined up with it)
+    // fades out quickly, so there's no jump and no doubled image
+    const shipScale = (k: number) => SHIP_SCALE[Math.max(0, Math.min(SHIP_SCALE.length - 1, k))];
+    const shipView = (posF: number, rx: number, ry: number, rw: number, rh: number) => {
+      const at = (im: HTMLImageElement, k: number): ShipLayer => {
+        const w = rw * k;
+        const h = rh * k;
+        return { img: im, rect: [rx + (rw - w) / 2, ry + (rh - h) / 2, w, h] };
+      };
+      const i = Math.max(0, Math.min(SHIP - 1, Math.floor(posF)));
+      const f = posF - i;
+      const A = i + 1 < SHIP && ready(ship[i + 1]) ? ship[i + 1] : null;
+      const B = ready(ship[i]) ? ship[i] : null;
+      if (!A || f < 1e-4) {
+        const im = B ?? frame(ship, i, 0, SHIP - 1);
+        return im ? { a: at(im, 1), b: null, mixB: 0, halfW: 0.265 * shipScale(i) } : null;
+      }
+      const sNow = Math.exp(lerp(Math.log(shipScale(i)), Math.log(shipScale(i + 1)), f));
+      const fo = clamp(f / 0.35);
+      const mixB = B ? 1 - fo * fo * (3 - 2 * fo) : 0;
+      return { a: at(A, sNow / shipScale(i + 1)), b: B ? at(B, sNow / shipScale(i)) : null, mixB, halfW: 0.265 * shipScale(i + 1) };
     };
 
     const size = () => {
@@ -817,21 +871,31 @@ function StoryFilm() {
           g!.beginPath();
           g!.rect(0, Math.max(0, edge), vw, vh);
           g!.clip();
-          // the nearest frame only (blending two frames doubles the image while the camera moves fast)
-          const i0 = Math.round(pos);
-          const fA = frame(ship, i0, 0, SHIP - 1);
-          if (sea && sea.ok && fA) {
-            // the WebGL layer draws it (with the water moving); the plain canvas only keeps the sea colour
+          if (sea && sea.ok && ready(ship[0])) {
+            // the WebGL layer draws it (water moving, smooth between frames); the plain canvas only keeps the sea colour
             seaState.on = true;
-            seaState.img = fA;
+            seaState.target = pos;
             seaState.rect = [x, y, sDW, sDH];
             seaState.edge = Math.max(0, edge);
-            seaState.halfW = 0.265 * SHIP_SCALE[Math.min(SHIP_SCALE.length - 1, i0)];
-          } else if (fA) g!.drawImage(fA, x, y, sDW, sDH);
+          } else {
+            // no WebGL: the same in-between frames, drawn directly
+            const v = shipView(pos, x, y, sDW, sDH);
+            if (v) {
+              g!.drawImage(v.a.img, ...v.a.rect);
+              if (v.b && v.mixB > 0.001) {
+                g!.globalAlpha = v.mixB;
+                g!.drawImage(v.b.img, ...v.b.rect);
+                g!.globalAlpha = 1;
+              }
+            }
+          }
           g!.restore();
         }
       }
-      if (!shipOn) seaState.on = false;
+      if (!shipOn) {
+        seaState.on = false;
+        seaState.posS = -1;
+      }
       if (sea) set(sea.canvas, { display: seaState.on ? '' : 'none' });
       // ===================== 8. sky: clouds and a plane =====================
       // the sea scene moves onto a fixed layer that sits over the next section; clouds drift in over part of
