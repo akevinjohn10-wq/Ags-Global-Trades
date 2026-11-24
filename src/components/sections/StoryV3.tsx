@@ -37,8 +37,8 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
-const SHIP = 55; // ship frames, in order: deck close-up, pull-back to the whole ship, clouds rolling in
-const SHIP_CU = 16; // roughly where the pull-back is well under way
+const SHIP = 63; // the wide shot of the whole ship sailing, every frame, played as you scroll (clouds roll in at the end)
+const SHIP_CU = 1; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
 // the centre container of the deck (the truck lands on it) and the deck's full width, as fractions of the frame;
 // full-size frames (1920 x 1080); phones use a 540-wide centre slice
@@ -202,7 +202,7 @@ const FADE_MASK = 'linear-gradient(to bottom, transparent, #000 18%, #000 82%, t
 
 // how far the camera has pulled back in each ship frame (1 = the deck close-up); the ship's hull is
 // about half the frame wide at 1, so the moving-water effect leaves a band that wide (times this) alone
-const SHIP_SCALE = [1,0.9997,0.9994,0.9992,0.9986,0.9984,0.9981,0.9979,0.997,0.9847,0.9394,0.8935,0.8164,0.7632,0.6821,0.6295,0.577,0.5021,0.4553,0.3879,0.3466,0.3087,0.2614,0.2343,0.2008,0.1833,0.1688,0.1516,0.1428,0.1329,0.128,0.1241,0.1194,0.1167,0.1133,0.1114,0.1098,0.1077,0.1065,0.1052,0.1044,0.1038,0.103,0.1027,0.1022,0.102,0.1018,0.1014,0.1012,0.101,0.1007,0.1005,0.1003,0.1001,0.0999];
+const SHIP_SCALE = [0.133,0.1304,0.1281,0.126,0.1241,0.1223,0.1207,0.1193,0.1179,0.1166,0.1153,0.1142,0.1131,0.1121,0.1111,0.1103,0.1094,0.1086,0.1078,0.1071,0.1065,0.1059,0.1053,0.1049,0.1044,0.104,0.1036,0.1032,0.1029,0.1026,0.1024,0.1021,0.1019,0.1017,0.1015,0.1014,0.1012,0.1011,0.101,0.1009,0.1008,0.1007,0.1005,0.1004,0.1003,0.1002,0.1001,0.1,0.0998,0.0998,0.0996,0.0996,0.0994,0.0994,0.0993,0.0992,0.0991,0.099,0.0989,0.0988,0.0987,0.0987,0.0987];
 
 /**
  * The sea keeps moving while the page is still: the current ship frame is drawn through a tiny WebGL
@@ -430,7 +430,7 @@ function StoryFilm() {
       );
       const sOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship5${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship6${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -1010,7 +1010,7 @@ function StoryFilm() {
         li.style.opacity = String(t);
         li.style.transform = `translate3d(0,${((1 - t) * 20).toFixed(1)}px,0)`;
       });
-      const c2 = lerp(T.ship[0], T.ship[1], 0.5);
+      const c2 = lerp(T.ship[0], T.ship[1], 0.12);
       show('copy2', win(p, c2, lerp(T.ship[0], T.ship[1], 0.93), 0.12));
       valueRefs.current.forEach((li, i) => {
         if (!li) return;
