@@ -225,7 +225,11 @@ class SeaGL {
     this.canvas = canvas;
     this.gl = gl;
     const vs = 'attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}';
-    const fs = `precision mediump float;
+    const fs = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
 uniform sampler2D texA,texB;uniform vec4 rectA,rectB;uniform vec2 res;uniform float edge,t,halfW,amp,mixB,veil,sc,glare;
 float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -250,17 +254,19 @@ void main(){
   if(mixB>0.001){vec3 cb=texture2D(texB,clamp((px+dd-rectB.xy)/rectB.zw,0.,1.)).rgb;c=mix(c,cb,mixB);}
   c*=1.+.06*w*sin(uv.x*50.+uv.y*43.+t*1.7)*sin(uv.y*30.-t*1.3);
   c=mix(c,vec3(.008,.04,.08),veil);
-  // a soft sun glare from the top right, with small glints sparkling on the waves near it
-  vec2 sp=px/sc;float asp=res.x/res.y;
-  float sd=distance(vec2(px.x/res.x*asp,px.y/res.y),vec2(.9*asp,.08));
-  if(glare>0.&&sd<1.3){
-    float sun=exp(-sd*2.4);
-    c+=vec3(1.,.86,.64)*sun*.2*glare;
-    if(sd<.75&&w>0.){
-      float gl=max(0.,sin(sp.x*.9+t*2.2+sin(sp.y*.31)*3.)*sin(sp.y*.7-t*1.6+sin(sp.x*.23)*2.));
-      gl*=gl;gl*=gl;gl*=gl;gl*=gl;
-      c+=vec3(1.,.95,.86)*gl*w*sun*.85*glare;
-    }
+  // a subtle lens flare: a soft sun glow at the top right and a few faint rings along the line through the centre
+  float asp=res.x/res.y;
+  vec2 sp=vec2(px.x/res.x*asp,px.y/res.y);
+  vec2 sun=vec2(.9*asp,.07);
+  if(glare>0.){
+    float sd=distance(sp,sun);
+    c+=vec3(1.,.86,.64)*exp(-sd*2.6)*.2*glare;
+    vec2 axis=vec2(.5*asp,.5)-sun;
+    float g1=smoothstep(.075,.06,distance(sp,sun+axis*.55));
+    float g2=smoothstep(.035,.027,distance(sp,sun+axis*.85));
+    float g3=smoothstep(.13,.1,distance(sp,sun+axis*1.35))-smoothstep(.1,.07,distance(sp,sun+axis*1.35));
+    float g4=smoothstep(.05,.04,distance(sp,sun+axis*1.75));
+    c+=(vec3(1.,.8,.5)*g1*.05+vec3(.6,.85,1.)*g2*.07+vec3(.7,1.,.8)*g3*.035+vec3(1.,.7,.9)*g4*.05)*glare;
   }
   if(d>=1e3){gl_FragColor=vec4(c,1.);return;}
   float seaA=smoothstep(-8.,8.,d);
@@ -537,20 +543,25 @@ function StoryFilm() {
 
     const size = () => {
       vw = window.innerWidth;
-      vh = window.innerHeight;
+      // the stage is the full (toolbar-hidden) screen height on phones, so it never leaves a strip at the bottom
+      vh = canvas.parentElement?.clientHeight || window.innerHeight;
       mobile = vw < 768;
       dpr = Math.min(window.devicePixelRatio || 1, mobile ? 1.5 : 2);
-      canvas.width = Math.round(vw * dpr);
-      canvas.height = Math.round(vh * dpr);
+      // only reallocate a canvas when its size really changes (phone toolbars fire resize while scrolling)
+      const fit = (cv: HTMLCanvasElement, k: number) => {
+        const w = Math.round(vw * k);
+        const h = Math.round(vh * k);
+        if (cv.width !== w) cv.width = w;
+        if (cv.height !== h) cv.height = h;
+      };
+      fit(canvas, dpr);
       if (sea) {
         gdpr = Math.min(window.devicePixelRatio || 1, 1.5) * seaRes;
-        sea.canvas.width = Math.round(vw * gdpr);
-        sea.canvas.height = Math.round(vh * gdpr);
+        fit(sea.canvas, gdpr);
       }
       if (skyCv) {
         sdpr = Math.min(window.devicePixelRatio || 1, 1.5);
-        skyCv.width = Math.round(vw * sdpr);
-        skyCv.height = Math.round(vh * sdpr);
+        fit(skyCv, sdpr);
       }
       update();
     };
@@ -1128,7 +1139,7 @@ function StoryFilm() {
 
   return (
     <section ref={sectionRef} id="services" aria-label="Our services" className="relative h-[1800vh] scroll-mt-24 bg-[#fbfbfb] md:h-[2200vh]">
-      <div className="sticky top-0 h-[100svh] overflow-hidden">
+      <div className="sticky top-0 h-[100lvh] overflow-hidden">
         <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
         <canvas ref={seaRef} aria-hidden="true" className="absolute inset-0 h-full w-full" style={{ display: 'none' }} />
 
@@ -1246,7 +1257,7 @@ function StoryFilm() {
         </div>
       </div>
       {/* 8. sky: a fixed layer, so the clouds and plane carry on over the next section */}
-      <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-0 z-[30] overflow-hidden" style={{ display: 'none' }}>
+      <div ref={r('sky')} aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[30] h-[100lvh] overflow-hidden" style={{ display: 'none' }}>
         <canvas ref={skyRef} className="absolute inset-0 h-full w-full" />
         <img ref={r('cloudA')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
         <img ref={r('cloudB')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-0 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
