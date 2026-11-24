@@ -309,10 +309,6 @@ function StoryFilm() {
       productOpen = !!(e as CustomEvent<boolean>).detail;
       onScroll();
     };
-    let lastP = -1;
-    let lastMove = 0;
-    let lastT = performance.now();
-    let shipOff = 0;
     function drawImg(im: HTMLImageElement | null | undefined, x: number, y: number, w: number, h: number, alpha = 1) {
       if (!ready(im) || alpha <= 0.002) return;
       g!.globalAlpha = alpha;
@@ -594,8 +590,7 @@ function StoryFilm() {
       const hB = easeIO(clamp((hT - 0.4) / 0.6)); // the page slides up, the ship comes up under it
       const edge = lerp(vh, 0, hB);
 
-      let truckAt: number[] | null = null;
-      if (p >= T.road[0] && p < T.hand[1] + 0.02) {
+      if (p >= T.road[0] && p < T.hand[1]) {
         const sEnd = S_END * 0.97;
         const s = sEnd * ease(seg(p, T.road));
         const [px, py0, hd0] = path(s);
@@ -661,24 +656,22 @@ function StoryFilm() {
           g!.fillRect(XS - WR / 2 - 160, i, 110, 34);
           g!.fillRect(XS + i, WR / 2 + 50, 34, 110);
         }
+        // the truck rides the page: it goes up and away with it as the ship comes in underneath
+        g!.translate(px, py);
+        g!.rotate(hd);
+        g!.fillStyle = '#2a2d33';
+        g!.fillRect(BOX.x + 30, -60, BOX.w - 60, 34);
+        g!.fillRect(BOX.x + 30, 26, BOX.w - 60, 34);
+        if (ready(one['truck-top-cab'])) g!.drawImage(one['truck-top-cab'], -639.5 * TS, -360 * TS, 1280 * TS, 714 * TS);
+        if (ready(one['truck-top-box'])) g!.drawImage(one['truck-top-box'], BOX.x, BOX.y, BOX.w, BOX.h);
         g!.restore();
-        // the truck: not clipped with the page; it stays where it is and ends up on the ship's centre column
-        truckAt = [sxA, syA, z, cx, cy, px, py, hd];
       }
 
       // ===================== 7. the ship: the page slides up onto the deck, then the camera pulls back =====================
       const shipOn = (hT > 0.4 || p >= T.ship[0]) && rect.bottom > 0;
       set($('shipScene'), { display: shipOn ? '' : 'none', top: `${Math.max(0, edge).toFixed(1)}px` });
-      // the drone keeps rising on its own while the page is still (the footage plays forward at its
-      // real speed), so the sea and foam are always moving; scrolling moves it too. No pasting, no reversing.
-      const nowT = performance.now();
-      if (Math.abs(p - lastP) > 1e-6) lastMove = nowT;
-      lastP = p;
-      if (!shipOn || p < T.ship[0] - 0.02) shipOff = 0;
-      else if (p >= T.ship[0] && nowT - lastMove > 250) shipOff += Math.min(0.1, (nowT - lastT) / 1000) * 24;
-      lastT = nowT;
-      // pull-back frames over T.ship, then the wide shot over T.wide; when idle it carries on playing forward
-      const pos = Math.min(SHIP - 1, seg(p, T.ship) * (SHIP - 1) + shipOff);
+      // the clip only moves when you scroll: it plays through the pull-back and on under the clouds until the plane
+      const pos = Math.min(SHIP - 1, seg(p, [T.ship[0], 1]) * (SHIP - 1));
       if (shipOn) {
         g!.fillStyle = '#0b2a45';
         g!.fillRect(0, edge, vw, vh - edge);
@@ -688,6 +681,11 @@ function StoryFilm() {
         const x = (vw - sDW) / 2 + dxS;
         const y = edge + (vh - sDH) / 2;
         {
+          // the ship only fills the screen below the page's edge (the frame is taller than the window on wide screens)
+          g!.save();
+          g!.beginPath();
+          g!.rect(0, Math.max(0, edge), vw, vh);
+          g!.clip();
           // blend the two nearest frames so the motion is smooth between them
           const i0 = Math.floor(pos);
           const fA = frame(ship, i0, 0, SHIP - 1);
@@ -698,28 +696,9 @@ function StoryFilm() {
             g!.drawImage(fB, x, y, sDW, sDH);
             g!.globalAlpha = 1;
           }
-        }
-      }
-      // the truck on top of the page and the ship; once the camera starts climbing it becomes one of the deck's containers
-      if (truckAt) {
-        const [tx0, ty0, tz, tcx, tcy, tpx, tpy, thd] = truckAt;
-        const fade = clamp(1 - pos / 6);
-        if (fade > 0) {
-          g!.save();
-          g!.globalAlpha = fade;
-          g!.translate(tx0, ty0);
-          g!.scale(tz, tz);
-          g!.translate(-tcx + tpx, -tcy + tpy);
-          g!.rotate(thd);
-          g!.fillStyle = '#2a2d33';
-          g!.fillRect(BOX.x + 30, -60, BOX.w - 60, 34);
-          g!.fillRect(BOX.x + 30, 26, BOX.w - 60, 34);
-          if (ready(one['truck-top-cab'])) g!.drawImage(one['truck-top-cab'], -639.5 * TS, -360 * TS, 1280 * TS, 714 * TS);
-          if (ready(one['truck-top-box'])) g!.drawImage(one['truck-top-box'], BOX.x, BOX.y, BOX.w, BOX.h);
           g!.restore();
         }
       }
-
       // ===================== 8. sky: clouds and a plane =====================
       // the sea scene moves onto a fixed layer that sits over the next section; clouds drift in over part of
       // the sea, then the plane flies across and wipes the whole scene away right behind its wings, uncovering
@@ -818,7 +797,6 @@ function StoryFilm() {
         kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
         if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
       }
-      if (shipOn && !raf) raf = requestAnimationFrame(update);
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
       show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
@@ -858,10 +836,10 @@ function StoryFilm() {
         {/* 7. the ship at sea */}
         <div ref={r('shipScene')} aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden" style={{ display: 'none', top: '100%' }}>
           {/* darken the whole scene a little, plus a vignette */}
-          <div className="absolute inset-0 bg-[#020a14]/10" />
-          {/* phones: the ship fills the width, so shade behind the heading and the points */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(2,10,20,0.7)_0%,rgba(2,10,20,0.15)_32%,rgba(2,10,20,0.15)_52%,rgba(2,10,20,0.75)_75%)] sm:hidden" />
-          <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_55%,rgba(2,12,24,0.4))] max-md:bg-[radial-gradient(160%_80%_at_50%_45%,transparent_60%,rgba(2,12,24,0.3))]" />
+          <div ref={r('shipTint')} className="absolute inset-0">
+            <div className="absolute inset-0 bg-[#020a14]/10" />
+            <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_45%,transparent_55%,rgba(2,12,24,0.4))] max-md:bg-[radial-gradient(160%_80%_at_50%_45%,transparent_60%,rgba(2,12,24,0.3))]" />
+          </div>
         </div>
 
         {/* 4. the black panel under the truck */}
