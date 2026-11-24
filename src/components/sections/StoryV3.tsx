@@ -223,6 +223,10 @@ function StoryFilm() {
     const skyCv = skyRef.current;
     const sg = skyCv?.getContext('2d') ?? null;
     let sdpr = 1;
+    let nextInner: HTMLElement | null = null;
+    let blurEl: Element | null = null;
+    let blurV = 0;
+    let lastY = 0;
     const g = canvas?.getContext('2d');
     if (!section || !canvas || !g) return;
     const $ = (k: string) => q.current[k] ?? null;
@@ -609,8 +613,10 @@ function StoryFilm() {
         if (hT > 0) {
           // camera holds; the truck drives on down until its cab reaches the bottom of the page
           z = lerp(zRoad, zH, hA);
-          const drive = (vh - syA) / zH - 640 * TS - 30;
-          py += hA * drive;
+          // drives on until the cab has gone past the bottom of the page (out of sight) and only the
+          // container shows; then, as the page slides up, the container slides on into the ship's centre column
+          const drive = (vh - syA) / zH - (BOX.x + BOX.w);
+          py += hA * drive + hB * BOX.w;
           hd = Math.PI / 2;
         }
 
@@ -707,7 +713,10 @@ function StoryFilm() {
       const skyB = span + vh * 0.95;
       const u = clamp((-rect.top - skyA) / (skyB - skyA));
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
+      if (!blurEl) blurEl = document.getElementById('plane-mb-blur');
       set($('sky'), { display: skyOn ? '' : 'none' });
+      if (!nextInner) nextInner = document.querySelector<HTMLElement>('#catalogue > .container-x');
+      if (!skyOn) set(nextInner, { opacity: '', transform: '' });
       set($('planeLayer'), { opacity: productOpen ? '0' : '1', display: skyOn ? '' : 'none' });
       if (skyOn && sg) {
         // the same frame of the clip, full screen, on the fixed layer
@@ -730,10 +739,23 @@ function StoryFilm() {
         set($('cloudA'), { transform: `translate3d(${lerp(-100, mobile ? -30 : -42, drift).toFixed(2)}%,${(-3 * u).toFixed(2)}%,0) scale(1.3)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
         set($('cloudB'), { transform: `translate3d(${lerp(100, mobile ? 30 : 42, drift).toFixed(2)}%,${(3 * u).toFixed(2)}%,0) scale(1.3) scaleX(-1)`, opacity: (0.92 * Math.min(1, u * 6)).toFixed(3) });
         // the plane: big, nose first, lingering a little through the middle
-        const u0 = (span - skyA) / (skyB - skyA) - 0.04; // the next section reaches the top just as the wipe begins
+        // timed so the wipe is 70% done just as the next section reaches the top of the screen,
+        // which is when its content fades in (heading and all)
+        const pwM = vw * 1.3 * (1369 / 1087);
+        const pwD = vh * 1.55 * (1369 / 1087);
+        const t70 = mobile
+          ? (vh + pwM / 2 + 40 - 0.3 * vh + 0.04 * pwM) / (vh + pwM + 80)
+          : (0.7 * vw - 0.46 * pwD + pwD + 40) / (vw + pwD + 80);
+        const uTop = (span - skyA) / (skyB - skyA);
+        const u0 = Math.max(0.15, (uTop - t70) / (1 - t70));
         const t = clamp((u - u0) / (1 - u0));
         const glide = t; // a steady pass, so the wipe moves at an even pace
+        // motion blur along the flight path, stronger the faster you scroll
+        const v = Math.abs(-rect.top - lastY);
+        blurV = lerp(blurV, Math.min(14, v * 0.08), 0.5);
+        if (blurEl) blurEl.setAttribute('stdDeviation', mobile ? `0 ${blurV.toFixed(1)}` : `${blurV.toFixed(1)} 0`);
         let wipeOn: boolean;
+        let wiped = 0;
         if (mobile) {
           // phones: the plane climbs up the screen nose first, wings past both sides, and wipes upwards
           const span2 = vw * 1.3; // wingspan
@@ -743,6 +765,7 @@ function StoryFilm() {
           // everything below the wings is already the next section
           const wipe = cy + pw * 0.04;
           wipeOn = wipe < vh + 60;
+          wiped = 1 - wipe / vh;
           const m = wipeOn ? `linear-gradient(to bottom, #000 ${(wipe - 50).toFixed(0)}px, transparent ${(wipe + 70).toFixed(0)}px)` : 'none';
           set($('sky'), { WebkitMaskImage: m, maskImage: m });
         } else {
@@ -753,15 +776,23 @@ function StoryFilm() {
           // everything left of the wings is already the next section
           const wipe = px + pw * 0.46;
           wipeOn = wipe > -60;
+          wiped = wipe / vw;
           const m = wipeOn ? `linear-gradient(to right, transparent ${(wipe - 70).toFixed(0)}px, #000 ${(wipe + 50).toFixed(0)}px)` : 'none';
           set($('sky'), { WebkitMaskImage: m, maskImage: m });
         }
         // under the wiped part the page is plain paper until the next section's own background reaches the top
+        // the next section's content waits until the plane has wiped about 70% of the way, then comes in
+        const nx = clamp((wiped - 0.62) / 0.16);
+        set(nextInner, { opacity: nx.toFixed(3), transform: `translate3d(0,${((1 - nx) * 30).toFixed(1)}px,0)` });
         if (wipeOn) {
           g!.fillStyle = PAPER;
           g!.fillRect(0, 0, vw, vh);
         }
       }
+
+      lastY = -rect.top;
+      // keep easing the blur back to sharp after the scrolling stops
+      if (skyOn && blurV > 0.2 && !raf) raf = requestAnimationFrame(update);
 
       // ===================== copy =====================
       // fades as the stacker reaches the stack (end of its run across the page)
@@ -960,8 +991,13 @@ function StoryFilm() {
           src={V('plane-xl.webp')}
           alt=""
           className="absolute left-0 top-1/2 max-w-none will-change-transform"
-          style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
+          style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'url(#plane-mb) drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
         />
+        <svg width="0" height="0" className="absolute">
+          <filter id="plane-mb" x="-10%" y="-10%" width="120%" height="120%">
+            <feGaussianBlur id="plane-mb-blur" in="SourceGraphic" stdDeviation="0 0" />
+          </filter>
+        </svg>
       </div>
     </section>
   );
