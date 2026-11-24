@@ -399,7 +399,7 @@ function StoryFilm() {
     let seaRaf = 0;
     let lastRender = 0;
     const renderSea = (now: number) => {
-      if (!sea || !seaState.on) return false;
+      if (!sea || !seaState.on || (mobile && skyState.on)) return false;
       if (now - lastRender < 4) return true; // already drawn this refresh
       lastRender = now;
       // the ship glides toward where the scroll is, every screen refresh, instead of jumping with each scroll event
@@ -417,7 +417,7 @@ function StoryFilm() {
     const paintSky = () => {
       if (!sg || !skyState.on) return;
       sg.setTransform(sdpr, 0, 0, sdpr, 0, 0);
-      if (sea && seaState.on) sg.drawImage(sea.canvas, 0, 0, vw, vh); // already has the veil
+      if (sea && seaState.on && !mobile) sg.drawImage(sea.canvas, 0, 0, vw, vh); // already has the veil
       else {
         sg.fillStyle = '#0b2a45';
         sg.fillRect(0, 0, vw, vh);
@@ -454,9 +454,6 @@ function StoryFilm() {
       paintSky();
       seaRaf = requestAnimationFrame(seaTick);
     };
-    let blurEl: Element | null = null;
-    let blurV = 0;
-    let lastY = 0;
     const g = canvas?.getContext('2d');
     if (!section || !canvas || !g) return;
     const $ = (k: string) => q.current[k] ?? null;
@@ -991,7 +988,6 @@ function StoryFilm() {
       const skyB = span + vh * 0.95;
       const u = clamp((-rect.top - skyA) / (skyB - skyA));
       const skyOn = -rect.top > skyA - 10 && -rect.top < skyB;
-      if (!blurEl) blurEl = document.getElementById('plane-mb-blur');
       set($('sky'), { display: skyOn ? '' : 'none' });
       if (!skyOn) skyState.on = false;
       if (!skyOn) {
@@ -1023,10 +1019,9 @@ function StoryFilm() {
         const u0 = Math.max(0.15, (uTop - t70) / (1 - t70));
         const t = clamp((u - u0) / (1 - u0));
         const glide = t; // a steady pass, so the wipe moves at an even pace
-        // motion blur along the flight path, stronger the faster you scroll
-        const v = Math.abs(-rect.top - lastY);
-        blurV = lerp(blurV, Math.min(14, v * 0.08), 0.5);
-        if (blurEl) blurEl.setAttribute('stdDeviation', mobile ? `0 ${blurV.toFixed(1)}` : `${blurV.toFixed(1)} 0`);
+        // the plane image carries its own soft shadow, with a margin round it (no live filters: they made it lag)
+        const PK = (1370 + 220) / 1370;
+        const PH = (1088 + 220) / 1370;
         let wipeOn: boolean;
         let wiped = 0;
         if (mobile) {
@@ -1034,7 +1029,7 @@ function StoryFilm() {
           const span2 = vw * 1.3; // wingspan
           const pw = span2 * (1369 / 1087); // nose to tail
           const cy = lerp(vh + pw / 2 + 40, -pw / 2 - 40, glide);
-          set($('plane'), { width: `${pw.toFixed(0)}px`, top: '0px', transform: `translate3d(${(vw / 2 - pw / 2).toFixed(1)}px,${(cy - span2 / 2).toFixed(1)}px,0) rotate(-90deg)` });
+          set($('plane'), { width: `${(pw * PK).toFixed(0)}px`, top: '0px', transform: `translate3d(${(vw / 2 - (pw * PK) / 2).toFixed(1)}px,${(cy - (pw * PH) / 2).toFixed(1)}px,0) rotate(-90deg)` });
           // everything behind the wings is already the next section: the cut follows the swept-back
           // trailing edges (a chevron), so it stays hidden under the wings all the way out
           const wipe = cy - pw * 0.03;
@@ -1047,7 +1042,7 @@ function StoryFilm() {
           const span2 = vh * 1.55; // wingspan
           const pw = span2 * (1369 / 1087);
           const px = lerp(-pw - 40, vw + 40, glide);
-          set($('plane'), { width: `${pw.toFixed(0)}px`, top: '50%', transform: `translate3d(${px.toFixed(1)}px,-50%,0)` });
+          set($('plane'), { width: `${(pw * PK).toFixed(0)}px`, top: '50%', transform: `translate3d(${(px - (pw * 110) / 1370).toFixed(1)}px,-50%,0)` });
           // everything behind the wings is already the next section: the cut follows the swept-back
           // trailing edges (a chevron), so no sea shows between the wings and the uncovered page
           const wipe = px + pw * 0.53;
@@ -1075,10 +1070,7 @@ function StoryFilm() {
         set($('shipScene'), { visibility: wipeOn ? 'hidden' : '' });
         if (sea) set(sea.canvas, { visibility: wipeOn ? 'hidden' : '' });
       }
-
-      lastY = -rect.top;
       // keep easing the blur back to sharp after the scrolling stops
-      if (skyOn && blurV > 0.2 && !raf) raf = requestAnimationFrame(update);
 
       // draw the sea now (in step with the scroll), and keep it moving while it's on screen
       if (seaState.on) {
@@ -1291,16 +1283,11 @@ function StoryFilm() {
       <div ref={r('planeLayer')} aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[31] h-[100lvh] overflow-hidden transition-opacity duration-500" style={{ display: 'none' }}>
         <img
           ref={r('plane')}
-          src={V('plane-xl.webp')}
+          src={V('plane-sh.webp')}
           alt=""
           className="absolute left-0 top-1/2 max-w-none will-change-transform"
-          style={{ transform: 'translate3d(-200vw,-50%,0)', filter: 'url(#plane-mb) drop-shadow(40px 70px 40px rgba(10,20,40,0.35))' }}
+          style={{ transform: 'translate3d(-200vw,-50%,0)' }}
         />
-        <svg width="0" height="0" className="absolute">
-          <filter id="plane-mb" x="-10%" y="-10%" width="120%" height="120%">
-            <feGaussianBlur id="plane-mb-blur" in="SourceGraphic" stdDeviation="0 0" />
-          </filter>
-        </svg>
       </div>
     </section>
   );
