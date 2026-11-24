@@ -754,16 +754,31 @@ function StoryFilm() {
         const u0 = (span - skyA) / (skyB - skyA) - 0.04; // the next section reaches the top just as the wipe begins
         const t = clamp((u - u0) / (1 - u0));
         const glide = t; // a steady pass, so the wipe moves at an even pace
-        const span2 = vh * (mobile ? 0.78 : 1.55); // wingspan
-        const pw = span2 * (1369 / 1087);
-        const px = lerp(-pw - 40, vw + 40, glide);
-        set($('plane'), { width: `${pw.toFixed(0)}px`, transform: `translate3d(${px.toFixed(1)}px,-50%,0)` });
-        // everything left of the wings is already the next section
-        const wipe = px + pw * 0.46;
-        const m = wipe <= -60 ? 'none' : `linear-gradient(to right, transparent ${(wipe - 70).toFixed(0)}px, #000 ${(wipe + 50).toFixed(0)}px)`;
-        set($('sky'), { WebkitMaskImage: m, maskImage: m });
+        let wipeOn: boolean;
+        if (mobile) {
+          // phones: the plane climbs up the screen nose first, wings past both sides, and wipes upwards
+          const span2 = vw * 1.3; // wingspan
+          const pw = span2 * (1369 / 1087); // nose to tail
+          const cy = lerp(vh + pw / 2 + 40, -pw / 2 - 40, glide);
+          set($('plane'), { width: `${pw.toFixed(0)}px`, top: '0px', transform: `translate3d(${(vw / 2 - pw / 2).toFixed(1)}px,${(cy - span2 / 2).toFixed(1)}px,0) rotate(-90deg)` });
+          // everything below the wings is already the next section
+          const wipe = cy + pw * 0.04;
+          wipeOn = wipe < vh + 60;
+          const m = wipeOn ? `linear-gradient(to bottom, #000 ${(wipe - 50).toFixed(0)}px, transparent ${(wipe + 70).toFixed(0)}px)` : 'none';
+          set($('sky'), { WebkitMaskImage: m, maskImage: m });
+        } else {
+          const span2 = vh * 1.55; // wingspan
+          const pw = span2 * (1369 / 1087);
+          const px = lerp(-pw - 40, vw + 40, glide);
+          set($('plane'), { width: `${pw.toFixed(0)}px`, top: '50%', transform: `translate3d(${px.toFixed(1)}px,-50%,0)` });
+          // everything left of the wings is already the next section
+          const wipe = px + pw * 0.46;
+          wipeOn = wipe > -60;
+          const m = wipeOn ? `linear-gradient(to right, transparent ${(wipe - 70).toFixed(0)}px, #000 ${(wipe + 50).toFixed(0)}px)` : 'none';
+          set($('sky'), { WebkitMaskImage: m, maskImage: m });
+        }
         // under the wiped part the page is plain paper until the next section's own background reaches the top
-        if (wipe > -60) {
+        if (wipeOn) {
           g!.fillStyle = PAPER;
           g!.fillRect(0, 0, vw, vh);
         }
