@@ -47,7 +47,7 @@ export default function BrandCursor() {
       px = tx; py = ty;
       if (Math.hypot(vx, vy) > 2 && !reduce) { heading = (Math.atan2(vy, vx) * 180) / Math.PI + 90; still = 0; }
       else still += dt;
-      const target = still > 0.35 || reduce ? REST : heading;
+      const target = REST; // no turning to face the direction of travel
       let d = target - ang; d = ((d + 540) % 360) - 180;
       ang += d * Math.min(1, dt * 12);
       scT = down ? 0.8 : 1;
@@ -57,7 +57,7 @@ export default function BrandCursor() {
       hk += (hkT - hk) * Math.min(1, dt * (reduce ? 60 : 13));
       const e = hk * hk * (3 - 2 * hk);
       arrow.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${ang.toFixed(2)}deg) scale(${(sc * (1 - e)).toFixed(3)})`;
-      link.style.transform = `translate3d(${tx}px, ${ty}px, 0) rotate(${(-45 * (1 - e)).toFixed(2)}deg) scale(${(e * (down ? 0.86 : 1)).toFixed(3)})`;
+      link.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${(e * (down ? 0.86 : 1)).toFixed(3)})`;
       if (Math.abs(d) > 0.2 || Math.abs(sc - scT) > 0.002 || Math.abs(hk - hkT) > 0.002 || still < 0.4) raf = requestAnimationFrame(tick);
     }
 
