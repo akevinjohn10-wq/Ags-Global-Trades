@@ -497,7 +497,7 @@ function StoryFilm() {
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
       const dOrder: number[] = [];
       for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < DRIVE; i += s) if (!dOrder.includes(i)) dOrder.push(i);
-      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker4${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
+      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker5${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
       order.forEach((i, k) =>
         setTimeout(() => {
           const n = String(i).padStart(3, '0');
@@ -650,7 +650,8 @@ function StoryFilm() {
         }
 
         // ground strip -> services panel -> road band
-        let top = toY(groundStage + 2);
+        // the forklift's tyres end at stage y 677: the ground line sits right there so it never floats
+        let top = toY(groundStage + lerp(-1.5, 2, truckIn));
         let bottom = vh;
         if (p > T.rise[0]) {
           // the road's edge stays under the tyres while the camera climbs (tyre bottoms tracked per frame)
