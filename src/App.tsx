@@ -35,20 +35,15 @@ function useSpotlight() {
   }, []);
 }
 
-/** Cursor glow, magnetic buttons and tilting images (mouse users only). */
+/** Magnetic buttons and tilting images (mouse users only). */
 function usePointerEffects() {
   useEffect(() => {
     const fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!fine || reduce) return;
-    const glow = document.createElement('div');
-    glow.className = 'cursor-glow';
-    glow.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(glow);
     let magnet: HTMLElement | null = null;
     let tilt: HTMLElement | null = null;
     const onMove = (e: PointerEvent) => {
-      glow.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
       const t = e.target instanceof Element ? e.target : null;
       const m = t?.closest<HTMLElement>('[data-magnetic]') ?? null;
       if (magnet && magnet !== m) magnet.style.transform = '';
@@ -69,20 +64,9 @@ function usePointerEffects() {
         tl.style.transform = `perspective(900px) rotateY(${(px * 8).toFixed(2)}deg) rotateX(${(-py * 8).toFixed(2)}deg)`;
       }
     };
-    const onLeave = () => {
-      glow.style.opacity = '0';
-    };
-    const onEnter = () => {
-      glow.style.opacity = '1';
-    };
     document.addEventListener('pointermove', onMove, { passive: true });
-    document.documentElement.addEventListener('pointerleave', onLeave);
-    document.documentElement.addEventListener('pointerenter', onEnter);
     return () => {
       document.removeEventListener('pointermove', onMove);
-      document.documentElement.removeEventListener('pointerleave', onLeave);
-      document.documentElement.removeEventListener('pointerenter', onEnter);
-      glow.remove();
     };
   }, []);
 }

@@ -403,22 +403,6 @@
   100% { background-position: -50% 0; }
 }
 
-/* Cursor glow (desktop) */
-.cursor-glow {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 70;
-  width: 460px;
-  height: 460px;
-  margin: -230px 0 0 -230px;
-  border-radius: 9999px;
-  pointer-events: none;
-  background: radial-gradient(circle, rgba(93, 120, 194, 0.12), transparent 65%);
-  will-change: transform;
-  transition: opacity 0.4s ease;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .aurora::before,
   .grain::after,
@@ -426,8 +410,7 @@
   .sheen .split-word > span {
     animation: none !important;
   }
-  .particles,
-  .cursor-glow {
+  .particles {
     display: none;
   }
 }
@@ -543,25 +526,6 @@ html.brand-cursor select {
   display: block;
   margin: -1.15px 0 0 -10px;
   opacity: 0.9;
-  /* every few seconds the arrow breathes: a slow blue glow swells and fades */
-  animation: nav-cursor-glow 4.8s ease-in-out infinite;
-}
-@keyframes nav-cursor-glow {
-  0%, 55%, 100% {
-    opacity: 0.9;
-    filter: drop-shadow(0 0 0 rgba(127, 155, 234, 0));
-  }
-  72% {
-    opacity: 1;
-    filter: drop-shadow(0 0 4px rgba(127, 155, 234, 0.95)) drop-shadow(0 0 10px rgba(62, 91, 176, 0.6));
-  }
-  84% {
-    opacity: 0.75;
-    filter: drop-shadow(0 0 2px rgba(127, 155, 234, 0.4));
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .nav-cursor-arrow svg { animation: none; }
 }
 
 /* Over links and buttons the cursor becomes a small round "go" badge */
