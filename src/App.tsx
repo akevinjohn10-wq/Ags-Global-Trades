@@ -15,7 +15,6 @@ import Story from '@/components/sections/StoryV3';
 import ChatAssistant from '@/components/ui/ChatAssistant';
 import BackToTop from '@/components/ui/BackToTop';
 import BrandCursor from '@/components/ui/BrandCursor';
-import CursorGlow from '@/components/ui/CursorGlow';
 import ScrollProgress from '@/components/ui/ScrollProgress';
 
 /** Makes the soft blue spotlight on every .spot card follow the cursor. */
@@ -101,7 +100,6 @@ export default function App() {
       <Footer />
       <BackToTop />
       <ChatAssistant />
-      <CursorGlow />
       <BrandCursor />
     </>
   );
