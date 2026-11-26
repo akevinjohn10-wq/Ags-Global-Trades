@@ -46,12 +46,12 @@ function landTexture() {
     img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v ? 255 : 0; img.data[i * 4 + 3] = 255;
   }
   sc.putImageData(img, 0, 0);
-  const big = document.createElement('canvas'); big.width = 2048; big.height = 1024;
+  const big = document.createElement('canvas'); big.width = 1024; big.height = 512;
   const bc = big.getContext('2d');
   bc.imageSmoothingEnabled = true; bc.imageSmoothingQuality = 'high';
-  bc.filter = 'blur(3px)';
+  bc.filter = 'blur(1.5px)';
   // draw with wrap so the blur is seamless at the date line
-  bc.drawImage(small, -2048, 0, 2048, 1024); bc.drawImage(small, 0, 0, 2048, 1024); bc.drawImage(small, 2048, 0, 2048, 1024);
+  bc.drawImage(small, -1024, 0, 1024, 512); bc.drawImage(small, 0, 0, 1024, 512); bc.drawImage(small, 1024, 0, 1024, 512);
   return big;
 }
 
@@ -245,17 +245,26 @@ function loadImg(name) {
     const tryNext = () => {
       if (i >= IMG_BASES.length) return rej(new Error(name));
       const im = new Image(); im.crossOrigin = 'anonymous'; im.decoding = 'async';
-      im.onload = () => res(im); im.onerror = () => { i++; tryNext(); };
+      im.onload = () => { const done = (b) => res(b); (window.createImageBitmap ? createImageBitmap(im).then(done, () => done(im)) : im.decode().then(() => done(im), () => done(im))); }; im.onerror = () => { i++; tryNext(); };
       im.src = IMG_BASES[i] + name;
     };
     tryNext();
   });
 }
 const R_STATE = { real: 0, target: 0, water: 0, topo: 0, night: 0 };
+// one big upload at a time, a few hundred ms apart, so the opening animation never stalls on them
+const uploads = [];
+let uploading = false;
+function queueUpload(fn) { uploads.push(fn); if (!uploading) nextUpload(); }
+function nextUpload() {
+  const fn = uploads.shift(); if (!fn) { uploading = false; return; }
+  uploading = true;
+  requestAnimationFrame(() => { fn(); setTimeout(nextUpload, 350); });
+}
 loadImg('earth-water.png').then(w => {
-  makeTex(3, w); R_STATE.water = 1; R_STATE.target = 1;
-  loadImg('earth-topology.png').then(t => { makeTex(4, t); R_STATE.topo = 1; }).catch(() => {});
-  loadImg('earth-night.jpg').then(t => { makeTex(2, t); R_STATE.night = 1; }).catch(() => {});
+  queueUpload(() => { makeTex(3, w); R_STATE.water = 1; R_STATE.target = 1; });
+  loadImg('earth-topology.png').then(t => queueUpload(() => { makeTex(4, t); R_STATE.topo = 1; })).catch(() => {});
+  loadImg('earth-night.jpg').then(t => queueUpload(() => { makeTex(2, t); R_STATE.night = 1; })).catch(() => {});
 }).catch(() => { /* stays on the shaded land-mask fallback */ });
 
 /* ---------- maths ---------- */
@@ -304,8 +313,8 @@ let W = 0, H = 0, DPR = 1, center = [0, 0], scale = 1, mobile = false;
 function resize() {
   const r = stage.getBoundingClientRect();
   W = r.width; H = r.height; mobile = W < 900;
-  DPR = Math.min(window.devicePixelRatio || 1, 2) * quality;
-  const maxPx = 8.3e6; if (W*H*DPR*DPR > maxPx) DPR = Math.sqrt(maxPx/(W*H));   // up to a full 4K frame
+  DPR = Math.min(window.devicePixelRatio || 1, 1.5) * quality;
+  const maxPx = 4.2e6; if (W*H*DPR*DPR > maxPx) DPR = Math.sqrt(maxPx/(W*H));   // up to a full 4K frame
   glCanvas.width = Math.round(W*DPR); glCanvas.height = Math.round(H*DPR);
   const fd = Math.min(window.devicePixelRatio || 1, 2);
   fx.width = Math.round(W*fd); fx.height = Math.round(H*fd); ctx.setTransform(fd, 0, 0, fd, 0, 0);
@@ -494,7 +503,7 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
   S.time += dt;
   // a light glide (about a quarter second) so wheel notches don't step the zoom, without lagging the scroll
-  dive += (diveTarget - dive) * (1 - Math.exp(-dt * 9));
+  dive += (diveTarget - dive) * (1 - Math.exp(-dt * 5.5));
   if (Math.abs(diveTarget - dive) < 1e-4) dive = diveTarget;
   const diving = dive !== diveTarget || (dive > 0 && dive < 1);
   // keep it smooth: drop render resolution a step if frames run long, raise it again when there is headroom

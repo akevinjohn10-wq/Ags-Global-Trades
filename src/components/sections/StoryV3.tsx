@@ -1130,7 +1130,8 @@ function StoryFilm() {
     window.addEventListener('resize', size);
     window.addEventListener('ags:product-open', onProduct);
     let early = 0;
-    const kick = () => (early = window.setTimeout(startLoading, 600));
+    // after the globe's opening animation (or straight away if you scroll down towards the story)
+    const kick = () => (early = window.setTimeout(startLoading, 4800));
     if (document.readyState === 'complete') kick();
     else window.addEventListener('load', kick, { once: true });
     return () => {

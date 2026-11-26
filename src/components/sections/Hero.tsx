@@ -46,11 +46,11 @@ export default function Hero() {
       const rect = el.getBoundingClientRect();
       const span = rect.height - window.innerHeight;
       const p = span > 0 ? Math.min(1, Math.max(0, -rect.top / span)) : 0;
-      // first 60%: step through the route stages; last 40%: dive into the page
-      setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.6) * STAGES.length)));
-      const d = Math.min(1, Math.max(0, (p - 0.6) / 0.4));
+      // first 45%: step through the route stages; last 55%: a slow dive into the page
+      setStage(Math.min(STAGES.length - 1, Math.floor((p / 0.45) * STAGES.length)));
+      const d = Math.min(1, Math.max(0, (p - 0.45) / 0.55));
       // 1) the globe turns and flies in to New Delhi (inside the WebGL scene, so it stays sharp)
-      const z = Math.min(1, d / 0.7);
+      const z = Math.min(1, d / 0.75);
       controls.current?.setDive(z * z * (3 - 2 * z));
       if (copyRef.current) {
         const c = Math.min(1, d / 0.6);
@@ -80,7 +80,7 @@ export default function Hero() {
 
 
   return (
-    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[200vh] md:h-[280vh]'}`}>
+    <section id="home" ref={sectionRef} aria-label="Introduction" className={`relative bg-space text-white ${reduce ? '' : 'h-[240vh] md:h-[340vh]'}`}>
       <div className={`${reduce ? 'relative' : 'sticky top-0'} isolate h-[100svh] min-h-[640px] overflow-hidden`}>
         {/* Interactive globe */}
         <div
