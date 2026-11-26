@@ -520,13 +520,20 @@ const GlowCursor = ({
 
     const allocate = () => {
       const s = settingsRef.current;
+      // never build the simulation for a container that has no real size yet (e.g. before the page's styles
+      // load): a near-zero height gives an absurd aspect ratio and gigantic textures, which crashes the tab
+      if (state.width < 32 || state.height < 32) return;
       const key = `${s.quality}|${state.width}|${state.height}|${canvas.width}|${canvas.height}`;
       if (key === state.allocated && state.targets) return;
       release();
       state.allocated = key;
       const preset = QUALITY[s.quality];
       const aspect = state.width / state.height;
-      const dims = base => (aspect >= 1 ? [Math.round(base * aspect), base] : [base, Math.round(base / aspect)]);
+      const dims = base => {
+        const [w, h] = aspect >= 1 ? [Math.round(base * aspect), base] : [base, Math.round(base / aspect)];
+        const k = Math.min(1, 2048 / Math.max(w, h));
+        return [Math.max(2, Math.round(w * k)), Math.max(2, Math.round(h * k))];
+      };
       const [simW, simH] = dims(preset.sim);
       let [dyeW, dyeH] = dims(preset.dye);
       const shrink = Math.min(1, canvas.width / dyeW, canvas.height / dyeH);
@@ -827,6 +834,7 @@ const GlowCursor = ({
       const wanted = Math.min(window.devicePixelRatio || 1, Math.max(0.5, s.maxDevicePixelRatio || 2));
       if (Math.abs(wanted - state.ratio) > 0.01) applyResize();
       allocate();
+      if (!state.targets) return; // waits for the resize observer to report a real size
       resolveColors(s);
       gl.bindVertexArray(vao);
       gl.disable(gl.BLEND);
@@ -884,6 +892,7 @@ const GlowCursor = ({
 
     const onPointerDown = event => {
       const s = settingsRef.current;
+      if (!state.targets) return;
       if (!s.clickBurst || !s.enabled) return;
       const rect = container.getBoundingClientRect();
       const x = event.clientX - rect.left;

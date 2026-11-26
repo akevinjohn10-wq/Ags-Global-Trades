@@ -488,26 +488,58 @@ function StoryFilm() {
     const riseCut: (HTMLImageElement | null)[] = new Array(FRAMES).fill(null);
     const ship: (HTMLImageElement | null)[] = new Array(SHIP).fill(null);
     let loading = false;
+    // Only the frames for the scene on screen and the next one stay in memory: the four sets together are
+    // well over a gigabyte once decoded, which can crash a tab. A set loads as you approach its scene and is
+    // dropped again once you've scrolled well past it (or back above it).
+    const pad = (i: number) => String(i).padStart(3, '0');
+    const dir = () => (mobile ? '-m' : '');
+    type Group = { arr: (HTMLImageElement | null)[]; n: number; path: (i: number) => string; r: readonly [number, number]; on: boolean; timers: number[]; keep0?: boolean; delay: number };
+    const groups: Group[] = [
+      { arr: drive, n: DRIVE, path: (i) => `stacker5${dir()}/${pad(i)}.webp`, r: [0, T.turn[0]], on: false, timers: [], delay: 0 },
+      { arr: turn, n: FRAMES, path: (i) => `turn${dir()}/${pad(i)}.webp`, r: [T.turn[0], T.truckIn[0]], on: false, timers: [], keep0: true, delay: 300 },
+      { arr: riseCut, n: FRAMES, path: (i) => `truck${dir()}/${pad(i)}.webp`, r: [T.truckIn[0], T.rise[1]], on: false, timers: [], delay: 300 },
+      { arr: ship, n: SHIP, path: (i) => `ship7${dir()}/${pad(i)}.webp`, r: [T.hand[0], 1], on: false, timers: [], delay: 300 },
+    ];
+    const coarseToFine = (n: number) => {
+      const o: number[] = [];
+      for (let st = 4; st >= 1; st = st >> 1) for (let i = 0; i < n; i += st) if (!o.includes(i)) o.push(i);
+      return o;
+    };
+    const loadGroup = (gr: Group) => {
+      gr.on = true;
+      coarseToFine(gr.n).forEach((i, k) => {
+        if (gr.arr[i]) return;
+        gr.timers.push(window.setTimeout(() => (gr.arr[i] = img(V(gr.path(i)))), gr.delay + k * 10));
+      });
+    };
+    const dropGroup = (gr: Group) => {
+      gr.on = false;
+      gr.timers.forEach(clearTimeout);
+      gr.timers = [];
+      for (let i = 0; i < gr.n; i++) {
+        if (gr.keep0 && i === 0) continue;
+        const im = gr.arr[i];
+        if (im) {
+          im.onload = null;
+          im.src = '';
+        }
+        gr.arr[i] = null;
+      }
+    };
+    const manageFrames = () => {
+      if (!loading) return;
+      for (const gr of groups) {
+        const want = gr.r[1] >= p - 0.04 && gr.r[0] <= p + 0.1;
+        if (want && !gr.on) loadGroup(gr);
+        else if (!want && gr.on) dropGroup(gr);
+      }
+    };
     const startLoading = () => {
       if (loading) return;
       loading = true;
-      const dir = mobile ? '-m' : '';
       for (const n of ['fk-head', 'fk-box', 'fk-low2', 'truck-e', 'truck-top-cab', 'truck-top-box']) one[n] = img(V(`${n}.webp`));
-      const order: number[] = [];
-      for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < FRAMES; i += s) if (!order.includes(i)) order.push(i);
-      const dOrder: number[] = [];
-      for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < DRIVE; i += s) if (!dOrder.includes(i)) dOrder.push(i);
-      dOrder.forEach((i, k) => setTimeout(() => (drive[i] = img(V(`stacker5${dir}/${String(i).padStart(3, '0')}.webp`))), k * 10));
-      order.forEach((i, k) =>
-        setTimeout(() => {
-          const n = String(i).padStart(3, '0');
-          turn[i] = img(V(`turn${dir}/${n}.webp`));
-          riseCut[i] = img(V(`truck${dir}/${n}.webp`));
-        }, 400 + k * 12),
-      );
-      const sOrder: number[] = [];
-      for (let s = 4; s >= 1; s = s >> 1) for (let i = 0; i < SHIP; i += s) if (!sOrder.includes(i)) sOrder.push(i);
-      sOrder.forEach((i, k) => setTimeout(() => (ship[i] = img(V(`ship7${dir}/${String(i).padStart(3, '0')}.webp`))), 2400 + k * 14));
+      turn[0] = img(V(`turn${dir()}/000.webp`)); // stand-in while the drive-in frames arrive
+      manageFrames();
     };
     const frame = (arr: (HTMLImageElement | null)[], i: number, lo = 0, hi = FRAMES - 1) => {
       for (let d = 0; d < FRAMES; d++) {
@@ -597,6 +629,7 @@ function StoryFilm() {
       const span = rect.height - vh;
       p = span > 0 ? clamp(-rect.top / span) : 0;
       if (rect.top < vh * 2.5) startLoading();
+      manageFrames();
 
       g!.setTransform(dpr, 0, 0, dpr, 0, 0);
       g!.clearRect(0, 0, vw, vh);

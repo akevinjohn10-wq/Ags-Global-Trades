@@ -262,9 +262,9 @@ function nextUpload() {
   requestAnimationFrame(() => { fn(); setTimeout(nextUpload, 350); });
 }
 loadImg('earth-water.png').then(w => {
-  queueUpload(() => { makeTex(3, w); R_STATE.water = 1; R_STATE.target = 1; });
-  loadImg('earth-topology.png').then(t => queueUpload(() => { makeTex(4, t); R_STATE.topo = 1; })).catch(() => {});
-  loadImg('earth-night.jpg').then(t => queueUpload(() => { makeTex(2, t); R_STATE.night = 1; })).catch(() => {});
+  queueUpload(() => { makeTex(3, w); w.close?.(); R_STATE.water = 1; R_STATE.target = 1; });
+  loadImg('earth-topology.png').then(t => queueUpload(() => { makeTex(4, t); t.close?.(); R_STATE.topo = 1; })).catch(() => {});
+  loadImg('earth-night.jpg').then(t => queueUpload(() => { makeTex(2, t); t.close?.(); R_STATE.night = 1; })).catch(() => {});
 }).catch(() => { /* stays on the shaded land-mask fallback */ });
 
 /* ---------- maths ---------- */

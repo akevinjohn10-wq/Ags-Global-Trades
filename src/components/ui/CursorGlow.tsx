@@ -9,7 +9,8 @@ export default function CursorGlow() {
   }, []);
   if (!on) return null;
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[9998]">
+    // sized inline (not only through the stylesheet), so it is full-screen even before the CSS has loaded
+    <div aria-hidden="true" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 9998, pointerEvents: 'none' }}>
       <GlowCursor
         color="#5f8bff"
         intensity={1.3}
@@ -21,7 +22,7 @@ export default function CursorGlow() {
         blendMode="normal"
         quality="medium"
         maxDevicePixelRatio={1.25}
-        style={{ pointerEvents: 'none' }}
+        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden', pointerEvents: 'none' }}
       />
     </div>
   );
