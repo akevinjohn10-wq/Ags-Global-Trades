@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Handshake, Receipt, Truck } from 'lucide-react';
-import { services } from '@/data/siteContent';
+import { processSteps, services } from '@/data/siteContent';
 
 /**
  * Services scroll story, frame by frame:
@@ -8,9 +8,10 @@ import { services } from '@/data/siteContent';
  *  2. It lifts it and turns to face us                                    (119 video frames)
  *  3. The empty truck slides in, the container is lowered onto it, the spreader lifts away
  *  4. The truck pulls out: the frame zooms out, a black panel rises with the services
- *  5. The camera rises over the truck to top-down; the road slides in under it (119 frames)
- *  6. The truck drives the road through a junction and down between the services
- *  7. Fog rolls over, then the ship sails on, held for a while with "Why AGS Trade"
+ *  5. The truck drives on off the right of the screen and disappears into fog
+ *  6. Out of the fog: the camera climbs over a container train (scrubbed video) while
+ *     "How it works" scrolls past either side of it, until it rises into cloud
+ *  7. The cloud clears onto the ship, which sails on, held for a while with "Why AGS Trade"
  *  8. Clouds and a huge plane sweep across into the next section
  *
  * Scenes 1-6 are drawn on one 2D canvas in "stage" units (the 1280 x 720 video frame).
@@ -37,6 +38,8 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
+// the train climb: share of its scroll spent over the train (with the text) before the clouds take over
+const TRAIN_KNEE = 0.8;
 const SHIP = 63; // the wide shot of the whole ship sailing, every frame, played as you scroll (clouds roll in at the end)
 const SHIP_CU = 1; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
@@ -54,107 +57,10 @@ const WHEELS = [
   [777, 502],
   [1090, 501],
 ] as const;
-// wheel centre (x, y) and how round it still is (1 = side-on) in each camera-rise frame, for spinning
-const RISE_WHEELS: number[][] = [
-  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
-  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
-  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
-  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
-  [180,501,1.00,286,500,1.00,391,501,1.00,777,502,1.00,1090,501,1.00],
-  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
-  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
-  [180,502,1.00,286,501,1.00,391,502,1.00,777,503,1.00,1090,502,1.00],
-  [180,503,1.00,286,502,1.00,391,503,1.00,777,504,1.00,1090,503,1.00],
-  [180,503,1.00,286,502,1.00,391,503,1.00,777,504,1.00,1090,503,1.00],
-  [180,504,1.00,286,503,1.00,391,504,1.00,777,505,1.00,1090,504,1.00],
-  [180,505,1.00,286,504,1.00,391,505,1.00,777,506,1.00,1090,505,1.00],
-  [180,505,1.00,286,504,1.00,391,505,1.00,777,506,1.00,1090,505,1.00],
-  [180,506,1.00,286,505,1.00,391,506,1.00,777,507,1.00,1090,506,1.00],
-  [180,507,1.00,286,506,1.00,391,507,1.00,777,508,1.00,1090,507,1.00],
-  [180,508,1.00,286,507,1.00,391,508,1.00,777,509,1.00,1090,508,1.00],
-  [180,509,1.00,286,508,1.00,391,509,1.00,777,510,1.00,1090,509,1.00],
-  [180,510,1.00,286,509,1.00,391,510,1.00,777,511,1.00,1090,510,1.00],
-  [180,511,1.00,286,510,1.00,391,511,1.00,777,512,1.00,1090,511,1.00],
-  [180,512,1.00,286,511,1.00,391,512,1.00,777,514,1.00,1090,513,1.00],
-  [180,514,1.00,286,513,1.00,391,514,1.00,777,515,1.00,1090,514,1.00],
-  [179,515,1.00,286,514,1.00,391,515,1.00,777,516,1.00,1090,515,1.00],
-  [179,516,1.00,286,515,1.00,391,516,1.00,777,518,1.00,1091,517,1.00],
-  [179,518,1.00,286,517,1.00,391,518,1.00,777,519,1.00,1091,518,1.00],
-  [179,519,1.00,286,518,1.00,391,520,1.00,777,521,1.00,1091,520,1.00],
-  [179,521,1.00,285,520,1.00,391,521,1.00,777,523,1.00,1091,522,1.00],
-  [179,523,1.00,285,522,1.00,391,523,1.00,777,524,1.00,1091,523,1.00],
-  [179,524,1.00,285,523,1.00,391,524,1.00,777,526,1.00,1091,525,1.00],
-  [179,526,1.00,285,525,1.00,391,526,1.00,777,527,1.00,1091,526,1.00],
-  [179,527,1.00,285,526,1.00,391,527,1.00,777,529,1.00,1091,528,1.00],
-  [179,529,1.00,285,528,0.99,391,529,1.00,777,531,1.00,1091,530,1.00],
-  [179,531,1.00,285,529,0.99,391,531,1.00,777,532,1.00,1091,531,1.00],
-  [179,532,1.00,285,531,0.98,391,532,1.00,777,534,1.00,1091,533,1.00],
-  [179,534,0.99,285,533,0.97,391,534,1.00,777,536,1.00,1091,535,1.00],
-  [179,536,0.99,285,535,0.96,391,536,1.00,777,538,1.00,1091,537,1.00],
-  [179,538,0.99,285,537,0.96,391,539,1.00,777,540,1.00,1091,539,0.99],
-  [179,540,0.98,285,539,0.95,391,541,1.00,777,542,1.00,1091,541,0.99],
-  [179,543,0.97,285,542,0.95,391,543,0.99,777,545,1.00,1091,543,0.99],
-  [180,545,0.96,286,544,0.95,391,546,0.99,777,547,1.00,1091,546,0.99],
-  [180,548,0.96,286,547,0.95,391,548,0.98,777,549,0.99,1090,548,0.98],
-  [180,550,0.96,286,549,0.95,391,550,0.97,777,552,0.99,1090,550,0.97],
-  [180,552,0.96,286,551,0.95,391,552,0.96,777,553,0.98,1090,552,0.96],
-  [180,553,0.95,286,552,0.95,391,554,0.96,777,555,0.97,1090,554,0.96],
-  [180,554,0.95,286,554,0.95,391,555,0.95,777,556,0.96,1090,554,0.96],
-  [180,555,0.95,286,554,0.95,391,555,0.95,777,556,0.96,1090,555,0.95],
-  [181,555,0.95,286,554,0.95,391,556,0.95,777,556,0.95,1090,555,0.95],
-  [181,555,0.95,287,554,0.94,391,555,0.95,777,556,0.95,1089,555,0.95],
-  [181,554,0.94,287,554,0.94,392,555,0.95,777,556,0.95,1089,554,0.94],
-  [182,554,0.94,287,554,0.93,392,554,0.94,777,555,0.95,1089,554,0.94],
-  [182,554,0.93,287,553,0.92,392,554,0.94,777,555,0.95,1089,554,0.93],
-  [182,554,0.92,288,553,0.91,392,554,0.93,777,555,0.94,1089,553,0.92],
-  [182,554,0.91,288,553,0.91,392,554,0.92,776,555,0.94,1088,553,0.91],
-  [183,553,0.91,288,553,0.89,392,554,0.91,776,555,0.93,1088,553,0.91],
-  [183,554,0.90,288,553,0.89,392,554,0.90,776,555,0.92,1088,553,0.89],
-  [183,553,0.91,288,553,0.88,393,554,0.89,776,555,0.91,1087,553,0.89],
-  [184,553,0.92,289,553,0.87,393,554,0.88,776,555,0.89,1087,553,0.88],
-  [184,552,0.93,289,552,0.88,393,554,0.87,776,555,0.88,1087,553,0.87],
-  [184,551,0.94,289,552,0.89,393,554,0.88,776,555,0.87,1086,553,0.86],
-  [185,551,0.94,289,551,0.89,393,553,0.89,776,555,0.88,1086,553,0.86],
-  [185,551,0.94,289,551,0.91,393,553,0.89,776,554,0.89,1086,553,0.84],
-  [185,550,0.96,289,550,0.92,394,552,0.91,776,554,0.89,1086,553,0.84],
-  [186,550,0.95,290,549,0.94,394,552,0.92,776,553,0.91,1085,554,0.83],
-  [186,550,0.95,290,548,0.95,394,551,0.94,776,552,0.92,1085,554,0.82],
-  [186,549,0.95,290,548,0.95,394,550,0.95,776,551,0.94,1084,554,0.81],
-  [187,549,0.95,290,548,0.95,394,550,0.95,776,550,0.95,1084,554,0.80],
-  [187,549,0.95,291,548,0.95,395,549,0.95,776,550,0.95,1084,554,0.79],
-  [187,549,0.94,291,547,0.94,395,549,0.95,776,550,0.95,1083,553,0.78],
-  [188,548,0.94,291,547,0.94,395,549,0.94,776,549,0.95,1083,553,0.77],
-  [188,548,0.93,291,547,0.93,395,549,0.94,776,549,0.94,1083,553,0.76],
-  [188,548,0.92,292,547,0.92,395,548,0.93,776,549,0.94,1082,553,0.74],
-  [189,548,0.91,292,546,0.91,395,548,0.92,775,548,0.93,1082,553,0.73],
-  [189,548,0.89,292,546,0.89,396,548,0.91,775,548,0.92,1082,553,0.72],
-  [189,548,0.88,293,546,0.88,396,547,0.89,775,548,0.91,1081,552,0.71],
-  [190,547,0.86,293,546,0.86,396,547,0.88,775,548,0.89,1081,552,0.70],
-  [190,547,0.85,293,546,0.85,396,547,0.86,775,547,0.88,1081,552,0.69],
-  [190,547,0.84,293,545,0.84,396,546,0.85,775,547,0.86,1080,552,0.68],
-  [191,546,0.82,293,545,0.82,396,546,0.84,774,547,0.85,1080,551,0.67],
-  [191,546,0.81,294,545,0.81,397,546,0.82,774,546,0.84,1080,551,0.66],
-  [191,546,0.79,294,544,0.79,397,545,0.81,774,546,0.82,1079,550,0.64],
-  [192,545,0.78,294,544,0.78,397,545,0.79,774,545,0.81,1079,550,0.63],
-  [192,544,0.77,294,543,0.76,397,544,0.78,774,545,0.79,1078,549,0.61],
-  [192,544,0.76,295,543,0.75,397,544,0.76,774,544,0.78,1078,549,0.60],
-  [193,543,0.74,295,542,0.74,398,543,0.75,774,544,0.77,1078,548,0.59],
-  [193,543,0.73,295,542,0.72,398,543,0.74,774,543,0.76,1077,548,0.57],
-  [193,542,0.72,295,542,0.71,398,542,0.72,774,543,0.76,1077,547,0.56],
-];
 const DRIVE = 85; // drive-in video frames, ending on the first turn frame
 const DRIVE_EXT = 900; // drive frames are widened this much to the left so the stacker is never cut by the frame edge
 
 // ---------- world (top view) ----------
-const TL = 1155 * TS;
-const WR = 700;
-const A = 2600;
-const R = 900;
-const B = 7000;
-const ARC = (Math.PI / 2) * R;
-const XS = A + R;
-const S_END = A + ARC + B;
-const BOX = { x: (56 - 639.5) * TS, y: (234 - 360) * TS, w: 856 * TS, h: 262 * TS };
 
 // ---------- timeline ----------
 const T = {
@@ -168,9 +74,9 @@ const T = {
   release: [0.2732, 0.2961],
   shrink: [0.2961, 0.3598],
   services: [0.3279, 0.4282],
-  rise: [0.4282, 0.501],
-  road: [0.501, 0.6285],
-  hand: [0.6285, 0.6832], // the truck reaches the bottom of the page, which slides up onto the ship
+  rise: [0.4282, 0.462], // the truck drives off the right of the screen into fog
+  road: [0.462, 0.655], // the train climb: "How it works" scrolls by, then the clouds take over
+  hand: [0.655, 0.6832], // the cloud clears onto the ship
   ship: [0.6833, 0.8725], // the wide shot sails up the page, clouds roll in
   sky: [0.8725, 1],
 } as const;
@@ -186,15 +92,6 @@ const win = (p: number, a: number, b: number, edge = 0.25) => {
   return ease(Math.min(clamp(t / edge), clamp((1 - t) / edge)));
 };
 
-/** Position and heading (radians, 0 = east, +PI/2 = south) along the road. */
-function path(s: number): [number, number, number] {
-  if (s <= A) return [s, 0, 0];
-  if (s <= A + ARC) {
-    const a = (s - A) / R;
-    return [A + R * Math.sin(a), R - R * Math.cos(a), a];
-  }
-  return [XS, R + (s - A - ARC), Math.PI / 2];
-}
 
 const PAPER = '#ffffff';
 const SIDE_MASK = 'linear-gradient(to right, #000 0%, #000 55%, transparent 100%)';
@@ -376,7 +273,7 @@ function StoryFilm() {
     q.current[k] = el;
   };
   const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
-  const roadRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const trainRef = useRef<HTMLVideoElement>(null);
   const valueRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   useEffect(() => {
@@ -623,6 +520,33 @@ function StoryFilm() {
       for (let x = -off - (dl + gap); x < vw + dl; x += dl + gap) g!.fillRect(x, y - 7 * scale, dl, 14 * scale);
     }
 
+    // ---------- the train clip: never played, only scrubbed towards where the scroll is ----------
+    const trainState = { target: 0, cur: 0, raf: 0, loaded: false };
+    const loadTrain = () => {
+      const v = trainRef.current;
+      if (!v || trainState.loaded) return;
+      trainState.loaded = true;
+      const small = vw <= 900 || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+      v.src = `/story/train/train-${small ? '720' : '1080'}.mp4`;
+      v.load();
+      v.addEventListener('seeked', () => {
+        if (!trainState.raf) trainState.raf = requestAnimationFrame(trainTick);
+      });
+    };
+    function trainTick() {
+      trainState.raf = 0;
+      const v = trainRef.current;
+      if (!v || !v.duration) {
+        if (trainState.loaded) trainState.raf = requestAnimationFrame(trainTick);
+        return;
+      }
+      const goal = trainState.target * (v.duration - 1 / 48);
+      trainState.cur += (goal - trainState.cur) * 0.22;
+      if (Math.abs(goal - trainState.cur) < 0.002) trainState.cur = goal;
+      if (!v.seeking && Math.abs(v.currentTime - trainState.cur) > 1 / 60) v.currentTime = trainState.cur;
+      if (Math.abs(goal - trainState.cur) > 0.002 || v.seeking) trainState.raf = requestAnimationFrame(trainTick);
+    }
+
     function update() {
       raf = 0;
       const rect = section!.getBoundingClientRect();
@@ -660,10 +584,9 @@ function StoryFilm() {
 
       const truckIn = easeOut(seg(p, T.truckIn));
       const groundStage = lerp(GROUND1, GROUND2, truckIn);
-      const riseT = seg(p, T.rise);
-      const riseI = Math.round(riseT * (FRAMES - 1));
-      // the truck stays on the road while the camera rises: the band grows from under the wheels to the full road
-      const toRoad = easeIO(clamp(riseT / 0.95));
+      // 5. the truck drives on and out of the right of the screen (stage units), into the fog
+      const exitT = seg(p, T.rise);
+      const exitX = exitT * exitT * (vw / K + 900);
       const travelled = (p - T.release[1]) * vw * 9.88;
 
       // ===================== stage scenes (1-5) =====================
@@ -684,21 +607,12 @@ function StoryFilm() {
 
         // ground strip -> services panel -> road band
         // the forklift's tyres end at stage y 677: the ground line sits right there so it never floats
-        let top = toY(groundStage + lerp(-1.5, 2, truckIn));
-        let bottom = vh;
-        if (p > T.rise[0]) {
-          // the road's edge stays under the tyres while the camera climbs (tyre bottoms tracked per frame)
-          const tw = RISE_WHEELS[Math.min(riseI, RISE_WHEELS.length - 1)];
-          let contact = 0;
-          for (let j = 0; j < 5; j++) contact = Math.max(contact, tw[j * 3 + 1] + 44 * tw[j * 3 + 2]);
-          top = toY(RISE.y + contact * (RISE.h / 720));
-          top = lerp(top, toY(TRUCK_C.y - WR / 2), toRoad);
-          bottom = lerp(vh, toY(TRUCK_C.y + WR / 2), toRoad);
-        }
+        const top = toY(groundStage + lerp(-1.5, 2, truckIn));
+        const bottom = vh;
         g!.fillStyle = ROAD;
         g!.fillRect(0, top, vw, Math.max(0, bottom - top));
         // the road under the wheels: dashes on the strip while the truck drives, then on the road band
-        if (p > T.release[1]) dashes(toRoad > 0 ? (top + bottom) / 2 : top + 70 * K, K, travelled, toRoad > 0 ? toRoad : 0.5 * win(p, T.release[1], T.rise[0] + 0.03, 0.08));
+        if (p > T.release[1]) dashes(top + 70 * K, K, travelled, 0.5 * win(p, T.release[1], T.rise[1], 0.08));
         set($('panel'), { top: `${top.toFixed(1)}px` });
 
         // fade a clip's edges into the page so its slightly different white never shows as a box
@@ -769,7 +683,7 @@ function StoryFilm() {
               // feather the clip's edges into the page (the right edge only once the stack has left it)
               feather(fx, fy, fw, fh, ti >= 58 ? 'lr' : 'l');
             });
-        } else if (p < T.rise[0]) {
+        } else {
           // 3. the stacker raises the container, the truck drives in under it on the same ground line,
           //    the container is lowered onto the trailer, the spreader lets go and lifts; 4. the truck
           //    drives off and the stacker is left behind. Nothing fades: every part is moved.
@@ -823,7 +737,7 @@ function StoryFilm() {
               g!.fillRect(OX + (566 + fx) * K, sleeveTop, 148 * K, 7 * K);
             }
             // the truck (empty, then the identical loaded frame once the box is down)
-            const tx = (1 - easeOut(seg(p, T.truckIn))) * 1700;
+            const tx = (1 - easeOut(seg(p, T.truckIn))) * 1700 + exitX;
             const [rx, ry, rw, rh] = R_({ ...RISE, x: RISE.x + tx });
             drawImg(one['truck-e'], rx, ry, rw, rh, 1);
             // the held container, scaled onto the truck's container as it comes down
@@ -861,15 +775,6 @@ function StoryFilm() {
             }
             drawImg(one['fk-head'], OX + (140 + fx) * K, OY + headDy * K, 1000 * K, 299 * K);
           });
-        } else {
-          // 5. the camera rises over the truck, which stays on the road (frames are cut out)
-          const fr = frame(riseCut, riseI);
-          if (fr) {
-            const [rx, ry, rw, rh] = R_(RISE);
-            g!.drawImage(fr, rx, ry, rw, rh);
-            // as in the reference, the wheels aren't redrawn while the camera rises: the frames' own tyres
-            // are shown untouched, so nothing is overlaid on wheels seen at an angle
-          }
         }
       }
 
@@ -880,94 +785,11 @@ function StoryFilm() {
       const sDW = sc.fw * sCover;
       const sDH = sc.fh * sCover;
       const colX = (vw - sDW) / 2 + sc.cx * sDW;
-      const colW = sc.w * sDW;
-      const hT = seg(p, T.hand);
-      const hA = easeIO(clamp(hT / 0.45)); // truck lines up with the column and drives to the bottom of the page
-      const hB = easeIO(clamp((hT - 0.4) / 0.6)); // the page slides up, the ship comes up under it
-      const edge = lerp(vh, 0, hB);
-
-      if (p >= T.road[0] && p < T.hand[1]) {
-        const sEnd = S_END * 0.97;
-        const s = sEnd * ease(seg(p, T.road));
-        const [px, py0, hd0] = path(s);
-        let py = py0;
-        let hd = hd0;
-        const hx = OX + TRUCK_C.x * K;
-        const hy = OY + TRUCK_C.y * K;
-        const zRoad = (vh * (mobile ? 0.3 : 0.34)) / TL;
-        const zH = colW / BOX.h; // the truck's container as wide as a container on the ship
-        const settle = easeIO(clamp(seg(p, T.road) / 0.22));
-        let z = lerp(K, zRoad, settle);
-        let sxA = lerp(hx, vw / 2, settle);
-        const syA = lerp(hy, vh * (mobile ? 0.42 : 0.4), settle);
-        const cx = px;
-        const cy = py0;
-        if (hT > 0) {
-          // camera holds; the truck drives on down until its cab reaches the bottom of the page
-          z = lerp(zRoad, zH, hA);
-          // drives on until the cab has gone past the bottom of the page (out of sight) and only the
-          // container shows; then, as the page slides up, the container slides on into the ship's centre column
-          const drive = (vh - syA) / zH - (BOX.x + BOX.w);
-          py += hA * drive + hB * BOX.w;
-          hd = Math.PI / 2;
-        }
-
-        g!.save();
-        if (hT > 0) {
-          g!.beginPath();
-          // with the foam line (WebGL) the page runs on a little under it, so the ragged edge shows road and page, not a gap
-          g!.rect(0, 0, vw, edge + (sea && sea.ok ? 160 : 0));
-          g!.clip();
-        }
-        g!.translate(sxA, syA - (vh - edge));
-        g!.scale(z, z);
-        g!.translate(-cx, -cy);
-        g!.fillStyle = BG;
-        g!.fillRect(px - 40000, py - 40000, 80000, 80000);
-        g!.strokeStyle = ROAD;
-        g!.lineWidth = WR;
-        g!.beginPath();
-        g!.moveTo(-14000, 0);
-        g!.lineTo(A + R + 5000, 0);
-        g!.stroke();
-        g!.beginPath();
-        g!.moveTo(A - 2, 0);
-        g!.arc(A, R, R, -Math.PI / 2, 0);
-        g!.lineTo(XS, S_END + 6000);
-        g!.stroke();
-        g!.fillStyle = ROAD;
-        g!.fillRect(XS - WR / 2, -WR / 2, WR, WR + 2);
-        g!.strokeStyle = 'rgba(255,255,255,0.55)';
-        g!.lineWidth = 14;
-        g!.setLineDash([120, 140]);
-        g!.lineDashOffset = 0;
-        g!.beginPath();
-        g!.moveTo(-14000, 0);
-        g!.lineTo(A - WR / 2 - 60, 0);
-        g!.moveTo(XS, WR / 2 + 60);
-        g!.lineTo(XS, S_END + 6000);
-        g!.moveTo(XS + WR / 2 + 60, 0);
-        g!.lineTo(A + R + 5000, 0);
-        g!.stroke();
-        g!.setLineDash([]);
-        g!.fillStyle = 'rgba(255,255,255,0.6)';
-        for (let i = -WR / 2 + 30; i < WR / 2 - 20; i += 70) {
-          g!.fillRect(XS - WR / 2 - 160, i, 110, 34);
-          g!.fillRect(XS + i, WR / 2 + 50, 34, 110);
-        }
-        // the truck rides the page: it goes up and away with it as the ship comes in underneath
-        g!.translate(px, py);
-        g!.rotate(hd);
-        g!.fillStyle = '#2a2d33';
-        g!.fillRect(BOX.x + 30, -60, BOX.w - 60, 34);
-        g!.fillRect(BOX.x + 30, 26, BOX.w - 60, 34);
-        if (ready(one['truck-top-cab'])) g!.drawImage(one['truck-top-cab'], -639.5 * TS, -360 * TS, 1280 * TS, 714 * TS);
-        if (ready(one['truck-top-box'])) g!.drawImage(one['truck-top-box'], BOX.x, BOX.y, BOX.w, BOX.h);
-        g!.restore();
-      }
+      // the ship sits under the train's cloud from the moment the cloud starts to clear
+      const edge = p >= T.hand[0] ? 0 : vh;
 
       // ===================== 7. the ship: the page slides up onto the deck, then the camera pulls back =====================
-      const shipOn = (hT > 0.4 || p >= T.ship[0]) && rect.bottom > 0;
+      const shipOn = p >= T.hand[0] && rect.bottom > 0;
       set($('shipScene'), { display: shipOn ? '' : 'none', top: `${Math.max(0, edge).toFixed(1)}px` });
       // the clip only moves when you scroll: it plays through the pull-back and on under the clouds until the plane
       const pos = Math.min(SHIP - 1, seg(p, [T.ship[0], 1]) * (SHIP - 1));
@@ -1118,20 +940,30 @@ function StoryFilm() {
       const reach = lerp(T.driveIn[0], T.driveIn[1], 0.55);
       const c0 = clamp((reach + 0.006 - p) / 0.022);
       show('copy0', c0, { transform: `translate3d(0,${((1 - c0) * 16).toFixed(1)}px,0)` });
-      show('panelCopy', win(p, T.shrink[0] + 0.015, T.rise[0] + 0.015, 0.12));
+      show('panelCopy', win(p, T.shrink[0] + 0.015, T.rise[1] + 0.01, 0.12));
       const row = $('row');
       if (row) row.style.transform = `translate3d(${lerp(vw * 0.25, -Math.max(0, row.scrollWidth - vw * 0.7), seg(p, T.services)).toFixed(1)}px,0,0)`;
       rowRefs.current.forEach((li, i) => {
         if (li) li.style.opacity = String(ease(clamp((p - T.services[0] - i * 0.008) / 0.03)));
       });
-      const roadT = seg(p, T.road);
-      show('copy1', win(roadT, 0.42, 1.06, 0.12) * (1 - ease(seg(p, [T.hand[0], T.hand[0] + 0.02]))));
-      roadRefs.current.forEach((li, i) => {
-        if (!li) return;
-        const t = ease(clamp((roadT - 0.46 - i * 0.06) / 0.08));
-        li.style.opacity = String(t);
-        li.style.transform = `translate3d(0,${((1 - t) * 20).toFixed(1)}px,0)`;
-      });
+      // ===================== 5-6. fog, then the train climb =====================
+      const trT = seg(p, T.road);
+      const fogV = p < T.road[0] ? ease(clamp((exitT - 0.3) / 0.7)) : 1 - ease(clamp(trT / 0.07));
+      show('fog', fogV, { transform: `translate3d(${(-4 * (exitT + trT)).toFixed(2)}%,0,0) scale(1.15)` });
+      const trainOn = p >= T.road[0] - 0.01 && p < T.hand[1];
+      if (trainOn) loadTrain();
+      show('train', !trainOn ? 0 : p < T.hand[0] ? 1 : 1 - easeIO(seg(p, T.hand)));
+      // the camera only climbs over the train while the text is on screen; then the clouds take over
+      const cp = trT < TRAIN_KNEE ? (trT / TRAIN_KNEE) * 0.46 : 0.46 + ((trT - TRAIN_KNEE) / (1 - TRAIN_KNEE)) * 0.54;
+      trainState.target = cp;
+      if (trainOn && !trainState.raf) trainState.raf = requestAnimationFrame(trainTick);
+      const tc = $('trainCopy');
+      if (tc) {
+        const h = tc.scrollHeight;
+        const k = clamp((trT - 0.04) / (TRAIN_KNEE - 0.04));
+        tc.style.transform = `translate3d(0,${lerp(vh, -h, k).toFixed(1)}px,0)`;
+      }
+
       const c2 = lerp(T.ship[0], T.ship[1], 0.12);
       show('copy2', win(p, c2, lerp(T.ship[0], T.ship[1], 0.93), 0.12));
       valueRefs.current.forEach((li, i) => {
@@ -1143,13 +975,10 @@ function StoryFilm() {
 
       // speed while the truck is moving
       let kmh = 0;
-      if (p > T.release[1] && p < T.hand[0] + 0.03) {
-        kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
-        if (p > T.road[0]) kmh = 64 - 36 * Math.exp(-Math.pow((roadT - A / S_END) / 0.05, 2));
-      }
+      if (p > T.release[1] && p < T.rise[1]) kmh = 64 * easeOut(seg(p, [T.release[1], T.shrink[1]]));
       const spd = $('kmh');
       if (spd) spd.textContent = String(Math.max(0, Math.round(kmh))).padStart(2, '0');
-      show('speed', win(p, T.release[1], T.hand[0] + 0.03, 0.06));
+      show('speed', win(p, T.release[1], T.rise[0] + (T.rise[1] - T.rise[0]) * 0.6, 0.06));
     }
 
     function onScroll() {
@@ -1173,6 +1002,7 @@ function StoryFilm() {
       window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
       cancelAnimationFrame(seaRaf);
+      cancelAnimationFrame(trainState.raf);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', size);
@@ -1235,24 +1065,48 @@ function StoryFilm() {
           </div>
         </div>
 
-        {/* 6. down the road: services with detail, either side */}
-        <div ref={r('copy1')} className="container-x pointer-events-none absolute inset-0 z-[2] text-ink" style={{ opacity: 0, visibility: 'hidden' }}>
-          <ul className="grid h-full grid-cols-2 content-center gap-x-[38vw] gap-y-8 py-24 sm:gap-y-10 lg:gap-x-[30vw]">
-            {services.map((sv, i) => (
-              <li
-                key={sv.title}
-                ref={(el) => {
-                  roadRefs.current[i] = el;
-                }}
-                className={`max-w-[300px] ${i % 2 ? 'justify-self-start' : 'justify-self-end text-right'}`}
-                style={{ opacity: 0 }}
-              >
-                <p className="font-display text-[18px] font-medium leading-none text-accent sm:text-[20px]">{String(i + 1).padStart(2, '0')}</p>
-                <p className="mt-2 font-display text-[16px] leading-tight sm:text-[20px]">{sv.title}</p>
-                <p className="mt-1 hidden text-[13px] leading-[1.55] text-muted sm:block sm:text-[14px]">{sv.description}</p>
-              </li>
-            ))}
-          </ul>
+        {/* 6. the train climb: scrubbed clip, "How it works" either side of the train */}
+        <div ref={r('train')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[3] bg-[#0a0b0c]" style={{ opacity: 0, visibility: 'hidden' }}>
+          <video ref={trainRef} muted playsInline preload="auto" disablePictureInPicture poster="/story/train/train-poster.jpg" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.12),rgba(0,0,0,0.02)_30%,rgba(0,0,0,0.02)_70%,rgba(0,0,0,0.12))]" />
+          <div ref={r('trainCopy')} className="absolute inset-x-0 top-0 text-white will-change-transform">
+            <div className="container-x pb-[20vh] text-center">
+              <p className="eyebrow eyebrow-light justify-center [text-shadow:0_2px_12px_rgba(0,0,0,0.6)]">How it works</p>
+              <h3 className="mx-auto mt-5 font-display text-[40px] font-medium leading-[1.02] text-[#F7F5EF] [text-shadow:0_12px_32px_rgba(0,0,0,0.5)] sm:text-[64px] lg:text-[80px]">
+                {['You ask.', 'We source.', 'We check.', 'It arrives.'].map((l, i) => (
+                  <span key={l} className={`block whitespace-nowrap ${i === 3 ? 'text-sky' : ''}`}>
+                    {l}
+                  </span>
+                ))}
+              </h3>
+            </div>
+            <ol className="container-x grid gap-y-[16vh] pb-[30vh] sm:grid-cols-[1fr_170px_1fr] sm:gap-y-[22vh] lg:grid-cols-[1fr_200px_1fr]">
+              {processSteps.map((st, i) => {
+                const Icon = st.icon;
+                const left = i % 2 === 0;
+                return (
+                  <li
+                    key={st.title}
+                    className={`mx-auto max-w-[300px] text-center [text-shadow:0_2px_16px_rgba(0,0,0,0.7)] sm:mx-0 ${
+                      left ? 'sm:col-start-1 sm:justify-self-end sm:text-right' : 'sm:col-start-3 sm:justify-self-start sm:text-left'
+                    } ${left ? '' : 'sm:mt-[11vh]'}`}
+                  >
+                    <Icon size={30} strokeWidth={1.5} aria-hidden="true" className={`mx-auto text-sky drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:mx-0 ${left ? 'sm:ml-auto' : ''}`} />
+                    <p className="mt-5 font-display text-[15px] font-medium text-sky">{String(i + 1).padStart(2, '0')}</p>
+                    <p className="mt-1 font-display text-[22px] font-medium leading-tight sm:text-[26px]">{st.title}</p>
+                    <p className="mt-2 text-[14px] leading-[1.55] text-white/[0.88] sm:text-[15px]">{st.description}</p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        </div>
+
+        {/* 5-6. fog the truck drives into, and the train comes out of */}
+        <div ref={r('fog')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[4] will-change-transform" style={{ opacity: 0, visibility: 'hidden' }}>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#ffffff_0%,#f3f5f8_55%,#e6eaf0_100%)]" />
+          <img src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+          <img src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full -scale-x-100 object-cover opacity-60" />
         </div>
 
         {/* 7. at sea: Why AGS Trade */}
