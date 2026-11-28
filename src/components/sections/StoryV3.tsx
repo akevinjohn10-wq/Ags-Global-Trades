@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BadgeCheck, Handshake, Receipt, Truck } from 'lucide-react';
-import { services } from '@/data/siteContent';
-import './train-hero.css';
+import { processSteps, services } from '@/data/siteContent';
 
 /**
  * Services scroll story, frame by frame:
@@ -10,9 +9,9 @@ import './train-hero.css';
  *  3. The empty truck slides in, the container is lowered onto it, the spreader lifts away
  *  4. The truck pulls out: the frame zooms out, a black panel rises with the services
  *  5. The truck drives on off the right of the screen and disappears into fog
- *  6. Out of the fog: a container train crossing coal terrain (looping video), with
- *     "One team for every mile of the journey" and two points set either side of the train; fog rolls back over it
- *  7. The fog clears onto the ship, which sails on, held for a while with "Why AGS Trade"
+ *  6. Out of the fog: the camera comes down through cloud onto a container train (scrubbed
+ *     video, played backwards as you scroll) while "How it works" scrolls past either side
+ *  7. Clouds close over the train and part again onto the ship, which sails on, held for a while with "Why AGS Trade"
  *  8. Clouds and a huge plane sweep across into the next section
  *
  * Scenes 1-6 are drawn on one 2D canvas in "stage" units (the 1280 x 720 video frame).
@@ -39,6 +38,8 @@ const TRUCK = { x: 90.25, y: GROUND1 - 548 * TS, w: 1280 * TS, h: 714 * TS };
 const GROUND2 = TRUCK.y + 548 * TS;
 const TRUCK_C = { x: TRUCK.x + 639.5 * TS, y: TRUCK.y + 360 * TS };
 const RISE = { x: TRUCK.x, y: TRUCK.y, w: 1280 * TS, h: 720 * TS };
+// the train scene: share of its scroll spent coming down through the clouds before the text starts
+const TRAIN_DESC = 0.18;
 const SHIP = 63; // the wide shot of the whole ship sailing, every frame, played as you scroll (clouds roll in at the end)
 const SHIP_CU = 1; // roughly where the pull-back is well under way
 // the light grey container column the truck lines up with, as fractions of the ship frame's width
@@ -74,9 +75,9 @@ const T = {
   shrink: [0.2961, 0.3598],
   services: [0.3279, 0.4282],
   rise: [0.4282, 0.462], // the truck drives off the right of the screen into fog
-  road: [0.462, 0.585], // the train scene, between two banks of fog
-  hand: [0.585, 0.62], // the fog clears onto the ship
-  ship: [0.62, 0.8725], // the wide shot sails up the page, clouds roll in
+  road: [0.462, 0.64], // down through the clouds onto the train: "How it works" scrolls by
+  hand: [0.64, 0.6832], // clouds close over the train, then part onto the ship
+  ship: [0.6833, 0.8725], // the wide shot sails up the page, clouds roll in
   sky: [0.8725, 1],
 } as const;
 
@@ -519,6 +520,33 @@ function StoryFilm() {
       for (let x = -off - (dl + gap); x < vw + dl; x += dl + gap) g!.fillRect(x, y - 7 * scale, dl, 14 * scale);
     }
 
+    // ---------- the train clip: never played, only scrubbed towards where the scroll is ----------
+    const trainState = { target: 0, cur: 0, raf: 0, loaded: false };
+    const loadTrain = () => {
+      const v = trainRef.current;
+      if (!v || trainState.loaded) return;
+      trainState.loaded = true;
+      const small = vw <= 900 || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+      v.src = `/story/train/train-${small ? '720' : '1080'}.mp4`;
+      v.load();
+      v.addEventListener('seeked', () => {
+        if (!trainState.raf) trainState.raf = requestAnimationFrame(trainTick);
+      });
+    };
+    function trainTick() {
+      trainState.raf = 0;
+      const v = trainRef.current;
+      if (!v || !v.duration) {
+        if (trainState.loaded) trainState.raf = requestAnimationFrame(trainTick);
+        return;
+      }
+      const goal = trainState.target * (v.duration - 1 / 48);
+      trainState.cur += (goal - trainState.cur) * 0.22;
+      if (Math.abs(goal - trainState.cur) < 0.002) trainState.cur = goal;
+      if (!v.seeking && Math.abs(v.currentTime - trainState.cur) > 1 / 60) v.currentTime = trainState.cur;
+      if (Math.abs(goal - trainState.cur) > 0.002 || v.seeking) trainState.raf = requestAnimationFrame(trainTick);
+    }
+
     function update() {
       raf = 0;
       const rect = section!.getBoundingClientRect();
@@ -757,7 +785,7 @@ function StoryFilm() {
       const sDW = sc.fw * sCover;
       const sDH = sc.fh * sCover;
       const colX = (vw - sDW) / 2 + sc.cx * sDW;
-      // the ship sits under the train's cloud from the moment the cloud starts to clear
+      // the ship sits under the clouds from the moment they close over the train
       const edge = p >= T.hand[0] ? 0 : vh;
 
       // ===================== 7. the ship: the page slides up onto the deck, then the camera pulls back =====================
@@ -918,25 +946,33 @@ function StoryFilm() {
       rowRefs.current.forEach((li, i) => {
         if (li) li.style.opacity = String(ease(clamp((p - T.services[0] - i * 0.008) / 0.03)));
       });
-      // ===================== 5-6. fog, the train, fog again =====================
+      // ===================== 5-7. fog, down onto the train, clouds into the ship =====================
       const trT = seg(p, T.road);
-      const fogV =
-        p < T.road[0] ? ease(clamp((exitT - 0.3) / 0.7)) : p < T.hand[0] ? Math.max(1 - ease(clamp(trT / 0.14)), ease(clamp((trT - 0.84) / 0.16))) : 1 - ease(seg(p, T.hand));
-      show('fog', fogV, { transform: `translate3d(${(-4 * (exitT + trT + seg(p, T.hand))).toFixed(2)}%,0,0) scale(1.15)` });
-      const trainOn = p >= T.road[0] - 0.005 && p < T.hand[0];
+      const hT = seg(p, T.hand);
+      // the ship's first frame has to be on hand before the clouds part, or they hold
+      const shipReady = ready(ship[0]);
+      let fogV = 0;
+      if (p < T.road[0]) fogV = ease(clamp((exitT - 0.3) / 0.7));
+      else if (p < T.hand[0]) fogV = Math.max(1 - ease(clamp(trT / 0.06)), ease(clamp((trT - 0.9) / 0.1)));
+      else fogV = shipReady ? 1 - easeIO(clamp((hT - 0.3) / 0.7)) : 1;
+      show('fog', clamp(fogV * 1.4));
+      set($('fogBase'), { opacity: fogV.toFixed(3) });
+      const drift = (exitT + trT + hT) * 3;
+      set($('fogL'), { transform: `translate3d(${(-(1 - fogV) * 70 - drift).toFixed(2)}%,0,0) scale(1.2)` });
+      set($('fogR'), { transform: `translate3d(${((1 - fogV) * 70 + drift).toFixed(2)}%,0,0) scale(1.2) scaleX(-1)` });
+      const trainOn = p >= T.road[0] - 0.01 && p < T.hand[0] + (T.hand[1] - T.hand[0]) * 0.3;
+      if (trainOn) loadTrain();
       show('train', trainOn ? 1 : 0);
-      const tv = trainRef.current;
-      if (tv) {
-        if (trainOn) {
-          if (!tv.src) {
-            tv.src = '/story/train/train-loop.mp4';
-            tv.load();
-          }
-          if (tv.paused) tv.play().catch(() => {});
-        } else if (!tv.paused) tv.pause();
+      // played backwards: it opens in the clouds (end of the clip) and comes down to the train
+      const cp = trT < TRAIN_DESC ? 1 - (trT / TRAIN_DESC) * 0.54 : 0.46 * (1 - (trT - TRAIN_DESC) / (1 - TRAIN_DESC));
+      trainState.target = cp;
+      if (trainOn && !trainState.raf) trainState.raf = requestAnimationFrame(trainTick);
+      const tc = $('trainCopy');
+      if (tc) {
+        const h = tc.scrollHeight;
+        const k = clamp((trT - TRAIN_DESC) / (0.92 - TRAIN_DESC));
+        tc.style.transform = `translate3d(0,${lerp(vh, -h, k).toFixed(1)}px,0)`;
       }
-      // the entrance plays once the fog has mostly cleared, and again if you come back to it
-      $('trainStage')?.classList.toggle('go', trainOn && trT > 0.07);
 
       const c2 = lerp(T.ship[0], T.ship[1], 0.12);
       show('copy2', win(p, c2, lerp(T.ship[0], T.ship[1], 0.93), 0.12));
@@ -976,6 +1012,7 @@ function StoryFilm() {
       window.removeEventListener('load', kick);
       cancelAnimationFrame(raf);
       cancelAnimationFrame(seaRaf);
+      cancelAnimationFrame(trainState.raf);
       ro.disconnect();
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', size);
@@ -1038,87 +1075,49 @@ function StoryFilm() {
           </div>
         </div>
 
-        {/* 6. the train: looping clip, headline and two points set either side of the train */}
-        <div ref={r('train')} aria-hidden="true" className="trh pointer-events-none absolute inset-0 z-[3] bg-[#0a0b0c]" style={{ opacity: 0, visibility: 'hidden' }}>
-          <video
-            ref={trainRef}
-            muted
-            loop
-            playsInline
-            preload="none"
-            disablePictureInPicture
-            poster="/story/train/train-loop.jpg"
-            aria-label="Aerial view of a container freight train crossing black coal terrain"
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
-          <div className="trh-tint" />
-          <main ref={r('trainStage')} className="trh-stage">
-            <p className="trh-eyebrow">
-              <span>From factory to door</span>
-            </p>
-            <h3 className="trh-headline">
-              <span className="hl1">One team</span>
-              <span className="hl2">for every</span>
-              <span className="hl3">mile of the</span>
-              <span className="hl4">journey.</span>
-            </h3>
-            <svg className="trh-mark" viewBox="0 0 52 52" fill="none" aria-hidden="true">
-              <circle cx="26" cy="26" r="23" stroke="currentColor" strokeWidth="1.6" strokeDasharray="98.3 46.3" transform="rotate(2.5 26 26)" />
-              <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                <circle cx="26.5" cy="26.1" r="2.3" />
-                <path d="M28.9 27.6C31.6 29 32.9 31.2 31.8 33.3 30.7 35.4 27.2 36.1 24.2 35.1" />
-              </g>
-            </svg>
-            <section className="trh-feature trh-left">
-              <svg className="trh-icon" viewBox="0 0 35 34" fill="none" aria-hidden="true">
-                <defs>
-                  <clipPath id="trh-gclip">
-                    <circle cx="17.5" cy="17" r="9.8" />
-                  </clipPath>
-                </defs>
-                <circle cx="17.5" cy="17" r="16.5" stroke="#F9F9F9" strokeWidth="1.9" strokeDasharray="3.6 3" />
-                <circle cx="17.5" cy="17" r="9.8" fill="#F9F9F9" />
-                <path d="M11.9 7.2V26.8M17.5 7.2V26.8M23.1 7.2V26.8M7.7 11.4H27.3M7.7 17H27.3M7.7 22.6H27.3" stroke="#101215" strokeWidth="0.9" clipPath="url(#trh-gclip)" />
-              </svg>
-              <h4>
-                <span>Sourced</span>
-                <span>worldwide</span>
-              </h4>
-              <p>
-                <span>Verified suppliers across Asia, Europe</span>
-                <span>and beyond, matched to your product</span>
-                <span>and quantity.</span>
-              </p>
-            </section>
-            <section className="trh-feature trh-right">
-              <svg className="trh-icon" viewBox="0 0 35 38" fill="none" aria-hidden="true">
-                <rect x="0.5" y="0.5" width="17" height="9.6" rx="0.5" fill="#F9F9F9" />
-                <rect x="10.5" y="13.5" width="13.5" height="10.9" rx="0.5" fill="#F9F9F9" />
-                <rect x="17.5" y="28.3" width="17" height="9.7" rx="0.5" fill="#F9F9F9" />
-                <g fill="#101215">
-                  {[2.5, 6.5].flatMap((y) => [2.5, 5.6, 8.7, 11.8, 14.9].map((x) => <rect key={`a${x}${y}`} x={x} y={y} width="1.1" height="1.9" />))}
-                  {[15.2, 20.4].flatMap((y) => [12.5, 15.6, 18.7, 21.8].map((x) => <rect key={`b${x}${y}`} x={x} y={y} width="1.1" height="1.9" />))}
-                  {[30.3, 34.4].flatMap((y) => [19.5, 22.6, 25.7, 28.8, 31.9].map((x) => <rect key={`c${x}${y}`} x={x} y={y} width="1.1" height="1.9" />))}
-                </g>
-              </svg>
-              <h4>
-                <span>Shipped and</span>
-                <span>tracked</span>
-              </h4>
-              <p>
-                <span>Sea freight or courier with trusted</span>
-                <span>partners, and tracking shared with</span>
-                <span>you until delivery.</span>
-              </p>
-            </section>
-          </main>
+        {/* 6. the train climb: scrubbed clip, "How it works" either side of the train */}
+        <div ref={r('train')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[3] bg-[#0a0b0c]" style={{ opacity: 0, visibility: 'hidden' }}>
+          <video ref={trainRef} muted playsInline preload="auto" disablePictureInPicture poster="/story/train/train-poster.jpg" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.12),rgba(0,0,0,0.02)_30%,rgba(0,0,0,0.02)_70%,rgba(0,0,0,0.12))]" />
+          <div ref={r('trainCopy')} className="absolute inset-x-0 top-0 text-white will-change-transform">
+            <div className="container-x pb-[20vh] text-center">
+              <p className="eyebrow eyebrow-light justify-center [text-shadow:0_2px_12px_rgba(0,0,0,0.6)]">How it works</p>
+              <h3 className="mx-auto mt-5 font-display text-[40px] font-medium leading-[1.02] text-[#F7F5EF] [text-shadow:0_12px_32px_rgba(0,0,0,0.5)] sm:text-[64px] lg:text-[80px]">
+                {['You ask.', 'We source.', 'We check.', 'It arrives.'].map((l, i) => (
+                  <span key={l} className={`block whitespace-nowrap ${i === 3 ? 'text-sky' : ''}`}>
+                    {l}
+                  </span>
+                ))}
+              </h3>
+            </div>
+            <ol className="container-x grid gap-y-[16vh] pb-[30vh] sm:grid-cols-[1fr_170px_1fr] sm:gap-y-[22vh] lg:grid-cols-[1fr_200px_1fr]">
+              {processSteps.map((st, i) => {
+                const Icon = st.icon;
+                const left = i % 2 === 0;
+                return (
+                  <li
+                    key={st.title}
+                    className={`mx-auto max-w-[300px] text-center [text-shadow:0_2px_16px_rgba(0,0,0,0.7)] sm:mx-0 ${
+                      left ? 'sm:col-start-1 sm:justify-self-end sm:text-right' : 'sm:col-start-3 sm:justify-self-start sm:text-left'
+                    } ${left ? '' : 'sm:mt-[11vh]'}`}
+                  >
+                    <Icon size={30} strokeWidth={1.5} aria-hidden="true" className={`mx-auto text-sky drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)] sm:mx-0 ${left ? 'sm:ml-auto' : ''}`} />
+                    <p className="mt-5 font-display text-[15px] font-medium text-sky">{String(i + 1).padStart(2, '0')}</p>
+                    <p className="mt-1 font-display text-[22px] font-medium leading-tight sm:text-[26px]">{st.title}</p>
+                    <p className="mt-2 text-[14px] leading-[1.55] text-white/[0.88] sm:text-[15px]">{st.description}</p>
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
         </div>
 
         {/* 5-6. fog the truck drives into, and the train comes out of */}
-        <div ref={r('fog')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[4] will-change-transform" style={{ opacity: 0, visibility: 'hidden' }}>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#ffffff_0%,#f3f5f8_55%,#e6eaf0_100%)]" />
-          <img src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
-          <img src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full -scale-x-100 object-cover opacity-60" />
+        <div ref={r('fog')} aria-hidden="true" className="pointer-events-none absolute inset-0 z-[4] overflow-hidden" style={{ opacity: 0, visibility: 'hidden' }}>
+          {/* a soft white base, and two banks of cloud that close in from the sides and part again */}
+          <div ref={r('fogBase')} className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,#ffffff_0%,#f1f4f8_55%,#e3e8ef_100%)]" style={{ opacity: 0 }} />
+          <img ref={r('fogL')} src={V('cloud-1.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-95 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
+          <img ref={r('fogR')} src={V('cloud-2.webp')} alt="" className="absolute inset-0 h-full w-full object-cover opacity-95 will-change-transform" style={{ WebkitMaskImage: SIDE_MASK, maskImage: SIDE_MASK }} />
         </div>
 
         {/* 7. at sea: Why AGS Trade */}
